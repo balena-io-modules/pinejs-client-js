@@ -1,0 +1,30 @@
+{
+  "name": "pinejs-client",
+  "version": "0.0.0",
+  "description": "This module provides wrappers that allow easier interaction with the pinejs API.",
+  "main": "request.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:resin-io/pinejs-client-js.git"
+  },
+  "author": "Pagan Gazzard <page@resin.io>",
+  "contributors": [
+    "Lorenzo Stoakes <lorenzo@resin.io>"
+  ],
+  "scripts": {
+    "pretest": "npm run-script prepublish",
+    "test": "./node_modules/.bin/mocha",
+    "prepublish": "./node_modules/.bin/coffee -c angular.coffee core.coffee request.coffee"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "request": "^2.51.0",
+    "bluebird": "^2.6.0",
+    "lodash": "^3.0.0"
+  },
+  "devDependencies": {
+    "chai": "^2.0.0",
+    "coffee-script": "~1.9.1",
+    "mocha": "^2.1.0"
+  }
+}
