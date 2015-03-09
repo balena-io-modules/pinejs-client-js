@@ -277,42 +277,48 @@
 			delete: (params) ->
 				return @request(params, method: 'DELETE')
 
+			compile: (params) ->
+				if utils.isString(params)
+					return params
+				else if params.url?
+					return params.url
+				else
+					if !params.resource?
+						throw new Error('Either the url or resource must be specified.')
+					url = params.resource
+
+					if params.id?
+						url += '(' + escapeValue(params.id) + ')'
+
+					queryOptions = []
+					if params.options?
+						for own option, value of params.options
+							value =
+								switch option
+									when 'filter'
+										buildFilter(value)
+									when 'expand'
+										buildExpand(value)
+									else
+										join(value)
+							queryOptions.push("$#{option}=" + value)
+					if params.customOptions?
+						for own option, value of params.customOptions
+							queryOptions.push(option + '=' + value)
+					if queryOptions.length > 0
+						url += '?' + queryOptions.join('&')
+					return url
+
 			request: (params, overrides = {}) ->
 				try
-					{ method, url, body, passthrough } = params
+					{ method, body, passthrough } = params
 					passthrough ?= {}
 
 					if utils.isString(params)
-						url = params
 						method = 'GET'
-					else if !url?
-						if !params.resource?
-							throw new Error('Either the url or resource must be specified.')
-						url = params.resource
-
-						if params.id?
-							url += '(' + escapeValue(params.id) + ')'
-
-						queryOptions = []
-						if params.options?
-							for own option, value of params.options
-								value =
-									switch option
-										when 'filter'
-											buildFilter(value)
-										when 'expand'
-											buildExpand(value)
-										else
-											join(value)
-								queryOptions.push("$#{option}=" + value)
-						if params.customOptions?
-							for own option, value of params.customOptions
-								queryOptions.push(option + '=' + value)
-						if queryOptions.length > 0
-							url += '?' + queryOptions.join('&')
 
 					apiPrefix = params.apiPrefix ? @apiPrefix
-					url = apiPrefix + url
+					url = apiPrefix + @compile(params)
 
 					method = method ? overrides.method ? 'GET'
 					method = method.toUpperCase()

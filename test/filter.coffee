@@ -1,11 +1,10 @@
-{ PinejsClientTest } = require './test'
+{ test } = require './test'
 
 testFilter = (input, output) ->
 	resource = 'test'
-	url = '/' + resource + '?$filter=' + output
+	url = resource + '?$filter=' + output
 	it "should compile #{JSON.stringify(input)} to #{url}", ->
-		client = new PinejsClientTest(expected: url)
-		client.get {
+		test url, {
 			resource
 			options:
 				filter: input
