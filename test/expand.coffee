@@ -1,11 +1,10 @@
-{ PinejsClientTest } = require './test'
+{ test } = require './test'
 
 testExpand = (input, output) ->
 	resource = 'test'
-	url = '/' + resource + '?$expand=' + output
+	url = resource + '?$expand=' + output
 	it "should compile #{JSON.stringify(input)} to #{url}", ->
-		client = new PinejsClientTest(expected: url)
-		client.get {
+		test url, {
 			resource
 			options:
 				expand: input
