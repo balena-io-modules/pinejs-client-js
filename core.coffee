@@ -234,8 +234,9 @@
 				if utils.isString(params)
 					params = {apiPrefix: params}
 
-				for validParam in validParams when params[validParam]?
-					@[validParam] = params[validParam]
+				if utils.isObject(params)
+					for validParam in validParams when params[validParam]?
+						@[validParam] = params[validParam]
 
 			clone: (params) ->
 				if utils.isString(params)
@@ -245,7 +246,7 @@
 				for validParam in validParams
 					if @[validParam]?
 						cloneParams[validParam] = @[validParam]
-					if params[validParam]?
+					if params?[validParam]?
 						cloneParams[validParam] = params[validParam]
 
 				new @constructor(cloneParams)
