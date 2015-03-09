@@ -338,10 +338,12 @@
               apiPrefix: params
             };
           }
-          for (i = 0, len = validParams.length; i < len; i++) {
-            validParam = validParams[i];
-            if (params[validParam] != null) {
-              this[validParam] = params[validParam];
+          if (utils.isObject(params)) {
+            for (i = 0, len = validParams.length; i < len; i++) {
+              validParam = validParams[i];
+              if (params[validParam] != null) {
+                this[validParam] = params[validParam];
+              }
             }
           }
         }
@@ -359,7 +361,7 @@
             if (this[validParam] != null) {
               cloneParams[validParam] = this[validParam];
             }
-            if (params[validParam] != null) {
+            if ((params != null ? params[validParam] : void 0) != null) {
               cloneParams[validParam] = params[validParam];
             }
           }
@@ -413,64 +415,73 @@
           });
         };
 
+        PinejsClientCore.prototype.compile = function(params) {
+          var option, queryOptions, ref, ref1, url, value;
+          if (utils.isString(params)) {
+            return params;
+          } else if (params.url != null) {
+            return params.url;
+          } else {
+            if (params.resource == null) {
+              throw new Error('Either the url or resource must be specified.');
+            }
+            url = params.resource;
+            if (params.id != null) {
+              url += '(' + escapeValue(params.id) + ')';
+            }
+            queryOptions = [];
+            if (params.options != null) {
+              ref = params.options;
+              for (option in ref) {
+                if (!hasProp.call(ref, option)) continue;
+                value = ref[option];
+                value = (function() {
+                  switch (option) {
+                    case 'filter':
+                      return buildFilter(value);
+                    case 'expand':
+                      return buildExpand(value);
+                    default:
+                      return join(value);
+                  }
+                })();
+                queryOptions.push(("$" + option + "=") + value);
+              }
+            }
+            if (params.customOptions != null) {
+              ref1 = params.customOptions;
+              for (option in ref1) {
+                if (!hasProp.call(ref1, option)) continue;
+                value = ref1[option];
+                queryOptions.push(option + '=' + value);
+              }
+            }
+            if (queryOptions.length > 0) {
+              url += '?' + queryOptions.join('&');
+            }
+            return url;
+          }
+        };
+
         PinejsClientCore.prototype.request = function(params, overrides) {
-          var apiPrefix, body, e, i, len, mergeObjs, method, obj, option, opts, passthrough, queryOptions, ref, ref1, ref2, ref3, ref4, url, value;
+          var apiPrefix, body, e, i, len, mergeObjs, method, obj, option, opts, passthrough, ref, ref1, ref2, url, value;
           if (overrides == null) {
             overrides = {};
           }
           try {
-            method = params.method, url = params.url, body = params.body, passthrough = params.passthrough;
+            method = params.method, body = params.body, passthrough = params.passthrough;
             if (passthrough == null) {
               passthrough = {};
             }
             if (utils.isString(params)) {
-              url = params;
               method = 'GET';
-            } else if (url == null) {
-              if (params.resource == null) {
-                throw new Error('Either the url or resource must be specified.');
-              }
-              url = params.resource;
-              if (params.id != null) {
-                url += '(' + escapeValue(params.id) + ')';
-              }
-              queryOptions = [];
-              if (params.options != null) {
-                ref = params.options;
-                for (option in ref) {
-                  if (!hasProp.call(ref, option)) continue;
-                  value = ref[option];
-                  value = (function() {
-                    switch (option) {
-                      case 'filter':
-                        return buildFilter(value);
-                      case 'expand':
-                        return buildExpand(value);
-                      default:
-                        return join(value);
-                    }
-                  })();
-                  queryOptions.push(("$" + option + "=") + value);
-                }
-              }
-              if (params.customOptions != null) {
-                ref1 = params.customOptions;
-                for (option in ref1) {
-                  if (!hasProp.call(ref1, option)) continue;
-                  value = ref1[option];
-                  queryOptions.push(option + '=' + value);
-                }
-              }
-              if (queryOptions.length > 0) {
-                url += '?' + queryOptions.join('&');
-              }
             }
-            apiPrefix = (ref2 = params.apiPrefix) != null ? ref2 : this.apiPrefix;
-            url = apiPrefix + url;
-            method = (ref3 = method != null ? method : overrides.method) != null ? ref3 : 'GET';
+            apiPrefix = (ref = params.apiPrefix) != null ? ref : this.apiPrefix;
+            url = apiPrefix + this.compile(params);
+            method = (ref1 = method != null ? method : overrides.method) != null ? ref1 : 'GET';
             method = method.toUpperCase();
             mergeObjs = [
-              this.passthrough, (ref4 = this.passthroughByMethod[method]) != null ? ref4 : {}, passthrough != null ? passthrough : {}, {
+              this.passthrough, (ref2 = this.passthroughByMethod[method]) != null ? ref2 : {}, passthrough != null ? passthrough : {}, {
                 method: method,
                 url: url,
                 body: body
