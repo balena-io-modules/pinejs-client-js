@@ -1,3 +1,5 @@
+v1.2.0
+
 * Added the concept of backend parameters via `new PinejsClient(params, backendParams)` and `.clone(params, backendParams)`
 * Added a `cache` backend parameter to the request backend, which is used to create a bluebird-lru-cache cache for GET request ETags.
 

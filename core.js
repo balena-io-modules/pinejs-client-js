@@ -331,7 +331,7 @@
 
         PinejsClientCore.prototype.passthroughByMethod = {};
 
-        function PinejsClientCore(params) {
+        function PinejsClientCore(params, backendParams) {
           var i, len, validParam;
           if (utils.isString(params)) {
             params = {
@@ -348,8 +348,8 @@
           }
         }
 
-        PinejsClientCore.prototype.clone = function(params) {
-          var cloneParams, i, len, validParam;
+        PinejsClientCore.prototype.clone = function(params, backendParams) {
+          var cloneBackendParams, cloneParams, i, key, len, ref, validParam, value;
           if (utils.isString(params)) {
             params = {
               apiPrefix: params
@@ -365,7 +365,21 @@
               cloneParams[validParam] = params[validParam];
             }
           }
-          return new this.constructor(cloneParams);
+          cloneBackendParams = {};
+          if (utils.isObject(this.backendParams)) {
+            ref = this.backendParams;
+            for (key in ref) {
+              value = ref[key];
+              cloneBackendParams[key] = value;
+            }
+          }
+          if (utils.isObject(backendParams)) {
+            for (key in backendParams) {
+              value = backendParams[key];
+              cloneBackendParams[key] = value;
+            }
+          }
+          return new this.constructor(cloneParams, cloneBackendParams);
         };
 
         PinejsClientCore.prototype.query = function(params) {
