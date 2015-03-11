@@ -230,7 +230,9 @@
 			apiPrefix: '/'
 			passthrough: {}
 			passthroughByMethod: {}
-			constructor: (params) ->
+
+			# `backendParams` must be used by a backend for any additional parameters it may have.
+			constructor: (params, backendParams) ->
 				if utils.isString(params)
 					params = {apiPrefix: params}
 
@@ -238,7 +240,8 @@
 					for validParam in validParams when params[validParam]?
 						@[validParam] = params[validParam]
 
-			clone: (params) ->
+			# `backendParams` must be used by a backend for any additional parameters it may have.
+			clone: (params, backendParams) ->
 				if utils.isString(params)
 					params = {apiPrefix: params}
 
@@ -249,7 +252,15 @@
 					if params?[validParam]?
 						cloneParams[validParam] = params[validParam]
 
-				new @constructor(cloneParams)
+				cloneBackendParams = {}
+				if utils.isObject(@backendParams)
+					for key, value of @backendParams
+						cloneBackendParams[key] = value
+				if utils.isObject(backendParams)
+					for key, value of backendParams
+						cloneBackendParams[key] = value
+
+				new @constructor(cloneParams, cloneBackendParams)
 
 			query: (params) ->
 				@get(params)
