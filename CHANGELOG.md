@@ -1,3 +1,5 @@
+* Added the concept of backend parameters via `new PinejsClient(params, backendParams)` and `.clone(params, backendParams)`
+
 v1.1.0
 
 * Added a `compile` function that can be used to compile a request object to a url without sending off an actual request.
