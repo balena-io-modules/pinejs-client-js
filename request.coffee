@@ -20,6 +20,8 @@ module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
 	_request: (params) ->
 		# We default to gzip on for efficiency.
 		params.gzip ?= true
+		# We default to a 30s timeout, rather than hanging indefinitely.
+		params.timeout ?= 30
 		# The request is always a json request.
 		params.json = true
 

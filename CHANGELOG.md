@@ -1,3 +1,5 @@
+* Default to 30s timeout for request, rather than hanging indefinitely.
+
 v1.2.0
 
 * Added the concept of backend parameters via `new PinejsClient(params, backendParams)` and `.clone(params, backendParams)`
