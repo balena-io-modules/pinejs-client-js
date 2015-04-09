@@ -11,8 +11,6 @@
 		# Browser globals
 		factory(root.angular, root.PinejsClientCore)
 ) @, (angular, PinejsClientCore) ->
-	serviceName = 'PinejsClient'
-
 	# Use our own isBoolean as angular is missing it, but copy the other methods across.
 	utils =
 		isBoolean: (v) ->
