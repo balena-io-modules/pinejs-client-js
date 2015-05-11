@@ -1,3 +1,5 @@
+v1.3.0
+
 * Made sure that $in filters can be specified with arrays of length 1
 * Default to 30s timeout for request, rather than hanging indefinitely.
 
