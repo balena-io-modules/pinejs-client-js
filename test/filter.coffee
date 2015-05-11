@@ -307,6 +307,15 @@ testFilter(
 		b:
 			$in: [
 				'c'
+			]
+	"a/b eq 'c'"
+)
+
+testFilter(
+	a:
+		b:
+			$in: [
+				'c'
 				'd'
 			]
 	"((a/b eq 'c') or (a/b eq 'd'))"
@@ -321,6 +330,14 @@ testFilter(
 				e: 'f'
 			]
 	"((a/b/c eq 'd') or (a/b/e eq 'f'))"
+)
+
+testFilter(
+	a:
+		b:
+			$in:
+				c: 'd'
+	"a/b/c eq 'd'"
 )
 
 testFilter(
