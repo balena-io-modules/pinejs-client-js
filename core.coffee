@@ -127,7 +127,7 @@
 							filter = escapeValue(filter)
 							addParentKey(filter, parentKey, ' eq ')
 						else if utils.isArray(filter)
-							filter = handleArray(filter, parentKey)
+							filter = handleArray(filter, parentKey, 1)
 							filter = bracketJoin(filter, ' or ')
 						else if utils.isObject(filter)
 							result = handleObject(filter, parentKey)
@@ -152,9 +152,9 @@
 							key = parentKey.concat(key)
 						buildFilter(value, key)
 
-			handleArray = (filter, parentKey) ->
-				if filter.length < 2
-					throw new Error("Filter arrays must have at least 2 elements, got: #{JSON.stringify(filter)}")
+			handleArray = (filter, parentKey, minElements = 2) ->
+				if filter.length < minElements
+					throw new Error("Filter arrays must have at least #{minElements} elements, got: #{JSON.stringify(filter)}")
 
 				for value in filter
 					buildFilter(value, parentKey)
