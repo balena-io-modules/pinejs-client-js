@@ -1,3 +1,7 @@
+v1.3.1
+
+* Fixed the request timeout value to be 30s instead of 30ms.
+
 v1.3.0
 
 * Made sure that $in filters can be specified with arrays of length 1

@@ -43,7 +43,7 @@
         params.gzip = true;
       }
       if (params.timeout == null) {
-        params.timeout = 30;
+        params.timeout = 30000;
       }
       params.json = true;
       if ((this.cache != null) && params.method === 'GET') {
