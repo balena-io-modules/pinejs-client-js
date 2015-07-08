@@ -22,6 +22,8 @@ module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
 		params.gzip ?= true
 		# We default to a 30s timeout, rather than hanging indefinitely.
 		params.timeout ?= 30000
+		# We default to enforcing valid ssl certificates, after all there's a reason we're using them!
+		params.strictSSL ?= true
 		# The request is always a json request.
 		params.json = true
 
