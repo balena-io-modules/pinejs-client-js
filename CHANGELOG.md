@@ -1,3 +1,5 @@
+v1.4.0
+
 * Require a valid SSL certificate for the request backend by default.
 
 v1.3.1

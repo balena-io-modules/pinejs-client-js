@@ -45,6 +45,9 @@
       if (params.timeout == null) {
         params.timeout = 30000;
       }
+      if (params.strictSSL == null) {
+        params.strictSSL = true;
+      }
       params.json = true;
       if ((this.cache != null) && params.method === 'GET') {
         return this.cache.get(params.url).then(function(cached) {
