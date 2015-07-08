@@ -1,3 +1,5 @@
+* Require a valid SSL certificate for the request backend by default.
+
 v1.3.1
 
 * Fixed the request timeout value to be 30s instead of 30ms.
