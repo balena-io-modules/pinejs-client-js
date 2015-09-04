@@ -6,6 +6,11 @@ BluebirdLRU = require 'bluebird-lru-cache'
 
 request = Promise.promisify(request)
 
+throwWithCode = (body, statusCode) ->
+	err = new Error(body)
+	err.statusCode = statusCode
+	throw err
+
 validParams = ['cache']
 module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
 	constructor: (params, backendParams) ->
@@ -41,7 +46,7 @@ module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
 							etag: response.headers.etag
 							body
 						}
-					throw new Error(body)
+					throwWithCode(body, response.statusCode)
 			.catch BluebirdLRU.NoSuchKeyError, ->
 				request(params).spread (response, body) ->
 					if 200 <= response.statusCode < 300
@@ -49,7 +54,7 @@ module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
 							etag: response.headers.etag
 							body
 						}
-					throw new Error(body)
+					throwWithCode(body, response.statusCode)
 			.then (cached) =>
 				@cache.set(params.url, cached)
 				return _.cloneDeep(cached.body)
@@ -57,4 +62,4 @@ module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
 			request(params).spread (response, body) ->
 				if 200 <= response.statusCode < 300
 					return body
-				throw new Error(body)
+				throwWithCode(body, response.statusCode)
