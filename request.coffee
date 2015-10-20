@@ -3,11 +3,13 @@ request = require 'request'
 Promise = require 'bluebird'
 PinejsClientCore = require './core'
 BluebirdLRU = require 'bluebird-lru-cache'
+TypedError = require 'typed-error'
 
 request = Promise.promisify(request)
 
-class StatusError extends Error
+class StatusError extends TypedError
 	constructor: (@message, @statusCode) ->
+		super(@message)
 
 validParams = ['cache']
 module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
