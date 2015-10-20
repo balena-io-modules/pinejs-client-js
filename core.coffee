@@ -88,10 +88,13 @@
 							addParentKey(filter, parentKey)
 						else if utils.isObject(filter)
 							result = handleObject(filter)
-							if result.length < 2
-								throw new Error("#{operator} objects must have at least 2 properties as an object, got: #{JSON.stringify(filter)}")
-							filter = bracketJoin(result, operator)
-							addParentKey(filter, parentKey)
+							if result.length < 1
+								throw new Error("#{operator} objects must have at least 1 property as an object, got: #{JSON.stringify(filter)}")
+							if result.length is 1
+								addParentKey(result[0], parentKey, operator)
+							else
+								filter = bracketJoin(result, operator)
+								addParentKey(filter, parentKey)
 						else
 							throw new Error('Expected null/string/number/bool/obj/array, got: ' + typeof filter)
 					when 'contains', 'endswith', 'startswith', 'endswith', 'endswith', 'length', 'indexof', 'substring', 'tolower', 'toupper', 'trim', 'concat', 'year', 'month', 'day', 'hour', 'minute', 'second', 'fractionalseconds', 'date', 'time', 'totaloffsetminutes', 'now', 'maxdatetime', 'mindatetime', 'totalseconds', 'round', 'floor', 'ceiling', 'isof', 'cast'
