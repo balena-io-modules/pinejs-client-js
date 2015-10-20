@@ -51,9 +51,38 @@ testOperator = (operator) ->
 
 	testFilter(
 		a: createFilter
-				b: 'c'
-				d: 'e'
+			b: 'c'
+			d: 'e'
 		"a eq ((b eq 'c') #{operator} (d eq 'e'))"
+	)
+
+	testFilter(
+		a: createFilter
+			$: 'b'
+		"a #{operator} b"
+	)
+
+	testFilter(
+		a: createFilter
+			$: ['b', 'c']
+		"a #{operator} b/c"
+	)
+
+	rawDatetime = "datetime'2015-10-20T14%3A04%3A05.374Z'"
+	testFilter(
+		a: createFilter
+			$raw: rawDatetime
+		"a #{operator} #{rawDatetime}"
+	)
+
+	testFilter(
+		a: createFilter
+			$or: [
+				$: 'b'
+			,
+				$: 'c'
+			]
+		"a #{operator} ((b) or (c))"
 	)
 
 testFunction = (funcName) ->
@@ -93,8 +122,8 @@ testFunction = (funcName) ->
 
 	testFilter(
 		a: createFilter
-				b: 'c'
-				d: 'e'
+			b: 'c'
+			d: 'e'
 		"a eq #{funcName}((b eq 'c'),(d eq 'e'))"
 	)
 
