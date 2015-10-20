@@ -1,6 +1,6 @@
 {
   "name": "pinejs-client",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "This module provides wrappers that allow easier interaction with the pinejs API.",
   "main": "request.js",
   "repository": {
@@ -25,8 +25,8 @@
     "typed-error": "^0.1.0"
   },
   "devDependencies": {
-    "chai": "^2.0.0",
-    "coffee-script": "~1.9.1",
+    "chai": "^3.3.0",
+    "coffee-script": "~1.10.0",
     "mocha": "^2.1.0"
   }
 }
