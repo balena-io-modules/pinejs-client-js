@@ -1,6 +1,6 @@
 v1.5.0
 
-* Added support for operator objects with only one value, eg `a: $ne: $b`
+* Added support for operator objects with only one value, eg `a: $ne: $: 'b'`
 * Added status code to thrown errors from the request backend.
 
 v1.4.0
