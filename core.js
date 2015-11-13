@@ -286,6 +286,8 @@
                 switch (key) {
                   case '$filter':
                     return buildFilter(value);
+                  case '$expand':
+                    return buildExpand(value);
                   default:
                     return join(value);
                 }
