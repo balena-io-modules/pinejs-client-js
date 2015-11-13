@@ -189,6 +189,8 @@
 							switch key
 								when '$filter'
 									buildFilter(value)
+								when '$expand'
+									buildExpand(value)
 								else
 									join(value)
 						expandOptions.push("#{key}=#{value}")
