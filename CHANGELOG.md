@@ -1,3 +1,5 @@
+* Add suport for nested expands and expand options in the style `a: $expand: b: $select: 'c'`
+
 v1.5.0
 
 * Added support for operator objects with only one value, eg `a: $ne: $: 'b'`

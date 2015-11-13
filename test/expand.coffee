@@ -118,3 +118,23 @@ testExpand(
 	]
 	"a($filter=b eq 'c'),a($filter=d eq 'e'&$select=f,g)"
 )
+
+testExpand
+	a:
+		$expand: 'b'
+	"a($expand=b)"
+
+testExpand
+	a:
+		$expand:
+			b:
+				$expand: 'c'
+	"a($expand=b($expand=c))"
+
+testExpand
+	a:
+		$expand:
+			b:
+				$expand: 'c'
+				$select: [ 'd', 'e' ]
+	"a($expand=b($expand=c&$select=d,e))"
