@@ -1,3 +1,5 @@
+* Updated to bluebird 3.
+
 v1.6.0
 
 * Add suport for nested expands and expand options in the style `a: $expand: b: $select: 'c'`

@@ -5,7 +5,7 @@ PinejsClientCore = require './core'
 BluebirdLRU = require 'bluebird-lru-cache'
 TypedError = require 'typed-error'
 
-request = Promise.promisify(request)
+request = Promise.promisify(request, multiArgs: true)
 
 class StatusError extends TypedError
 	constructor: (@message, @statusCode) ->
