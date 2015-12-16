@@ -316,7 +316,10 @@
 									when 'expand'
 										buildExpand(value)
 									else
-										join(value)
+										if utils.isString(value) or utils.isArray(value)
+											join(value)
+										else
+											throw new Error("'#{option}' option has no special handling so must be either a string or array")
 							queryOptions.push("$#{option}=" + value)
 					if params.customOptions?
 						for own option, value of params.customOptions
