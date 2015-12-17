@@ -465,7 +465,11 @@
                     case 'expand':
                       return buildExpand(value);
                     default:
-                      return join(value);
+                      if (utils.isString(value) || utils.isArray(value)) {
+                        return join(value);
+                      } else {
+                        throw new Error("'" + option + "' option has no special handling so must be either a string or array");
+                      }
                   }
                 })();
                 queryOptions.push(("$" + option + "=") + value);

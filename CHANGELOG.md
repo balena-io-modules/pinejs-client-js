@@ -1,4 +1,7 @@
-* Updated to bluebird 3.
+v2.0.0
+
+* Updated request backend to use bluebird 3.
+* Added a nice error message when an option without special handling isn't a string or array.
 
 v1.6.0
 
