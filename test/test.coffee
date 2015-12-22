@@ -7,4 +7,7 @@ PinejsClientCore = require '../core'
 PinejsClientCore = PinejsClientCore(_, Promise)
 core = new PinejsClientCore()
 exports.test = (expected, params) ->
-	expect(core.compile(params)).to.equal expected
+	if _.isError(expected)
+		expect(-> core.compile(params)).to.throw(expected.constructor, expected.message)
+	else
+		expect(core.compile(params)).to.equal expected

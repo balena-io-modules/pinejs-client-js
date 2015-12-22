@@ -1,3 +1,5 @@
+* Added support for the `any` and `all` lambda operators.
+
 v2.0.1
 
 * Commit missed request.js changes.

@@ -142,8 +142,18 @@
 					when 'not'
 						filter = 'not(' + buildFilter(filter) + ')'
 						addParentKey(filter, parentKey)
+					when 'any', 'all'
+						alias = filter.$alias
+						expr = filter.$expr
+						if not alias?
+							throw new Error("Lambda expression (#{operator}) has no alias defined.")
+						if not expr?
+							throw new Error("Lambda expression (#{operator}) has no expr defined.")
+						expr = buildFilter(expr)
+						expr = "#{operator}(#{alias}:#{expr})"
+						addParentKey(expr, parentKey, '/')
 					else
-						throw new Error('Unrecognised operator: ' + operator)
+						throw new Error("Unrecognised operator: '#{operator}'")
 
 			handleObject = (filter, parentKey) ->
 				for own key, value of filter

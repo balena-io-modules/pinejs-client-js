@@ -1,10 +1,12 @@
 { test } = require './test'
+_ = require 'lodash'
 
 testFilter = (input, output) ->
 	resource = 'test'
-	url = resource + '?$filter=' + output
-	it "should compile #{JSON.stringify(input)} to #{url}", ->
-		test url, {
+	if not _.isError(output)
+		output = resource + '?$filter=' + output
+	it "should compile #{JSON.stringify(input)} to #{output}", ->
+		test output, {
 			resource
 			options:
 				filter: input
@@ -522,3 +524,37 @@ testFilter(
 	]
 	"((tolower(a)) eq (tolower('b')))"
 )
+
+testLambda = (operator) ->
+	createFilter = (partialFilter) ->
+		"$#{operator}": partialFilter
+
+	testFilter(
+		a:
+			createFilter
+				$alias: 'b'
+				$expr:
+					b: c: 'd'
+		"a/#{operator}(b:b/c eq 'd')"
+	)
+
+	testFilter(
+		a:
+			createFilter
+				$expr:
+					b: c: 'd'
+		new Error("Lambda expression (#{operator}) has no alias defined.")
+	)
+
+	testFilter(
+		a:
+			createFilter
+				$alias: 'b'
+		new Error("Lambda expression (#{operator}) has no expr defined.")
+	)
+
+# Test $any
+testLambda('any')
+
+# Test $all
+testLambda('all')
