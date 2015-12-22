@@ -1,3 +1,8 @@
+v1.7.0
+
+* Added support for the `any` and `all` lambda operators.
+* Added a nice error message when an option without special handling isn't a string or array.
+
 v1.6.0
 
 * Add suport for nested expands and expand options in the style `a: $expand: b: $select: 'c'`
