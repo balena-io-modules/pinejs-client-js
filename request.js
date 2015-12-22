@@ -16,7 +16,9 @@
 
   TypedError = require('typed-error');
 
-  request = Promise.promisify(request);
+  request = Promise.promisify(request, {
+    multiArgs: true
+  });
 
   StatusError = (function(superClass) {
     extend(StatusError, superClass);

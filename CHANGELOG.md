@@ -1,3 +1,7 @@
+v2.0.1
+
+* Commit missed request.js changes.
+
 v2.0.0
 
 * Updated request backend to use bluebird 3.
