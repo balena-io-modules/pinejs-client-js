@@ -97,7 +97,7 @@
           return filter;
         };
         handleOperator = function(filter, parentKey, operator) {
-          var operands, result;
+          var alias, expr, operands, result;
           operator = operator.slice(1);
           switch (operator) {
             case 'ne':
@@ -216,8 +216,21 @@
             case 'not':
               filter = 'not(' + buildFilter(filter) + ')';
               return addParentKey(filter, parentKey);
+            case 'any':
+            case 'all':
+              alias = filter.$alias;
+              expr = filter.$expr;
+              if (alias == null) {
+                throw new Error("Lambda expression (" + operator + ") has no alias defined.");
+              }
+              if (expr == null) {
+                throw new Error("Lambda expression (" + operator + ") has no expr defined.");
+              }
+              expr = buildFilter(expr);
+              expr = operator + "(" + alias + ":" + expr + ")";
+              return addParentKey(expr, parentKey, '/');
             default:
-              throw new Error('Unrecognised operator: ' + operator);
+              throw new Error("Unrecognised operator: '" + operator + "'");
           }
         };
         handleObject = function(filter, parentKey) {

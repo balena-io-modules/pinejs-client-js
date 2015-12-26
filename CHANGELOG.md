@@ -1,3 +1,5 @@
+v2.1.0
+
 * Added support for the `any` and `all` lambda operators.
 
 v2.0.1
