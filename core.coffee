@@ -42,6 +42,7 @@
 		# Escape a primitive value (string or number)
 		escapeValue = (value) ->
 			if utils.isString(value)
+				value = value.replace(/'/g, "''")
 				return "'" + encodeURIComponent(value) + "'"
 			else if utils.isNumber(value) or utils.isBoolean(value) or value is null
 				return value
@@ -97,7 +98,7 @@
 								addParentKey(filter, parentKey)
 						else
 							throw new Error('Expected null/string/number/bool/obj/array, got: ' + typeof filter)
-					when 'contains', 'endswith', 'startswith', 'endswith', 'endswith', 'length', 'indexof', 'substring', 'tolower', 'toupper', 'trim', 'concat', 'year', 'month', 'day', 'hour', 'minute', 'second', 'fractionalseconds', 'date', 'time', 'totaloffsetminutes', 'now', 'maxdatetime', 'mindatetime', 'totalseconds', 'round', 'floor', 'ceiling', 'isof', 'cast'
+					when 'contains', 'endswith', 'startswith', 'length', 'indexof', 'substring', 'tolower', 'toupper', 'trim', 'concat', 'year', 'month', 'day', 'hour', 'minute', 'second', 'fractionalseconds', 'date', 'time', 'totaloffsetminutes', 'now', 'maxdatetime', 'mindatetime', 'totalseconds', 'round', 'floor', 'ceiling', 'isof', 'cast'
 						if isPrimitive(filter)
 							operands = []
 							if parentKey?
