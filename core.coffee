@@ -67,13 +67,21 @@
 				return '(' + str + ')'
 			return str
 
-		buildFilter = do ->
-			# Add the parentKey + operator if it exists.
-			addParentKey = (filter, parentKey, operator = ' eq ') ->
-				if parentKey?
-					return escapeResource(parentKey) + operator + filter
-				return filter
+		# Add the parentKey + operator if it exists.
+		addParentKey = (filter, parentKey, operator = ' eq ') ->
+			if parentKey?
+				return escapeResource(parentKey) + operator + filter
+			return filter
 
+		applyBinds = (filter, params, parentKey) ->
+			for index, param of params
+				param = '(' + buildFilter(param) + ')'
+				# Escape $ for filter.replace
+				param = param.replace(/\$/g, '$$$$')
+				filter = filter.replace(new RegExp("\\$#{index}([^a-zA-Z0-9]|$)", 'g'), "#{param}$1")
+			addParentKey(filter, parentKey)
+
+		buildFilter = do ->
 			# Handle special cases for all the different $ operators.
 			handleOperator = (filter, parentKey, operator) ->
 				operator = operator[1...]
@@ -124,14 +132,23 @@
 							[ filter, params... ] = filter
 							if not utils.isString(filter)
 								throw new Error("First element of array for $#{operator} must be a string, got: #{typeof filter}")
+							mappedParams = {}
 							for param, index in params
-								param = '(' + buildFilter(param) + ')'
-								# Escape $ for filter.replace
-								param = param.replace(/\$/g, '$$$$')
-								filter = filter.replace(new RegExp("\\$#{index + 1}([^0-9]|$)", 'g'), "#{param}$1")
-							addParentKey(filter, parentKey)
+								mappedParams[index + 1] = param
+							applyBinds(filter, mappedParams, parentKey)
+						else if utils.isObject(filter)
+							params = filter
+							filter = filter.$string
+							if not utils.isString(filter)
+								throw new Error("$string element of object for $#{operator} must be a string, got: #{typeof filter}")
+							mappedParams = {}
+							for index, param of params when index isnt '$string'
+								if not /^[a-zA-Z0-9]+$/.test(index)
+									throw new Error("$#{operator} param names must contain only [a-zA-Z0-9], got: #{index}")
+								mappedParams[index] = param
+							applyBinds(filter, mappedParams, parentKey)
 						else
-							throw new Error("Expected string/array for $#{operator}, got: #{typeof filter}")
+							throw new Error("Expected string/array/object for $#{operator}, got: #{typeof filter}")
 					when ''
 						filter = escapeResource(filter)
 						addParentKey(filter, parentKey)
