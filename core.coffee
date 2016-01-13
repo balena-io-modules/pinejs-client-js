@@ -118,7 +118,20 @@
 						else
 							throw new Error('Expected null/string/number/obj/array, got: ' + typeof filter)
 					when 'raw'
-						addParentKey(filter, parentKey)
+						if utils.isString(filter)
+							addParentKey(filter, parentKey)
+						else if utils.isArray(filter)
+							[ filter, params... ] = filter
+							if not utils.isString(filter)
+								throw new Error("First element of array for $#{operator} must be a string, got: #{typeof filter}")
+							for param, index in params
+								param = '(' + buildFilter(param) + ')'
+								# Escape $ for filter.replace
+								param = param.replace(/\$/g, '$$$$')
+								filter = filter.replace(new RegExp("\\$#{index + 1}([^0-9]|$)", 'g'), "#{param}$1")
+							addParentKey(filter, parentKey)
+						else
+							throw new Error("Expected string/array for $#{operator}, got: #{typeof filter}")
 					when ''
 						filter = escapeResource(filter)
 						addParentKey(filter, parentKey)

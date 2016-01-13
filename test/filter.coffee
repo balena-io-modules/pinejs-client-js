@@ -265,6 +265,11 @@ testFilter(
 )
 
 testFilter(
+	$raw: true
+	new Error('Expected string/array for $raw, got: boolean')
+)
+
+testFilter(
 	[
 		$raw: 'a ge b'
 	,
@@ -293,6 +298,53 @@ testFilter(
 			]
 	"a/b eq ((c ge d) and (e le f))"
 )
+
+
+# Test raw arrays
+testFilter(
+	$raw: [
+		"a/b eq $1 and a eq $2"
+		'c'
+		'd'
+	]
+	"a/b eq ('c') and a eq ('d')"
+)
+
+testFilter(
+	$raw: [
+		true
+	]
+	new Error('First element of array for $raw must be a string, got: boolean')
+)
+
+testFilter(
+	$raw: [
+		"a/b eq $1 and a eq $2"
+		{ c: 'd' }
+		$add: [
+			1
+			2
+		]
+	]
+	"a/b eq (c eq 'd') and a eq (((1) add (2)))"
+)
+
+testFilter(
+	$raw: [
+		"a/b eq $1"
+		$raw: '$$'
+	]
+	"a/b eq ($$)"
+)
+
+testFilter(
+	$raw: [
+		"a/b eq $10 and a eq $1"
+		[1..10]...
+	]
+	"a/b eq (10) and a eq (1)"
+)
+
 
 # Test $and
 testFilter(

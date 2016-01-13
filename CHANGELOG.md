@@ -1,3 +1,5 @@
+* Added support for an array form of `$raw` which allows use of bindings for automatic processing of filter fragments and escaping of values.
+
 v2.2.0
 
 * Updated request backend to lodash ^4.0.0
