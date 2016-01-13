@@ -1,3 +1,5 @@
+* Correctly escape single quotes in strings.
+
 v2.1.0
 
 * Added support for the `any` and `all` lambda operators.
