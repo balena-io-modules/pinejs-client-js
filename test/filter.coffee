@@ -18,6 +18,12 @@ testFilter(
 	"((a eq 'b') and (d eq 'e'))"
 )
 
+testFilter(
+	a: "b'c"
+	d: "e''f'''g"
+	"((a eq 'b''c') and (d eq 'e''''f''''''g'))"
+)
+
 testOperator = (operator) ->
 	createFilter = (partialFilter) ->
 		"$#{operator}": partialFilter
