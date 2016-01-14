@@ -1,3 +1,5 @@
+v1.7.1
+
 * Correctly escape single quotes in strings.
 
 v1.7.0

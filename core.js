@@ -52,6 +52,7 @@
       };
       escapeValue = function(value) {
         if (utils.isString(value)) {
+          value = value.replace(/'/g, "''");
           return "'" + encodeURIComponent(value) + "'";
         } else if (utils.isNumber(value) || utils.isBoolean(value) || value === null) {
           return value;
@@ -137,8 +138,6 @@
             case 'contains':
             case 'endswith':
             case 'startswith':
-            case 'endswith':
-            case 'endswith':
             case 'length':
             case 'indexof':
             case 'substring':
