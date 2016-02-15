@@ -282,15 +282,7 @@
 				@get(params)
 
 			get: (params) ->
-				singular = utils.isObject(params) and params.id?
-				return @request(params, method: 'GET').then (data) ->
-					if !data?.d?
-						throw new Error('Invalid response received.')
-					if singular
-						if data.d.length > 1
-							throw new Error('Returned multiple results when only one was expected.')
-						return data.d[0]
-					return data.d
+				return @request(params, method: 'GET')
 
 			put: (params) ->
 				return @request(params, method: 'PUT')
@@ -366,6 +358,17 @@
 							opts[option] = value
 					opts.method = method
 
-					return @_request(opts)
+					return @_request(opts).then (data) ->
+						return data if opts.method isnt 'GET'
+
+						if !data?.d?
+							throw new Error('Invalid response received.')
+
+						singular = utils.isObject(params) and params.id?
+						if singular
+							if data.d.length > 1
+								throw new Error('Returned multiple results when only one was expected.')
+							return data.d[0]
+						return data.d
 				catch e
 					return Promise.reject(e)
