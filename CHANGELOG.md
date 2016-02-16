@@ -1,3 +1,5 @@
+* Updated request backend to lodash ^4.0.0
+
 v2.1.1
 
 * Correctly escape single quotes in strings.
