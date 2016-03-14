@@ -1,3 +1,5 @@
+v2.3.0
+
 * Deprecated `$expand: a: b: ...`
 * Deprecated `$expand: a: "b"`
 * Deprecated `$filter: a: b: ...`
