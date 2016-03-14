@@ -1,3 +1,6 @@
+* Deprecated `$expand: a: b: ...`
+* Deprecated `$expand: a: "b"`
+* Deprecated `$filter: a: b: ...`
 * Added support for array and object forms of `$raw` which allows use of bindings for automatic processing of filter fragments and escaping of values.
 
 v2.2.0
