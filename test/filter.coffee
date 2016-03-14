@@ -265,6 +265,11 @@ testFilter(
 )
 
 testFilter(
+	$raw: true
+	new Error('Expected string/array/object for $raw, got: boolean')
+)
+
+testFilter(
 	[
 		$raw: 'a ge b'
 	,
@@ -293,6 +298,110 @@ testFilter(
 			]
 	"a/b eq ((c ge d) and (e le f))"
 )
+
+
+# Test raw arrays
+testFilter(
+	$raw: [
+		"a/b eq $1 and a eq $2"
+		'c'
+		'd'
+	]
+	"a/b eq ('c') and a eq ('d')"
+)
+
+testFilter(
+	$raw: [
+		true
+	]
+	new Error('First element of array for $raw must be a string, got: boolean')
+)
+
+testFilter(
+	$raw: [
+		"a/b eq $1 and a eq $2"
+		{ c: 'd' }
+		$add: [
+			1
+			2
+		]
+	]
+	"a/b eq (c eq 'd') and a eq (((1) add (2)))"
+)
+
+testFilter(
+	$raw: [
+		"a/b eq $1"
+		$raw: '$$'
+	]
+	"a/b eq ($$)"
+)
+
+testFilter(
+	$raw: [
+		"a/b eq $10 and a eq $1"
+		[1..10]...
+	]
+	"a/b eq (10) and a eq (1)"
+)
+
+
+# Test raw objects
+testFilter(
+	$raw:
+		$string: "a/b eq $1 and a eq $2"
+		1: 'c'
+		2: 'd'
+	"a/b eq ('c') and a eq ('d')"
+)
+
+testFilter(
+	$raw:
+		$string: true
+	new Error("$string element of object for $raw must be a string, got: boolean")
+)
+testFilter(
+	$raw:
+		$string: ''
+		$invalid: ''
+	new Error("$raw param names must contain only [a-zA-Z0-9], got: $invalid")
+)
+
+testFilter(
+	$raw:
+		$string: 'a/b eq $1 and a eq $2'
+		1: c: 'd'
+		2: $add: [
+			1
+			2
+		]
+	"a/b eq (c eq 'd') and a eq (((1) add (2)))"
+)
+
+testFilter(
+	$raw:
+		$string: 'a/b eq $1'
+		1: $raw: '$$'
+	"a/b eq ($$)"
+)
+
+testFilter(
+	$raw:
+		$string: 'a/b eq $10 and a eq $1'
+		1: 1
+		10: 10
+	"a/b eq (10) and a eq (1)"
+)
+
+testFilter(
+	$raw:
+		$string: 'a eq $a and b eq $b or b eq $b2'
+		a: 'a'
+		b: 'b'
+		b2: 'b2'
+	"a eq ('a') and b eq ('b') or b eq ('b2')"
+)
+
 
 # Test $and
 testFilter(
