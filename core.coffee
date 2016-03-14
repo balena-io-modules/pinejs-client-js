@@ -13,6 +13,16 @@
 		root.PinejsClientCore = factory()
 ) @, ->
 
+	noop = ->
+	deprecated = {}
+	addDeprecated = (name, message) ->
+		deprecated[name] = ->
+			console.warn('pinejs-client deprecated:', message)
+			deprecated[name] = noop
+	addDeprecated('expandObject', '`$expand: a: b: ...` is deprecated, please use `$expand: a: $expand: b: ...` instead.')
+	addDeprecated('expandPrimitive', '`$expand: a: "b"` is deprecated, please use `$expand: a: $expand: "b"` instead.')
+	addDeprecated('expandFilter', '`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.')
+
 	# Utils must support .isString, .isObject, and .isArray
 	# Promise must support Promise.reject, returning a rejected promise
 	return (utils, Promise) ->
@@ -180,7 +190,12 @@
 							throw new Error("Lambda expression (#{operator}) has no alias defined.")
 						if not expr?
 							throw new Error("Lambda expression (#{operator}) has no expr defined.")
-						expr = buildFilter(expr)
+						try
+							# Disable the expandFilter deprecation notice when inside a lambda expr
+							deprecatedFn = deprecated.expandFilter = ->
+							expr = buildFilter(expr)
+						finally
+							deprecated.expandFilter = deprecatedFn
 						expr = "#{operator}(#{alias}:#{expr})"
 						addParentKey(expr, parentKey, '/')
 					else
@@ -193,6 +208,8 @@
 					else
 						key = [key]
 						if parentKey?
+							if parentKey.length > 0
+								deprecated.expandFilter()
 							key = parentKey.concat(key)
 						buildFilter(value, key)
 
@@ -235,8 +252,8 @@
 								else
 									join(value)
 						expandOptions.push("#{key}=#{value}")
-						
 					else
+						deprecated.expandObject()
 						key = parentKey.concat(key)
 						expands.push(buildExpand(value, key))
 				if expandOptions.length > 0
@@ -254,6 +271,8 @@
 
 			return (expand, parentKey = []) ->
 				if isPrimitive(expand)
+					if parentKey.length > 0
+						deprecated.expandPrimitive()
 					escapeResource(parentKey.concat(expand))
 				else if utils.isArray(expand)
 					expand = handleArray(expand, parentKey)
