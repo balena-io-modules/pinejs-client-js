@@ -371,7 +371,9 @@
               })();
               expandOptions.push(key + "=" + value);
             } else {
-              deprecated.expandObject();
+              if (parentKey.length > 0) {
+                deprecated.expandObject();
+              }
               key = parentKey.concat(key);
               expands.push(buildExpand(value, key));
             }

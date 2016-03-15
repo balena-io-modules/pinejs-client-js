@@ -1,3 +1,7 @@
+v2.3.1
+
+* Fixed spurious deprecation notice on cases like `$expand: a: $select: 'b'`
+
 v2.3.0
 
 * Deprecated `$expand: a: b: ...`
