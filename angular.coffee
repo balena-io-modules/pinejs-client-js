@@ -10,7 +10,7 @@
 	else
 		# Browser globals
 		factory(root.angular, root.PinejsClientCore)
-) @, (angular, PinejsClientCore) ->
+) this, (angular, PinejsClientCore) ->
 	# Use our own isBoolean as angular is missing it, but copy the other methods across.
 	utils =
 		isBoolean: (v) ->
@@ -21,7 +21,7 @@
 	angular
 	.module('resin.pinejs', [])
 	.service 'pinejs-client', ['$http', '$q', ($http, Promise) ->
-		return class PinejsClientAngular extends PinejsClientCore(utils, Promise)
+		class PinejsClientAngular extends PinejsClientCore(utils, Promise)
 			_request: (params) ->
 				# Angular expects 'data'.
 				params.data = params.body
@@ -29,7 +29,8 @@
 
 				 # Returns an httpPromise so we need to cast to a $q promise, see $http docs.
 				return Promise.when($http(params)).then(
-					({data}) -> return data
-					({data}) -> return Promise.reject(new Error(data))
+					({ data }) -> return data
+					({ data }) -> return Promise.reject(new Error(data))
 				)
+		return PinejsClientAngular
 	]

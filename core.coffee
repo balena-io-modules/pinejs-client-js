@@ -11,7 +11,7 @@
 	else
 		# Browser globals
 		root.PinejsClientCore = factory()
-) @, ->
+) this, ->
 
 	noop = ->
 	deprecated = {}
@@ -19,9 +19,18 @@
 		deprecated[name] = ->
 			console.warn('pinejs-client deprecated:', message)
 			deprecated[name] = noop
-	addDeprecated('expandObject', '`$expand: a: b: ...` is deprecated, please use `$expand: a: $expand: b: ...` instead.')
-	addDeprecated('expandPrimitive', '`$expand: a: "b"` is deprecated, please use `$expand: a: $expand: "b"` instead.')
-	addDeprecated('expandFilter', '`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.')
+	addDeprecated(
+		'expandObject'
+		'`$expand: a: b: ...` is deprecated, please use `$expand: a: $expand: b: ...` instead.'
+	)
+	addDeprecated(
+		'expandPrimitive'
+		'`$expand: a: "b"` is deprecated, please use `$expand: a: $expand: "b"` instead.'
+	)
+	addDeprecated(
+		'expandFilter'
+		'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.'
+	)
 
 	# Utils must support .isString, .isObject, and .isArray
 	# Promise must support Promise.reject, returning a rejected promise
@@ -47,7 +56,7 @@
 						encodeURIComponent(component)
 				resource.join('/')
 			else
-				throw new Error('Not a valid resource: ' + typeof value)
+				throw new Error('Not a valid resource: ' + typeof resource)
 
 		# Escape a primitive value (string or number)
 		escapeValue = (value) ->
@@ -68,7 +77,7 @@
 				throw new Error('Expected a string or array, got: ' + typeof strOrArray)
 
 		# Join together a bunch of statements making sure the whole lot is correctly parenthesised
-		# Force outer brackets says that the outer brackets are needed even in the case of only one element (eg a 1 param function)
+		# `forceOuterBrackets` forces the outer brackets to be included when there is only one element (eg a 1 param function)
 		bracketJoin = (arr, separator, forceOuterBrackets = false) ->
 			str = arr.join(')' + separator + '(')
 			if arr.length > 1
@@ -108,7 +117,7 @@
 						else if utils.isObject(filter)
 							result = handleObject(filter)
 							if result.length < 1
-								throw new Error("#{operator} objects must have at least 1 property as an object, got: #{JSON.stringify(filter)}")
+								throw new Error("#{operator} objects must have at least 1 property, got: #{JSON.stringify(filter)}")
 							if result.length is 1
 								addParentKey(result[0], parentKey, operator)
 							else
@@ -116,7 +125,9 @@
 								addParentKey(filter, parentKey)
 						else
 							throw new Error('Expected null/string/number/bool/obj/array, got: ' + typeof filter)
-					when 'contains', 'endswith', 'startswith', 'length', 'indexof', 'substring', 'tolower', 'toupper', 'trim', 'concat', 'year', 'month', 'day', 'hour', 'minute', 'second', 'fractionalseconds', 'date', 'time', 'totaloffsetminutes', 'now', 'maxdatetime', 'mindatetime', 'totalseconds', 'round', 'floor', 'ceiling', 'isof', 'cast'
+					when 'contains', 'endswith', 'startswith', 'length', 'indexof', 'substring', 'tolower', 'toupper', 'trim', 'concat'
+					, 'year', 'month', 'day', 'hour', 'minute', 'second', 'fractionalseconds', 'date', 'time', 'totaloffsetminutes'
+					, 'now', 'maxdatetime', 'mindatetime', 'totalseconds', 'round', 'floor', 'ceiling', 'isof', 'cast'
 						if isPrimitive(filter)
 							operands = []
 							if parentKey?
@@ -176,7 +187,7 @@
 						else if utils.isObject(filter)
 							result = handleObject(filter, parentKey)
 							if result.length < 1
-								throw new Error("#{operator} objects must have at least 1 property as an object, got: #{JSON.stringify(filter)}")
+								throw new Error("#{operator} objects must have at least 1 property, got: #{JSON.stringify(filter)}")
 							filter = bracketJoin(result, ' or ')
 						else
 							throw new Error('Expected null/string/number/bool/obj/array, got: ' + typeof filter)
@@ -291,7 +302,7 @@
 			'passthroughByMethod'
 		]
 
-		return class PinejsClientCore
+		class PinejsClientCore
 
 			apiPrefix: '/'
 			passthrough: {}
@@ -300,7 +311,7 @@
 			# `backendParams` must be used by a backend for any additional parameters it may have.
 			constructor: (params, backendParams) ->
 				if utils.isString(params)
-					params = {apiPrefix: params}
+					params = { apiPrefix: params }
 
 				if utils.isObject(params)
 					for validParam in validParams when params[validParam]?
@@ -309,7 +320,7 @@
 			# `backendParams` must be used by a backend for any additional parameters it may have.
 			clone: (params, backendParams) ->
 				if utils.isString(params)
-					params = {apiPrefix: params}
+					params = { apiPrefix: params }
 
 				cloneParams = {}
 				for validParam in validParams
@@ -419,3 +430,5 @@
 					return @_request(opts)
 				catch e
 					return Promise.reject(e)
+
+		return PinejsClientCore
