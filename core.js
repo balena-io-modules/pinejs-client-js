@@ -60,7 +60,7 @@
           })();
           return resource.join('/');
         } else {
-          throw new Error('Not a valid resource: ' + typeof value);
+          throw new Error('Not a valid resource: ' + typeof resource);
         }
       };
       escapeValue = function(value) {
@@ -146,7 +146,7 @@
               } else if (utils.isObject(filter)) {
                 result = handleObject(filter);
                 if (result.length < 1) {
-                  throw new Error(operator + " objects must have at least 1 property as an object, got: " + (JSON.stringify(filter)));
+                  throw new Error(operator + " objects must have at least 1 property, got: " + (JSON.stringify(filter)));
                 }
                 if (result.length === 1) {
                   return addParentKey(result[0], parentKey, operator);
@@ -262,7 +262,7 @@
               } else if (utils.isObject(filter)) {
                 result = handleObject(filter, parentKey);
                 if (result.length < 1) {
-                  throw new Error(operator + " objects must have at least 1 property as an object, got: " + (JSON.stringify(filter)));
+                  throw new Error(operator + " objects must have at least 1 property, got: " + (JSON.stringify(filter)));
                 }
                 return filter = bracketJoin(result, ' or ');
               } else {
@@ -416,7 +416,7 @@
         };
       })();
       validParams = ['apiPrefix', 'passthrough', 'passthroughByMethod'];
-      return PinejsClientCore = (function() {
+      PinejsClientCore = (function() {
         PinejsClientCore.prototype.apiPrefix = '/';
 
         PinejsClientCore.prototype.passthrough = {};
@@ -617,6 +617,7 @@
         return PinejsClientCore;
 
       })();
+      return PinejsClientCore;
     };
   });
 

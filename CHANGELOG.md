@@ -1,3 +1,7 @@
+v2.3.2
+
+* Throw the correct error when an invalid resource is passed to `escapeResource`
+
 v2.3.1
 
 * Fixed spurious deprecation notice on cases like `$expand: a: $select: 'b'`

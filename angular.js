@@ -26,7 +26,7 @@
     return angular.module('resin.pinejs', []).service('pinejs-client', [
       '$http', '$q', function($http, Promise) {
         var PinejsClientAngular;
-        return PinejsClientAngular = (function(superClass) {
+        PinejsClientAngular = (function(superClass) {
           extend(PinejsClientAngular, superClass);
 
           function PinejsClientAngular() {
@@ -50,6 +50,7 @@
           return PinejsClientAngular;
 
         })(PinejsClientCore(utils, Promise));
+        return PinejsClientAngular;
       }
     ]);
   });
