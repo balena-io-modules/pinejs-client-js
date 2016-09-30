@@ -12,7 +12,7 @@
     "Lorenzo Stoakes <lorenzo@resin.io>"
   ],
   "scripts": {
-    "lint": "resin-lint angular.coffee core.coffee request.coffee",
+    "lint": "resin-lint angular.coffee core.coffee request.coffee test",
     "pretest": "npm run lint && npm run-script prepublish",
     "test": "mocha",
     "prepublish": "coffee -c angular.coffee core.coffee request.coffee"

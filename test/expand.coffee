@@ -122,14 +122,14 @@ testExpand(
 testExpand
 	a:
 		$expand: 'b'
-	"a($expand=b)"
+	'a($expand=b)'
 
 testExpand
 	a:
 		$expand:
 			b:
 				$expand: 'c'
-	"a($expand=b($expand=c))"
+	'a($expand=b($expand=c))'
 
 testExpand
 	a:
@@ -137,4 +137,4 @@ testExpand
 			b:
 				$expand: 'c'
 				$select: [ 'd', 'e' ]
-	"a($expand=b($expand=c&$select=d,e))"
+	'a($expand=b($expand=c&$select=d,e))'
