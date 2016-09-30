@@ -1,3 +1,5 @@
+v2.4.0
+
 * Throw an error if the id property is set but is empty.
 
 v2.3.2
