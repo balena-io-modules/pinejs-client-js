@@ -375,7 +375,9 @@
 						throw new Error('Either the url or resource must be specified.')
 					url = params.resource
 
-					if params.id?
+					if params.hasOwnProperty('id')
+						if !params.id?
+							throw new Error('If the id property is set it must be non-null')
 						url += '(' + escapeValue(params.id) + ')'
 
 					queryOptions = []

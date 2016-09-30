@@ -1,3 +1,5 @@
+* Throw an error if the id property is set but is empty.
+
 v2.3.2
 
 * Throw the correct error when an invalid resource is passed to `escapeResource`
