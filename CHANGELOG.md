@@ -1,3 +1,5 @@
+v3.0.0
+
 * Added support for dates
 * Breaking change: Utils must now provide an `isDate` method.
 

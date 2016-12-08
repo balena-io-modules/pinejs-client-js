@@ -18,7 +18,7 @@
         return (v === true || v === false) || (angular.isObject(v) && Object.prototype.toString.call(v) === '[object Boolean]');
       }
     };
-    ref = ['isString', 'isNumber', 'isObject', 'isArray'];
+    ref = ['isString', 'isNumber', 'isObject', 'isArray', 'isDate'];
     for (i = 0, len = ref.length; i < len; i++) {
       method = ref[i];
       utils[method] = angular[method];

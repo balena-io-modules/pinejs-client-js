@@ -30,7 +30,7 @@
       var PinejsClientCore, addParentKey, applyBinds, bracketJoin, buildExpand, buildFilter, escapeResource, escapeValue, isPrimitive, join, validParams;
       (function() {
         var i, len, method, requiredMethods;
-        requiredMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isArray'];
+        requiredMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isArray', 'isDate'];
         for (i = 0, len = requiredMethods.length; i < len; i++) {
           method = requiredMethods[i];
           if (utils[method] == null) {
@@ -42,7 +42,7 @@
         }
       })();
       isPrimitive = function(value) {
-        return utils.isString(value) || utils.isNumber(value) || utils.isBoolean(value) || value === null;
+        return value === null || utils.isString(value) || utils.isNumber(value) || utils.isBoolean(value) || utils.isDate(value);
       };
       escapeResource = function(resource) {
         var component;
@@ -67,8 +67,10 @@
         if (utils.isString(value)) {
           value = value.replace(/'/g, "''");
           return "'" + encodeURIComponent(value) + "'";
-        } else if (utils.isNumber(value) || utils.isBoolean(value) || value === null) {
+        } else if (value === null || utils.isNumber(value) || utils.isBoolean(value)) {
           return value;
+        } else if (utils.isDate(value)) {
+          return "datetime'" + (value.toISOString()) + "'";
         } else {
           throw new Error('Not a valid value: ' + typeof value);
         }
