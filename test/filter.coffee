@@ -163,6 +163,12 @@ testFilter(
 	a: null
 	'a eq null'
 )
+do ->
+	date = new Date()
+	testFilter(
+		a: date
+		"a eq datetime'#{date.toISOString()}'"
+	)
 
 
 # Test mixing operators

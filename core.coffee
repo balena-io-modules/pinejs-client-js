@@ -37,14 +37,14 @@
 	return (utils, Promise) ->
 		do ->
 			# Check that the objects passed in have the required properties.
-			requiredMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isArray']
+			requiredMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isArray', 'isDate']
 			for method in requiredMethods when !utils[method]?
 				throw new Error('The utils implementation must support ' + requiredMethods.join(', '))
 			if !Promise.reject?
 				throw new Error('The Promise implementation must support .reject')
 
 		isPrimitive = (value) ->
-			utils.isString(value) or utils.isNumber(value) or utils.isBoolean(value) or value is null
+			value is null or utils.isString(value) or utils.isNumber(value) or utils.isBoolean(value) or utils.isDate(value)
 
 		# Escape a resource name (string), or resource path (array)
 		escapeResource = (resource) ->
@@ -63,8 +63,10 @@
 			if utils.isString(value)
 				value = value.replace(/'/g, "''")
 				return "'" + encodeURIComponent(value) + "'"
-			else if utils.isNumber(value) or utils.isBoolean(value) or value is null
+			else if value is null or utils.isNumber(value) or utils.isBoolean(value)
 				return value
+			else if utils.isDate(value)
+				return "datetime'#{value.toISOString()}'"
 			else
 				throw new Error('Not a valid value: ' + typeof value)
 
