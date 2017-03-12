@@ -84,6 +84,11 @@ testExpand(
 
 # Expand options
 testExpand(
+	a: {}
+	'a()'
+)
+
+testExpand(
 	a: $filter: b: 'c'
 	"a($filter=b eq 'c')"
 )

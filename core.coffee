@@ -270,7 +270,7 @@
 							deprecated.expandObject()
 						key = parentKey.concat(key)
 						expands.push(buildExpand(value, key))
-				if expandOptions.length > 0
+				if expandOptions.length > 0 or expands.length == 0
 					expandOptions = expandOptions.join('&')
 					expandOptions = escapeResource(parentKey) + "(#{expandOptions})"
 					expands.push(expandOptions)
