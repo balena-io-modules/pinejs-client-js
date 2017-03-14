@@ -1,3 +1,5 @@
+v3.1.0
+
 * Added support for empty expand object options (`expand: a: {}`)
 
 v3.0.0
