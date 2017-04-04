@@ -1,3 +1,5 @@
+* Added support for properly validating the contents of `$orderby`, `$select`, `$skip`, and `$top`
+
 v3.1.0
 
 * Added support for empty expand object options (`expand: a: {}`)
