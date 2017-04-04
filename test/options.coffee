@@ -29,8 +29,38 @@ testOrderBy(
 )
 
 testOrderBy(
+	a: 'desc'
+	'a desc'
+)
+
+testOrderBy(
+	[{
+		a: 'desc'
+	}, {
+		b: 'asc'
+	}]
+	'a desc,b asc'
+)
+
+testOrderBy(
+	[[ 'a' ]]
+	new Error("'$orderby' cannot have nested arrays")
+)
+
+testOrderBy(
+	a: 'x'
+	new Error("'$orderby' direction must be 'asc' or 'desc'")
+)
+
+testOrderBy(
+	a: 'asc'
+	b: 'desc'
+	new Error("'$orderby' objects must have exactly one element, got 2 elements")
+)
+
+testOrderBy(
 	1
-	new Error("'$orderby' option has to be either a string or array")
+	new Error("'$orderby' option has to be either a string, array, or object")
 )
 
 

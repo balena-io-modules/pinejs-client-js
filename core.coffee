@@ -248,6 +248,28 @@
 				else
 					throw new Error('Expected null/string/number/obj/array, got: ' + typeof filter)
 
+		buildOrderBy = (orderby) ->
+			if utils.isString(orderby)
+				orderby
+			else if utils.isArray(orderby)
+				orderby =
+					for value in orderby
+						if utils.isArray(value)
+							throw new Error("'$orderby' cannot have nested arrays")
+						buildOrderBy(value)
+				join(orderby)
+			else if utils.isObject(orderby)
+				orderby =
+					for own key, dir of orderby
+						if dir not in [ 'asc', 'desc' ]
+							throw new Error("'$orderby' direction must be 'asc' or 'desc'")
+						"#{key} #{dir}"
+				if orderby.length isnt 1
+					throw new Error("'$orderby' objects must have exactly one element, got #{orderby.length} elements")
+				orderby[0]
+			else
+				throw new Error("'$orderby' option has to be either a string, array, or object")
+
 		buildOption = (option, value) ->
 			value = switch option
 				when '$filter'
@@ -255,10 +277,7 @@
 				when '$expand'
 					buildExpand(value)
 				when '$orderby'
-					if utils.isString(value) or utils.isArray(value)
-						join(value)
-					else
-						throw new Error("'#{option}' option has to be either a string or array")
+					buildOrderBy(value)
 				when '$top', '$skip'
 					if utils.isNumber(value)
 						value
