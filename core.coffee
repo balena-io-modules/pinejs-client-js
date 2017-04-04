@@ -248,6 +248,35 @@
 				else
 					throw new Error('Expected null/string/number/obj/array, got: ' + typeof filter)
 
+		buildOption = (option, value) ->
+			value = switch option
+				when '$filter'
+					buildFilter(value)
+				when '$expand'
+					buildExpand(value)
+				when '$orderby'
+					if utils.isString(value) or utils.isArray(value)
+						join(value)
+					else
+						throw new Error("'#{option}' option has to be either a string or array")
+				when '$top', '$skip'
+					if utils.isNumber(value)
+						value
+					else
+						throw new Error("'#{option}' option has to be a number")
+				when '$select'
+					if utils.isString(value) or utils.isArray(value)
+						join(value)
+					else
+						throw new Error("'#{option}' option has to be either a string or array")
+				else
+					# Unknown values are left as-is
+					if utils.isArray(value)
+						join(value)
+					else
+						value
+			return "#{option}=#{value}"
+
 		buildExpand = do ->
 			handleObject = (expand, parentKey) ->
 				expandOptions = []
@@ -256,15 +285,7 @@
 					if key[0] is '$'
 						if parentKey.length is 0
 							throw new Error('Cannot have expand options without first expanding something!')
-						value =
-							switch key
-								when '$filter'
-									buildFilter(value)
-								when '$expand'
-									buildExpand(value)
-								else
-									join(value)
-						expandOptions.push("#{key}=#{value}")
+						expandOptions.push(buildOption(key, value))
 					else
 						if parentKey.length > 0
 							deprecated.expandObject()
@@ -385,21 +406,11 @@
 					queryOptions = []
 					if params.options?
 						for own option, value of params.options
-							value =
-								switch option
-									when 'filter'
-										buildFilter(value)
-									when 'expand'
-										buildExpand(value)
-									else
-										if utils.isString(value) or utils.isArray(value)
-											join(value)
-										else
-											throw new Error("'#{option}' option has no special handling so must be either a string or array")
-							queryOptions.push("$#{option}=" + value)
+							option = '$' + option
+							queryOptions.push(buildOption(option, value))
 					if params.customOptions?
 						for own option, value of params.customOptions
-							queryOptions.push(option + '=' + value)
+							queryOptions.push(buildOption(option, value))
 					if queryOptions.length > 0
 						url += '?' + queryOptions.join('&')
 					return url
