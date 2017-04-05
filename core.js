@@ -27,7 +27,7 @@
     addDeprecated('expandPrimitive', '`$expand: a: "b"` is deprecated, please use `$expand: a: $expand: "b"` instead.');
     addDeprecated('expandFilter', '`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.');
     return function(utils, Promise) {
-      var PinejsClientCore, addParentKey, applyBinds, bracketJoin, buildExpand, buildFilter, escapeResource, escapeValue, isPrimitive, join, validParams;
+      var PinejsClientCore, addParentKey, applyBinds, bracketJoin, buildExpand, buildFilter, buildOption, buildOrderBy, escapeResource, escapeValue, isPrimitive, join, validParams;
       (function() {
         var i, len, method, requiredMethods;
         requiredMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isArray', 'isDate'];
@@ -348,6 +348,80 @@
           }
         };
       })();
+      buildOrderBy = function(orderby) {
+        var dir, key, value;
+        if (utils.isString(orderby)) {
+          return orderby;
+        } else if (utils.isArray(orderby)) {
+          orderby = (function() {
+            var i, len, results;
+            results = [];
+            for (i = 0, len = orderby.length; i < len; i++) {
+              value = orderby[i];
+              if (utils.isArray(value)) {
+                throw new Error("'$orderby' cannot have nested arrays");
+              }
+              results.push(buildOrderBy(value));
+            }
+            return results;
+          })();
+          return join(orderby);
+        } else if (utils.isObject(orderby)) {
+          orderby = (function() {
+            var results;
+            results = [];
+            for (key in orderby) {
+              if (!hasProp.call(orderby, key)) continue;
+              dir = orderby[key];
+              if (dir !== 'asc' && dir !== 'desc') {
+                throw new Error("'$orderby' direction must be 'asc' or 'desc'");
+              }
+              results.push(key + " " + dir);
+            }
+            return results;
+          })();
+          if (orderby.length !== 1) {
+            throw new Error("'$orderby' objects must have exactly one element, got " + orderby.length + " elements");
+          }
+          return orderby[0];
+        } else {
+          throw new Error("'$orderby' option has to be either a string, array, or object");
+        }
+      };
+      buildOption = function(option, value) {
+        value = (function() {
+          switch (option) {
+            case '$filter':
+              return buildFilter(value);
+            case '$expand':
+              return buildExpand(value);
+            case '$orderby':
+              return buildOrderBy(value);
+            case '$top':
+            case '$skip':
+              if (utils.isNumber(value)) {
+                return value;
+              } else {
+                throw new Error("'" + option + "' option has to be a number");
+              }
+              break;
+            case '$select':
+              if (utils.isString(value) || utils.isArray(value)) {
+                return join(value);
+              } else {
+                throw new Error("'" + option + "' option has to be either a string or array");
+              }
+              break;
+            default:
+              if (utils.isArray(value)) {
+                return join(value);
+              } else {
+                return value;
+              }
+          }
+        })();
+        return option + "=" + value;
+      };
       buildExpand = (function() {
         var handleArray, handleObject;
         handleObject = function(expand, parentKey) {
@@ -361,17 +435,7 @@
               if (parentKey.length === 0) {
                 throw new Error('Cannot have expand options without first expanding something!');
               }
-              value = (function() {
-                switch (key) {
-                  case '$filter':
-                    return buildFilter(value);
-                  case '$expand':
-                    return buildExpand(value);
-                  default:
-                    return join(value);
-                }
-              })();
-              expandOptions.push(key + "=" + value);
+              expandOptions.push(buildOption(key, value));
             } else {
               if (parentKey.length > 0) {
                 deprecated.expandObject();
@@ -546,21 +610,8 @@
               for (option in ref) {
                 if (!hasProp.call(ref, option)) continue;
                 value = ref[option];
-                value = (function() {
-                  switch (option) {
-                    case 'filter':
-                      return buildFilter(value);
-                    case 'expand':
-                      return buildExpand(value);
-                    default:
-                      if (utils.isString(value) || utils.isArray(value)) {
-                        return join(value);
-                      } else {
-                        throw new Error("'" + option + "' option has no special handling so must be either a string or array");
-                      }
-                  }
-                })();
-                queryOptions.push(("$" + option + "=") + value);
+                option = '$' + option;
+                queryOptions.push(buildOption(option, value));
               }
             }
             if (params.customOptions != null) {
@@ -568,7 +619,7 @@
               for (option in ref1) {
                 if (!hasProp.call(ref1, option)) continue;
                 value = ref1[option];
-                queryOptions.push(option + '=' + value);
+                queryOptions.push(buildOption(option, value));
               }
             }
             if (queryOptions.length > 0) {
