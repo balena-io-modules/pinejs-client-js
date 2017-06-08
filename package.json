@@ -13,27 +13,29 @@
     "Lorenzo Stoakes <lorenzo@resin.io>"
   ],
   "scripts": {
-    "lint": "resin-lint core.coffee request.coffee test",
+    "lint": "resin-lint request.coffee test",
     "pretest": "npm run lint && npm run-script prepublishOnly",
     "test": "mocha",
     "prepublish": "require-npm4-to-publish",
-    "prepublishOnly": "coffee -c core.coffee request.coffee"
+    "prepublishOnly": "coffee -c request.coffee && tsc"
   },
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.0.6",
     "bluebird-lru-cache": "^1.0.0",
     "lodash": "^4.0.0",
-    "request": "^2.82.0",
-    "typed-error": "^0.1.0"
+    "request": "^2.83.0",
+    "typed-error": "^2.0.0"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.12",
+    "@types/es6-collections": "^0.5.31",
     "@types/request": "^2.0.3",
     "chai": "^3.3.0",
-    "coffee-script": "~1.11.0",
+    "coffee-script": "~1.12.7",
     "mocha": "^3.5.3",
     "require-npm4-to-publish": "^1.0.0",
-    "resin-lint": "^1.3.0"
+    "resin-lint": "^1.4.2",
+    "typescript": "^2.5.3"
   }
 }
