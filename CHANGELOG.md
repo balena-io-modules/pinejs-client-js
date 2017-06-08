@@ -1,3 +1,5 @@
+* Added types for request and core.
+
 v4.0.0
 
 * Added support for properly validating the contents of `$orderby`, `$select`, `$skip`, and `$top`
