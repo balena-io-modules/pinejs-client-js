@@ -1,3 +1,4 @@
+* Converted core to typescript
 * Separated the angular backend to pinejs-client-angular
 * Removed bower.json
 

@@ -114,6 +114,11 @@ testFunction = (funcName) ->
 		return filter
 
 	testFilter(
+		createFilter(null)
+		"#{funcName}()"
+	)
+
+	testFilter(
 		createFilter
 			a: 'b'
 			c: 'd'
