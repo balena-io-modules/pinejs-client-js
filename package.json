@@ -3,6 +3,7 @@
   "version": "4.0.0",
   "description": "This module provides wrappers that allow easier interaction with the pinejs API.",
   "main": "request.js",
+  "types": "request.d.ts",
   "repository": {
     "type": "git",
     "url": "git@github.com:resin-io/pinejs-client-js.git"
@@ -26,6 +27,7 @@
     "typed-error": "^0.1.0"
   },
   "devDependencies": {
+    "@types/request": "0.0.43",
     "chai": "^3.3.0",
     "coffee-script": "~1.11.0",
     "mocha": "^3.0.0",
