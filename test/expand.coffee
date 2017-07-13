@@ -10,6 +10,13 @@ testExpand = (input, output) ->
 				expand: input
 		}
 
+	it "should compile #{JSON.stringify(input)} to #{url} when using customOptions", ->
+		test url, {
+			resource
+			customOptions:
+				expand: input
+		}
+
 # String
 testExpand(
 	'a'

@@ -619,6 +619,7 @@
               for (option in ref1) {
                 if (!hasProp.call(ref1, option)) continue;
                 value = ref1[option];
+                option = '$' + option;
                 queryOptions.push(buildOption(option, value));
               }
             }

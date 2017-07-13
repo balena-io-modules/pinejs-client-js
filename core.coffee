@@ -429,6 +429,7 @@
 							queryOptions.push(buildOption(option, value))
 					if params.customOptions?
 						for own option, value of params.customOptions
+							option = '$' + option
 							queryOptions.push(buildOption(option, value))
 					if queryOptions.length > 0
 						url += '?' + queryOptions.join('&')
