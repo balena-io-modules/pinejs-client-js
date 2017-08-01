@@ -1,3 +1,5 @@
+v4.1.0
+
 * Added types for request and core.
 
 v4.0.0
