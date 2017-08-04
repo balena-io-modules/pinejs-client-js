@@ -1,6 +1,7 @@
 _ = require 'lodash'
 request = require 'request'
 Promise = require 'bluebird'
+mimemessage = require 'mimemessage'
 PinejsClientCore = require './core'
 BluebirdLRU = require 'bluebird-lru-cache'
 TypedError = require 'typed-error'
@@ -12,7 +13,7 @@ class StatusError extends TypedError
 		super(@message)
 
 validParams = ['cache']
-module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
+module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise, mimemessage)
 	constructor: (params, backendParams) ->
 		super(params)
 		@backendParams = {}
@@ -29,8 +30,8 @@ module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
 		params.timeout ?= 30000
 		# We default to enforcing valid ssl certificates, after all there's a reason we're using them!
 		params.strictSSL ?= true
-		# The request is always a json request.
-		params.json = true
+		# The request must not be a json if it is a batch. In every other case it must be.
+		params.json ?= true
 
 		if @cache? and params.method is 'GET'
 			# If the cache is enabled and we are doing a GET then try to use a cached

@@ -38,7 +38,8 @@
 
 	# Utils must support .isString, .isObject, and .isArray
 	# Promise must support Promise.reject, returning a rejected promise
-	return (utils, Promise) ->
+	# mimemessage must support a factory function that build multipart/mixed bodies generating the buondaries in accordance to the standard
+	return (utils, Promise, mimemessage) ->
 		do ->
 			# Check that the objects passed in have the required properties.
 			requiredMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isArray', 'isDate']
@@ -411,6 +412,20 @@
 			delete: (params) ->
 				return @request(params, method: 'DELETE')
 
+			batch: (data) ->
+				compiledData = @compileBatch(data)
+				multipartHeader = compiledData.header('Content-Type')
+
+				params =
+					method: 'POST'
+					url: '$batch'
+					body: compiledData.toString({ noHeaders: true })
+				overrides =
+					json: false
+					headers:
+						'Content-Type': multipartHeader
+				return @request(params, overrides)
+
 			compile: (params) ->
 				if utils.isString(params)
 					return params
@@ -439,6 +454,57 @@
 					if queryOptions.length > 0
 						url += '?' + queryOptions.join('&')
 					return url
+
+			compileBatch: (data) ->
+				if !utils.isArray(data)
+					throw new Error('Batch must be passed an array')
+				if !mimemessage?.factory
+					throw new Error('The mimemessage implementation must support .factory')
+
+				buildReq = (req) =>
+					# This is a normal request
+					if req.url?
+						contentTransferEncoding = 'binary'
+						if req.body?
+							contentType = 'application/json'
+							b = JSON.stringify(req.body)
+						else
+							contentType = 'application/http'
+							b = ''
+
+						newReq = mimemessage.factory({
+							contentType: contentType
+							contentTransferEncoding: contentTransferEncoding
+							body: "#{req.method} #{@compile(req)} HTTP/1.1\r\n#{b}"
+						})
+
+						for own option, value of req
+							switch option
+								when 'url', 'method', 'body' then continue
+								else newReq.header(option, value)
+
+						return newReq
+					# This is a changeset
+					else
+						if !utils.isArray(req) then throw new Error('ChangeSet must be passed as an array')
+						csBody = []
+						for cs in req
+							csBody.push(buildReq(cs))
+
+						return mimemessage.factory(
+							contentType: 'multipart/mixed'
+							body: csBody
+						)
+
+				batchBody = []
+				for req in data
+					batchBody.push(buildReq(req))
+
+				return mimemessage.factory(
+					contentType: 'multipart/mixed'
+					body: batchBody
+				)
+
 
 			request: (params, overrides = {}) ->
 				try

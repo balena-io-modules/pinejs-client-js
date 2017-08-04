@@ -16,6 +16,21 @@ declare namespace PinejsClientCoreFactory {
 		[index: string]: T
 	}
 
+	interface MimemessageFactory {
+		factory(cs: BatchFactory): CompiledBatch
+	}
+
+	interface BatchFactory {
+		body: string | Array<BatchFactory>
+		contentTransferEncoding: string
+		contentType: string
+	}
+
+	interface CompiledBatch {
+		header(name:string, value?:string): string | void
+		toString(options:{noHeaders: boolean}): string
+	}
+
 	type FilterOperationValue = Filter
 	type FilterFunctionValue = Filter
 
@@ -125,6 +140,12 @@ declare namespace PinejsClientCoreFactory {
 		[index: string]: any
 	}
 
+	interface RequestBase {
+		method: string
+		url: string
+		body?: AnyObject
+	}
+
 	export type Params = {
 		apiPrefix?: string
 		method?: ODataMethod
@@ -168,19 +189,23 @@ declare namespace PinejsClientCoreFactory {
 
 		delete(params: Params): PromiseObj
 
+		batch(data: Array<Params>): Promise<{}>
+
 		compile(params: Params): string
+
+		compileBatch(data: Array<Params>): CompiledBatch
 
 		request(params: Params, overrides: { method?: ODataMethod }): PromiseObj
 
 		abstract _request(
 			params: {
-				method: string,
-				url: string,
-				body?: AnyObject,
+				method: string
+				url: string
+				body?: AnyObject
 			} & AnyObject): PromiseObj
 	}
 }
 
-declare function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: PinejsClientCoreFactory.PromiseRejector): typeof PinejsClientCoreFactory.PinejsClientCore
+declare function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: PinejsClientCoreFactory.PromiseRejector, mimemessage: PinejsClientCoreFactory.MimemessageFactory): typeof PinejsClientCoreFactory.PinejsClientCore
 
 export = PinejsClientCoreFactory
