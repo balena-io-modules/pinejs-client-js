@@ -1,3 +1,5 @@
+* Fixed types definition to make `backendParams` optional
+
 v4.1.0
 
 * Added types for request and core.
