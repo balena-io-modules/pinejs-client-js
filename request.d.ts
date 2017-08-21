@@ -4,7 +4,7 @@ import * as request from 'request'
 export = class PinejsClientRequest extends PinejsClientCoreFactory.PinejsClientCore<PinejsClientRequest> {
 	constructor(
 		params: string | PinejsClientCoreFactory.Params,
-		backendParams: {
+		backendParams?: {
 			cache: {
 				[index: string]: any
 			}

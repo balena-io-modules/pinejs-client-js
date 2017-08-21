@@ -116,7 +116,7 @@ declare namespace PinejsClientCoreFactory {
 		backendParams: AnyObject
 
 		// `backendParams` must be used by a backend for any additional parameters it may have.
-		constructor(params: string | Params, backendParams: AnyObject)
+		constructor(params: string | Params, backendParams?: AnyObject)
 
 
 		// `backendParams` must be used by a backend for any additional parameters it may have.
