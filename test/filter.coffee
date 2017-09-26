@@ -1,6 +1,20 @@
 { test } = require './test'
 _ = require 'lodash'
 
+
+testFilter = (input, output) ->
+	resource = 'test'
+	input =
+		a: 'b'
+		d: 'e'
+	output = "((a eq 'b') and (d eq 'e'))"
+	it "should compile #{JSON.stringify(input)} to #{output}", ->
+		test output, {
+			resource
+			options:
+				$filter: input
+		}
+
 testFilter = (input, output) ->
 	resource = 'test'
 	if not _.isError(output)

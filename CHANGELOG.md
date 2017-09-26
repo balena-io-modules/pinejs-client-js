@@ -1,3 +1,6 @@
+* Changed options to avoid prepending `$` to options that already have `$` prepended, allowing them to be used and work
+* Deprecated omitting the leading `$` in options
+
 v4.1.1
 
 * Fixed types definition to make `backendParams` optional

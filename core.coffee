@@ -31,6 +31,10 @@
 		'expandFilter'
 		'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.'
 	)
+	addDeprecated(
+		'implicitOptions'
+		'Options without $ prefixes (e.g. `options: filter: ...`) are deprecated, please use a $ prefix (eg `options: $filter: ...`).'
+	)
 
 	# Utils must support .isString, .isObject, and .isArray
 	# Promise must support Promise.reject, returning a rejected promise
@@ -425,7 +429,9 @@
 					queryOptions = []
 					if params.options?
 						for own option, value of params.options
-							option = '$' + option
+							if option[0] isnt '$'
+								deprecated.implicitOptions()
+								option = '$' + option
 							queryOptions.push(buildOption(option, value))
 					if params.customOptions?
 						for own option, value of params.customOptions
