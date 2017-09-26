@@ -26,6 +26,7 @@
     addDeprecated('expandObject', '`$expand: a: b: ...` is deprecated, please use `$expand: a: $expand: b: ...` instead.');
     addDeprecated('expandPrimitive', '`$expand: a: "b"` is deprecated, please use `$expand: a: $expand: "b"` instead.');
     addDeprecated('expandFilter', '`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.');
+    addDeprecated('implicitOptions', 'Options without $ prefixes (e.g. `options: filter: ...`) are deprecated, please use a $ prefix (eg `options: $filter: ...`).');
     return function(utils, Promise) {
       var PinejsClientCore, addParentKey, applyBinds, bracketJoin, buildExpand, buildFilter, buildOption, buildOrderBy, escapeResource, escapeValue, isPrimitive, join, validParams;
       (function() {
@@ -610,7 +611,10 @@
               for (option in ref) {
                 if (!hasProp.call(ref, option)) continue;
                 value = ref[option];
-                option = '$' + option;
+                if (option[0] !== '$') {
+                  deprecated.implicitOptions();
+                  option = '$' + option;
+                }
                 queryOptions.push(buildOption(option, value));
               }
             }

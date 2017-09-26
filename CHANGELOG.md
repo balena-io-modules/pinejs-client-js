@@ -1,3 +1,5 @@
+v4.2.0
+
 * Changed options to avoid prepending `$` to options that already have `$` prepended, allowing them to be used and work
 * Deprecated omitting the leading `$` in options
 
