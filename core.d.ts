@@ -81,16 +81,16 @@ type OptionsObject = ODataOptions & {
 
 type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-type AnyObject = {
-	[index: string]: any
-}
-
 type ResourceId = string | number | Date
 
 type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod'
 
 
 declare namespace PinejsClientCoreFactory {
+	export type AnyObject = {
+		[index: string]: any
+	}
+
 	export type Params = {
 		apiPrefix?: string
 		method?: ODataMethod
