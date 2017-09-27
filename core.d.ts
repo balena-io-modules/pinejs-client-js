@@ -172,12 +172,12 @@ declare namespace PinejsClientCoreFactory {
 
 		request(params: Params, overrides: { method?: ODataMethod }): Promise<{}>
 
-		abstract _request: (
+		abstract _request(
 			params: {
 				method: string,
 				url: string,
 				body?: AnyObject,
-			} & AnyObject) => Promise<{}>
+			} & AnyObject): Promise<{}>
 	}
 }
 
