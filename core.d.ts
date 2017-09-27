@@ -1,10 +1,10 @@
 interface Util {
-	isString(v: any): v is string
-	isNumber(v: any): v is number
-	isBoolean(v: any): v is boolean
-	isObject(v: any): v is object
-	isArray<T>(v: any): v is Array<T>
-	isDate(v: any): v is Date
+	isString(v?: any): v is string
+	isNumber(v?: any): v is number
+	isBoolean(v?: any): v is boolean
+	isObject(v?: any): v is object
+	isArray<T>(v?: any): v is Array<T>
+	isDate(v?: any): v is Date
 }
 
 interface PromiseRejector {
