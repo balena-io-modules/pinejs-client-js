@@ -120,7 +120,7 @@ declare namespace PinejsClientCoreFactory {
 
 
 		// `backendParams` must be used by a backend for any additional parameters it may have.
-		clone(params: string | Params, backendParams: AnyObject): T
+		clone(params: string | Params, backendParams?: AnyObject): PinejsClientCore<T>
 
 		query(params: Params): Promise<number | AnyObject | AnyObject[]>
 
