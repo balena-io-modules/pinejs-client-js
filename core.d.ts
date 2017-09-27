@@ -15,20 +15,10 @@ interface ResourceObj<T> {
 	[index: string]: T
 }
 
-type FilterOperationKey = '$ne' | '$eq' | '$gt' | '$ge' | '$lt' | '$le' | '$add' | '$sub' | '$mul' | '$div' | '$mod'
 type FilterOperationValue = Filter
-type FilterOperations = {
-	[P in FilterOperationKey]: FilterOperationValue
-}
-type FilterFunctionKey = '$contains' | '$endswith' | '$startswith' | '$length' | '$indexof' | '$substring' | '$tolower' | '$toupper' | '$trim' | '$concat' | '$year' | '$month' | '$day' | '$hour' | '$minute' | '$second' | '$fractionalseconds' | '$date' | '$time' | '$totaloffsetminutes' | '$now' | '$maxdatetime' | '$mindatetime' | '$totalseconds' | '$round' | '$floor' | '$ceiling' | '$isof' | '$cast'
 type FilterFunctionValue = Filter
-type FilterFunctions = {
-	[P in FilterFunctionKey]: FilterFunctionValue
-}
 
-interface ResourceFilter extends ResourceObj<Filter> {}
-
-type FilterObj = FilterOperations & FilterFunctions & {
+interface FilterObj extends ResourceObj<Filter | undefined> {
 	$raw?: RawFilter
 
 	$?: string | string[]
@@ -42,7 +32,51 @@ type FilterObj = FilterOperations & FilterFunctions & {
 
 	$any?: Lambda
 	$all?: Lambda
-} & ResourceFilter
+
+	// Filter operations
+	$ne?: FilterOperationValue,
+	$eq?: FilterOperationValue,
+	$gt?: FilterOperationValue,
+	$ge?: FilterOperationValue,
+	$lt?: FilterOperationValue,
+	$le?: FilterOperationValue,
+	$add?: FilterOperationValue,
+	$sub?: FilterOperationValue,
+	$mul?: FilterOperationValue,
+	$div?: FilterOperationValue,
+	$mod?: FilterOperationValue,
+
+	// Filter functions
+	$contains?: FilterFunctionValue,
+	$endswith?: FilterFunctionValue,
+	$startswith?: FilterFunctionValue,
+	$length?: FilterFunctionValue,
+	$indexof?: FilterFunctionValue,
+	$substring?: FilterFunctionValue,
+	$tolower?: FilterFunctionValue,
+	$toupper?: FilterFunctionValue,
+	$trim?: FilterFunctionValue,
+	$concat?: FilterFunctionValue,
+	$year?: FilterFunctionValue,
+	$month?: FilterFunctionValue,
+	$day?: FilterFunctionValue,
+	$hour?: FilterFunctionValue,
+	$minute?: FilterFunctionValue,
+	$second?: FilterFunctionValue,
+	$fractionalseconds?: FilterFunctionValue,
+	$date?: FilterFunctionValue,
+	$time?: FilterFunctionValue,
+	$totaloffsetminutes?: FilterFunctionValue,
+	$now?: FilterFunctionValue,
+	$maxdatetime?: FilterFunctionValue,
+	$mindatetime?: FilterFunctionValue,
+	$totalseconds?: FilterFunctionValue,
+	$round?: FilterFunctionValue,
+	$floor?: FilterFunctionValue,
+	$ceiling?: FilterFunctionValue,
+	$isof?: FilterFunctionValue,
+	$cast?: FilterFunctionValue,
+}
 
 interface FilterArray extends Array<Filter> {}
 type FilterString = string
