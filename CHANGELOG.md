@@ -1,3 +1,12 @@
+v4.2.1
+
+* Correctly type _request as a member function rather than a property
+* Export a lot more of the types so they can be used by external typescript
+* Merge properties into FilterObj directly, as the & merging doesn't work as expected
+* Export the AnyObject type so it can be used for typing that we know the response will match it
+* Fix clone typings
+* Fixed util typings
+
 v4.2.0
 
 * Changed options to avoid prepending `$` to options that already have `$` prepended, allowing them to be used and work
