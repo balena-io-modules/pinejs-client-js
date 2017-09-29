@@ -47,6 +47,8 @@
 				throw new Error('The utils implementation must support ' + requiredMethods.join(', '))
 			if !Promise.reject?
 				throw new Error('The Promise implementation must support .reject')
+			if mimemessage and !mimemessage.factory
+				throw new Error('The mimemessage implementation must support .factory')
 
 		isPrimitive = (value) ->
 			value is null or utils.isString(value) or utils.isNumber(value) or utils.isBoolean(value) or utils.isDate(value)
@@ -412,18 +414,18 @@
 			delete: (params) ->
 				return @request(params, method: 'DELETE')
 
-			batch: (data) ->
-				compiledData = @compileBatch(data)
+			batch: (data, overrides = {}) ->
+				compiledData = @compileBatch(data, overrides)
 				multipartHeader = compiledData.header('Content-Type')
 
 				params =
 					method: 'POST'
 					url: '$batch'
 					body: compiledData.toString({ noHeaders: true })
-				overrides =
-					json: false
-					headers:
-						'Content-Type': multipartHeader
+
+				overrides.json = false
+				overrides.headers = overrides.headers ? {}
+				overrides.headers['Content-Type'] = multipartHeader
 				return @request(params, overrides)
 
 			compile: (params) ->
@@ -455,56 +457,52 @@
 						url += '?' + queryOptions.join('&')
 					return url
 
-			compileBatch: (data) ->
+			compileBatch: (data, overrides = {}) ->
 				if !utils.isArray(data)
 					throw new Error('Batch must be passed an array')
-				if !mimemessage?.factory
-					throw new Error('The mimemessage implementation must support .factory')
+				if !mimemessage
+					throw new Error('A mimemessage implementation supporting .factory must be supplied to perform batch operations')
 
 				buildReq = (req) =>
-					# This is a normal request
-					if req.url?
-						contentTransferEncoding = 'binary'
-						if req.body?
-							contentType = 'application/json'
-							b = JSON.stringify(req.body)
-						else
-							contentType = 'application/http'
-							b = ''
-
-						newReq = mimemessage.factory({
-							contentType: contentType
-							contentTransferEncoding: contentTransferEncoding
-							body: "#{req.method} #{@compile(req)} HTTP/1.1\r\n#{b}"
-						})
-
-						for own option, value of req
-							switch option
-								when 'url', 'method', 'body' then continue
-								else newReq.header(option, value)
-
-						return newReq
 					# This is a changeset
-					else
-						if !utils.isArray(req) then throw new Error('ChangeSet must be passed as an array')
-						csBody = []
-						for cs in req
-							csBody.push(buildReq(cs))
+					if utils.isArray(req)
+						csBody = req.map(buildReq)
 
 						return mimemessage.factory(
 							contentType: 'multipart/mixed'
 							body: csBody
 						)
+					# This is a normal request
+					contentTransferEncoding = 'binary'
+					if req.body?
+						contentType = 'application/json'
+						b = JSON.stringify(req.body)
+					else
+						contentType = 'application/http'
+						b = ''
 
-				batchBody = []
-				for req in data
-					batchBody.push(buildReq(req))
+					apiPrefix =
+						if req.url?[0] == '$'
+						then ''
+						else overrides.apiPrefix ? @apiPrefix
+					url = apiPrefix + @compile(req)
+
+					newReq = mimemessage.factory({
+						contentType: contentType
+						contentTransferEncoding: contentTransferEncoding
+						body: "#{req.method} #{url} HTTP/1.1\r\n#{b}"
+					})
+					for own option, value of req.headers
+						newReq.header(option, value)
+
+					return newReq
+
+				batchBody = data.map(buildReq)
 
 				return mimemessage.factory(
 					contentType: 'multipart/mixed'
 					body: batchBody
 				)
-
 
 			request: (params, overrides = {}) ->
 				try

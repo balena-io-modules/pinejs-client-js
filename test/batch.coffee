@@ -1,4 +1,4 @@
-{ testBatch } = require './test'
+{ compile, testBatch } = require './test'
 ppJson = (json) -> JSON.stringify(json, null, 2)
 testBatchReq = (input, output) ->
 	it "should compile #{ppJson(input)} to #{ppJson(output)}", ->
@@ -21,43 +21,58 @@ dev4 =
 	devtype: 'cs2'
 
 req1 = {
-	url: '/testpine/device'
+	resource: 'device'
 	method: 'POST'
 	body: dev1
 }
+
 req2 = {
-	url: '/testpine/device'
+	resource: 'device'
 	method: 'POST'
 	body: dev2
 }
+
 req3 = {
-	url: '/testpine/device'
+	resource: 'device'
 	method: 'GET'
+	options:
+		filter:
+			name: 'First'
 }
 
 cs1 = {
 	url: '$2'
 	method: 'PUT'
-	'Content-ID': 1
 	body: dev4
+	headers:
+		'Content-ID': 1
 }
 
 cs2 = {
-	url: '/testpine/device'
+	resource: 'device'
 	method: 'POST'
-	'Content-ID': 2
 	body: dev3
+	headers:
+		'Content-ID': 2
 }
 
+cs3 = {
+	resource: 'device'
+	method: 'GET'
+	headers:
+		'Content-ID': 3
+	options:
+		expand: a: $filter: b: 'c'
+}
 
 req1Compiled = {
-	'body': 'POST /testpine/device HTTP/1.1\r\n{\"name\":\"First\",\"devtype\":\"b1\"}',
+	'body': 'POST /device HTTP/1.1\r\n{\"name\":\"First\",\"devtype\":\"b1\"}',
 	'Content-Transfer-Encoding': 'binary',
 	'Content-Type': 'application/json'
 }
 
 req2Compiled = {
-	'body': 'POST /testpine/device HTTP/1.1\r\n{\"name\":\"Second\",\"devtype\":\"b2\"}',
+	'body': 'POST /device HTTP/1.1\r\n{\"name\":\"Second\",\"devtype\":\"b2\"}',
 	'Content-Transfer-Encoding': 'binary',
 	'Content-Type': 'application/json'
 }
@@ -65,7 +80,7 @@ req2Compiled = {
 req3Compiled = {
 	'Content-Transfer-Encoding': 'binary',
 	'Content-Type': 'application/http',
-	'body': 'GET /testpine/device HTTP/1.1\r\n'
+	'body': "GET /#{compile(req3)} HTTP/1.1\r\n"
 }
 
 cs1Compiled = {
@@ -79,8 +94,14 @@ cs2Compiled = {
 	'Content-Type': 'application/json',
 	'Content-ID': 2,
 	'Content-Transfer-Encoding': 'binary',
-	'body': 'POST /testpine/device HTTP/1.1\r\n{\"name\":\"Third\",\"devtype\":\"cs1\"}'
+	'body': 'POST /device HTTP/1.1\r\n{\"name\":\"Third\",\"devtype\":\"cs1\"}'
+}
 
+cs3Compiled = {
+	'Content-Type': 'application/http',
+	'Content-ID': 3,
+	'Content-Transfer-Encoding': 'binary'
+	'body': "GET /#{compile(cs3)} HTTP/1.1\r\n"
 }
 
 testBatchReq(
@@ -96,4 +117,9 @@ testBatchReq(
 testBatchReq(
 	[ [ cs2, cs1 ], req3, req2, req1 ]
 	[ [ cs2Compiled, cs1Compiled ], req3Compiled, req2Compiled, req1Compiled ]
+)
+
+testBatchReq(
+	[ [ cs1, cs2, cs3 ], req3 ]
+	[ [ cs1Compiled, cs2Compiled, cs3Compiled ], req3Compiled ]
 )

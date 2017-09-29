@@ -22,6 +22,8 @@ exports.testBatch = (expected, params) ->
 			_.forEach entity.body, (CSentity, CSindex) ->
 				checkEntity(expected[index][CSindex], CSentity)
 
+exports.compile = (params) -> return core.compile(params)
+
 checkEntity = (expectation, entity) ->
 	for key, value of expectation
 		if key is 'body' then expect(entity.body).to.equal(value)

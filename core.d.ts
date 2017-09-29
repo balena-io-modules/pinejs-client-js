@@ -17,18 +17,18 @@ declare namespace PinejsClientCoreFactory {
 	}
 
 	interface MimemessageFactory {
-		factory(cs: BatchFactory): CompiledBatch
+		factory(cs: BatchParams): CompiledBatch
 	}
 
-	interface BatchFactory {
-		body: string | Array<BatchFactory>
+	interface BatchParams {
+		body: string | Array<BatchParams>
 		contentTransferEncoding: string
 		contentType: string
 	}
 
 	interface CompiledBatch {
-		header(name:string, value?:string): string | void
-		toString(options:{noHeaders: boolean}): string
+		header(name: string, value?: string): string | void
+		toString(options: {noHeaders: boolean}): string
 	}
 
 	type FilterOperationValue = Filter
@@ -140,11 +140,6 @@ declare namespace PinejsClientCoreFactory {
 		[index: string]: any
 	}
 
-	interface RequestBase {
-		method: string
-		url: string
-		body?: AnyObject
-	}
 
 	export type Params = {
 		apiPrefix?: string
@@ -153,6 +148,7 @@ declare namespace PinejsClientCoreFactory {
 		id?: ResourceId
 		url?: string
 		body?: AnyObject
+		headers?: AnyObject
 		passthrough?: AnyObject
 		passthroughByMethod?: {
 			GET: AnyObject
@@ -189,11 +185,11 @@ declare namespace PinejsClientCoreFactory {
 
 		delete(params: Params): PromiseObj
 
-		batch(data: Array<Params>): Promise<{}>
+		batch(data: Array<Params>, overrides?: AnyObject): Promise<{}>
 
 		compile(params: Params): string
 
-		compileBatch(data: Array<Params>): CompiledBatch
+		compileBatch(data: Array<Params>, overrides?: AnyObject): CompiledBatch
 
 		request(params: Params, overrides: { method?: ODataMethod }): PromiseObj
 
@@ -206,6 +202,10 @@ declare namespace PinejsClientCoreFactory {
 	}
 }
 
-declare function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: PinejsClientCoreFactory.PromiseRejector, mimemessage: PinejsClientCoreFactory.MimemessageFactory): typeof PinejsClientCoreFactory.PinejsClientCore
+declare function PinejsClientCoreFactory(
+	utils: PinejsClientCoreFactory.Util,
+	Promise: PinejsClientCoreFactory.PromiseRejector,
+	mimemessage: PinejsClientCoreFactory.MimemessageFactory
+): typeof PinejsClientCoreFactory.PinejsClientCore
 
 export = PinejsClientCoreFactory
