@@ -12,5 +12,5 @@ export = class PinejsClientRequest extends PinejsClientCoreFactory.PinejsClientC
 		}
 	)
 
-	_request: (params: request.Options) => Promise<{}>
+	_request(params: request.Options): Promise<{}>
 }
