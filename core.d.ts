@@ -9,7 +9,7 @@ declare namespace PinejsClientCoreFactory {
 	}
 
 	interface PromiseRejector {
-		reject(err: any): Promise<{}>
+		reject(err: any): PromiseLike<any>
 	}
 
 	interface ResourceObj<T> {
