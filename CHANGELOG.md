@@ -1,3 +1,9 @@
+v4.2.2
+
+* Fix type for the Promise.reject
+* Fix type of `_request` in request.d.ts
+* Allow passing in the promise types in order to get a correctly typed promise returned
+
 v4.2.1
 
 * Correctly type _request as a member function rather than a property
