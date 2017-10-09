@@ -1,3 +1,5 @@
+* Removed bower.json
+
 v4.2.2
 
 * Fix type for the Promise.reject
