@@ -1,3 +1,4 @@
+* Separated the angular backend to pinejs-client-angular
 * Removed bower.json
 
 v4.2.2
