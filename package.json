@@ -13,10 +13,10 @@
     "Lorenzo Stoakes <lorenzo@resin.io>"
   ],
   "scripts": {
-    "lint": "resin-lint angular.coffee core.coffee request.coffee test",
+    "lint": "resin-lint core.coffee request.coffee test",
     "pretest": "npm run lint && npm run-script prepublish",
     "test": "mocha",
-    "prepublish": "coffee -c angular.coffee core.coffee request.coffee"
+    "prepublish": "coffee -c core.coffee request.coffee"
   },
   "license": "MIT",
   "dependencies": {
