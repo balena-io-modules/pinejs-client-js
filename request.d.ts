@@ -2,7 +2,7 @@ import * as PinejsClientCoreFactory from './core'
 import * as request from 'request'
 import * as Promise from 'bluebird'
 
-export = class PinejsClientRequest extends PinejsClientCoreFactory.PinejsClientCore<PinejsClientRequest, Promise<{}>, Promise<number | PinejsClientCoreFactory.AnyObject | PinejsClientCoreFactory.AnyObject[]>> {
+export = class PinejsClientRequest extends PinejsClientCoreFactory.PinejsClientCore<PinejsClientRequest, Promise<{}>, Promise<PinejsClientCoreFactory.PromiseResultTypes>> {
 	constructor(
 		params: string | PinejsClientCoreFactory.Params,
 		backendParams?: {
