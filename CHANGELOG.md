@@ -1,3 +1,5 @@
+* Breaking: Options will no longer have $ automatically prefixed
+* Deprecated: `customOptions` (`options` can now be used directly instead)
 * Converted core to typescript
 * Separated the angular backend to pinejs-client-angular
 * Removed bower.json
