@@ -7,7 +7,7 @@ testExpand = (input, output) ->
 		test url, {
 			resource
 			options:
-				expand: input
+				$expand: input
 		}
 
 # String

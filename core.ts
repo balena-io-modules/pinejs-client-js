@@ -21,8 +21,8 @@ addDeprecated(
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.'
 )
 addDeprecated(
-	'implicitOptions',
-	'Options without $ prefixes (e.g. `options: filter: ...`) are deprecated, please use a $ prefix (eg `options: $filter: ...`).'
+	'customOptions',
+	'`customOptions` is deprecated, please use `options` instead.'
 )
 
 function defaults <T>(a: T | undefined, b: T | undefined, z: T): T
@@ -644,17 +644,14 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 				let queryOptions: string[] = []
 				if (params.options != null) {
 					queryOptions = mapObj(params.options, (value, option) => {
-						if (option[0] !== '$') {
-							deprecated.implicitOptions()
-							option = '$' + option
-						}
-						if(!isValidOption(option)) {
-							throw new Error(`Unknown option '${option}'`)
+						if(option[0] === '$' && !isValidOption(option)) {
+							throw new Error(`Unknown odata option '${option}'`)
 						}
 						return buildOption(option, value)
 					})
 				}
 				if (params.customOptions != null) {
+					deprecated.customOptions()
 					queryOptions = queryOptions.concat(
 						mapObj(params.customOptions, (value, option) => {
 							return buildOption(option, value)

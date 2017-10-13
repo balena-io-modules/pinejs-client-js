@@ -4,7 +4,7 @@ _ = require 'lodash'
 testOption = (option, input, output) ->
 	resource = 'test'
 	if not _.isError(output)
-		output = "#{resource}?$#{option}=#{output}"
+		output = "#{resource}?#{option}=#{output}"
 	it "should compile #{JSON.stringify(input)} to #{output}", ->
 		test output, {
 			resource
@@ -12,10 +12,10 @@ testOption = (option, input, output) ->
 				"#{option}": input
 		}
 
-testOrderBy = _.partial(testOption, 'orderby')
-testTop = _.partial(testOption, 'top')
-testSkip = _.partial(testOption, 'skip')
-testSelect = _.partial(testOption, 'select')
+testOrderBy = _.partial(testOption, '$orderby')
+testTop = _.partial(testOption, '$top')
+testSkip = _.partial(testOption, '$skip')
+testSelect = _.partial(testOption, '$select')
 
 
 testOrderBy(
