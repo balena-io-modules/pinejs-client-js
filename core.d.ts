@@ -143,7 +143,9 @@ declare namespace PinejsClientCoreFactory {
 		options?: ODataOptions
 	}
 
-	export abstract class PinejsClientCore<T, PromiseObj extends PromiseLike<{}> = Promise<{}>, PromiseResult extends PromiseLike<number | AnyObject | AnyObject[]> = Promise<number | AnyObject | AnyObject[]>> {
+	export type Result = number | AnyObject | AnyObject[]
+
+	export abstract class PinejsClientCore {
 		apiPrefix: string
 		passthrough: AnyObject
 		passthroughByMethod: AnyObject
@@ -154,30 +156,30 @@ declare namespace PinejsClientCoreFactory {
 
 
 		// `backendParams` must be used by a backend for any additional parameters it may have.
-		clone(params: string | Params, backendParams?: AnyObject): PinejsClientCore<T, PromiseResult, PromiseObj>
+		clone(params: string | Params, backendParams?: AnyObject): PinejsClientCore
 
-		query(params: Params): PromiseResult
+		query<U = Result>(params: Params): Promise<U>
 
-		get(params: Params): PromiseResult
+		get<U = Result>(params: Params): Promise<U>
 
-		put(params: Params): PromiseObj
+		put<U = {}>(params: Params): Promise<U>
 
-		patch(params: Params): PromiseObj
+		patch<U = {}>(params: Params): Promise<U>
 
-		post(params: Params): PromiseObj
+		post<U = {}>(params: Params): Promise<U>
 
-		delete(params: Params): PromiseObj
+		delete<U = {}>(params: Params): Promise<U>
 
 		compile(params: Params): string
 
-		request(params: Params, overrides: { method?: ODataMethod }): PromiseObj
+		request<U = {}>(params: Params, overrides: { method?: ODataMethod }): Promise<U>
 
 		abstract _request(
 			params: {
 				method: string,
 				url: string,
 				body?: AnyObject,
-			} & AnyObject): PromiseObj
+			} & AnyObject): Promise<{}>
 	}
 }
 
