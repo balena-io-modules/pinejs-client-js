@@ -411,6 +411,17 @@
 			delete: (params) ->
 				return @request(params, method: 'DELETE')
 
+			canAccess: (resource, action, id) ->
+				@request(
+					url: '$canAccess'
+					method: 'POST'
+					body: {
+						resource
+						action
+						id
+					}
+				)
+
 			compile: (params) ->
 				if utils.isString(params)
 					return params

@@ -172,6 +172,8 @@ declare namespace PinejsClientCoreFactory {
 
 		request(params: Params, overrides: { method?: ODataMethod }): PromiseObj
 
+		canAccess(resource: string, action: string, id: ResourceId): PromiseObj
+
 		abstract _request(
 			params: {
 				method: string,
