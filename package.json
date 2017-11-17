@@ -1,6 +1,6 @@
 {
   "name": "pinejs-client",
-  "version": "4.2.3",
+  "version": "4.2.4",
   "description": "This module provides wrappers that allow easier interaction with the pinejs API.",
   "main": "request.js",
   "types": "request.d.ts",
