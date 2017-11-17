@@ -80,7 +80,7 @@ declare namespace PinejsClientCoreFactory {
 	}
 
 	export interface FilterArray extends Array<Filter> {}
-	export type FilterString = string
+	export type FilterBaseType = string | number | null | boolean | Date
 	// Strictly speaking `[ string, ...Filter ]` but there isn't a way to type that yet
 	export type RawFilter = string | (string | Filter)[] | {
 		$string: string
@@ -90,7 +90,7 @@ declare namespace PinejsClientCoreFactory {
 		$alias: string
 		$expr: Filter
 	}
-	export type Filter = number | FilterString | FilterObj | FilterArray
+	export type Filter = FilterObj | FilterArray | FilterBaseType
 
 	export interface ResourceExpand extends ResourceObj<Expand> {}
 	export type ExpandObject = ODataOptions & ResourceExpand
