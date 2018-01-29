@@ -36,6 +36,82 @@
 		'Options without $ prefixes (e.g. `options: filter: ...`) are deprecated, please use a $ prefix (eg `options: $filter: ...`).'
 	)
 
+	class Poll
+		subscribers:
+			error: []
+			data: []
+
+		stopped: false
+
+		intervalTime: 10000
+
+		constructor: (requestFn, intervalTime) ->
+			if intervalTime?
+				@intervalTime = intervalTime
+
+			@requestFn =  requestFn
+			@start()
+
+		setPollInterval: (intervalTime) ->
+			@intervalTime = intervalTime
+			@stop()
+			@start()
+
+		runRequest: ->
+			return if @stopped
+			@requestFn()
+			.then (response) =>
+				return if @stopped
+
+				# Catch errors in event subscribers so that they don't trigger
+				# the 'catch' below, and that subsequent subscribers will still
+				# be called
+				@subscribers.data.forEach (fn) ->
+					try fn(response)
+					catch error
+						console.error('pinejs-client error: Caught error in data event subscription:', error)
+
+				return null
+
+			.catch (err) =>
+				return if @stopped
+
+				@subscribers.error.forEach (fn) ->
+					try fn(err)
+					catch error
+						console.error('pinejs-client error: Caught error in error event subscription:', error)
+
+				return null
+
+		on: (name, fn) ->
+			index = @subscribers[name].push(fn) - 1
+
+			unsubscribe: -> delete @subscribers[name][index]
+
+		start: ->
+			@stopped = false
+			@runRequest()
+			@pollInterval = setInterval =>
+				@runRequest()
+			, @intervalTime
+
+			return
+
+		stop: ->
+			clearInterval(@pollInterval)
+			@stopped = true
+
+			return
+
+		destroy: ->
+			@stop()
+			@requestFn = noop
+			@subscribers =
+				error: []
+				data: []
+
+			return
+
 	# Utils must support .isString, .isObject, and .isArray
 	# Promise must support Promise.reject, returning a rejected promise
 	return (utils, Promise) ->
@@ -388,6 +464,28 @@
 			query: (params) ->
 				@get(params)
 
+			subscribe: (params) ->
+				singular = utils.isObject(params) and params.id?
+
+				# precompile the URL string to improve performance
+				compiledUrl = @compile(params)
+				if utils.isString(params)
+					params = compiledUrl
+				else
+					params.url = compiledUrl
+
+				requestFn = =>
+					return @request(params, method: 'GET').then (data) ->
+						if !data?.d?
+							throw new Error('Invalid response received.')
+						if singular
+							if data.d.length > 1
+								throw new Error('Returned multiple results when only one was expected.')
+							return data.d[0]
+						return data.d
+
+				return new Poll(requestFn, params.pollInterval)
+
 			get: (params) ->
 				singular = utils.isObject(params) and params.id?
 				return @request(params, method: 'GET').then (data) ->
@@ -398,6 +496,7 @@
 							throw new Error('Returned multiple results when only one was expected.')
 						return data.d[0]
 					return data.d
+
 
 			put: (params) ->
 				return @request(params, method: 'PUT')

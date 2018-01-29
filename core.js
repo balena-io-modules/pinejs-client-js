@@ -14,7 +14,7 @@
       return root.PinejsClientCore = factory();
     }
   })(this, function() {
-    var addDeprecated, deprecated, noop;
+    var Poll, addDeprecated, deprecated, noop;
     noop = function() {};
     deprecated = {};
     addDeprecated = function(name, message) {
@@ -27,6 +27,106 @@
     addDeprecated('expandPrimitive', '`$expand: a: "b"` is deprecated, please use `$expand: a: $expand: "b"` instead.');
     addDeprecated('expandFilter', '`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.');
     addDeprecated('implicitOptions', 'Options without $ prefixes (e.g. `options: filter: ...`) are deprecated, please use a $ prefix (eg `options: $filter: ...`).');
+    Poll = (function() {
+      Poll.prototype.subscribers = {
+        error: [],
+        data: []
+      };
+
+      Poll.prototype.stopped = false;
+
+      Poll.prototype.intervalTime = 10000;
+
+      function Poll(requestFn, intervalTime) {
+        if (intervalTime != null) {
+          this.intervalTime = intervalTime;
+        }
+        this.requestFn = requestFn;
+        this.start();
+      }
+
+      Poll.prototype.setPollInterval = function(intervalTime) {
+        this.intervalTime = intervalTime;
+        this.stop();
+        return this.start();
+      };
+
+      Poll.prototype.runRequest = function() {
+        if (this.stopped) {
+          return;
+        }
+        return this.requestFn().then((function(_this) {
+          return function(response) {
+            if (_this.stopped) {
+              return;
+            }
+            _this.subscribers.data.forEach(function(fn) {
+              var error;
+              try {
+                return fn(response);
+              } catch (error1) {
+                error = error1;
+                return console.error('pinejs-client error: Caught error in data event subscription:', error);
+              }
+            });
+            return null;
+          };
+        })(this))["catch"]((function(_this) {
+          return function(err) {
+            if (_this.stopped) {
+              return;
+            }
+            _this.subscribers.error.forEach(function(fn) {
+              var error;
+              try {
+                return fn(err);
+              } catch (error1) {
+                error = error1;
+                return console.error('pinejs-client error: Caught error in error event subscription:', error);
+              }
+            });
+            return null;
+          };
+        })(this));
+      };
+
+      Poll.prototype.on = function(name, fn) {
+        var index;
+        index = this.subscribers[name].push(fn) - 1;
+        return {
+          unsubscribe: function() {
+            return delete this.subscribers[name][index];
+          }
+        };
+      };
+
+      Poll.prototype.start = function() {
+        this.stopped = false;
+        this.runRequest();
+        this.pollInterval = setInterval((function(_this) {
+          return function() {
+            return _this.runRequest();
+          };
+        })(this), this.intervalTime);
+      };
+
+      Poll.prototype.stop = function() {
+        clearInterval(this.pollInterval);
+        this.stopped = true;
+      };
+
+      Poll.prototype.destroy = function() {
+        this.stop();
+        this.requestFn = noop;
+        this.subscribers = {
+          error: [],
+          data: []
+        };
+      };
+
+      return Poll;
+
+    })();
     return function(utils, Promise) {
       var PinejsClientCore, addParentKey, applyBinds, bracketJoin, buildExpand, buildFilter, buildOption, buildOrderBy, escapeResource, escapeValue, isPrimitive, join, validParams;
       (function() {
@@ -545,6 +645,36 @@
           return this.get(params);
         };
 
+        PinejsClientCore.prototype.subscribe = function(params) {
+          var compiledUrl, requestFn, singular;
+          singular = utils.isObject(params) && (params.id != null);
+          compiledUrl = this.compile(params);
+          if (utils.isString(params)) {
+            params = compiledUrl;
+          } else {
+            params.url = compiledUrl;
+          }
+          requestFn = (function(_this) {
+            return function() {
+              return _this.request(params, {
+                method: 'GET'
+              }).then(function(data) {
+                if ((data != null ? data.d : void 0) == null) {
+                  throw new Error('Invalid response received.');
+                }
+                if (singular) {
+                  if (data.d.length > 1) {
+                    throw new Error('Returned multiple results when only one was expected.');
+                  }
+                  return data.d[0];
+                }
+                return data.d;
+              });
+            };
+          })(this);
+          return new Poll(requestFn, params.pollInterval);
+        };
+
         PinejsClientCore.prototype.get = function(params) {
           var singular;
           singular = utils.isObject(params) && (params.id != null);
@@ -668,8 +798,8 @@
             }
             opts.method = method;
             return this._request(opts);
-          } catch (error) {
-            e = error;
+          } catch (error1) {
+            e = error1;
             return Promise.reject(e);
           }
         };

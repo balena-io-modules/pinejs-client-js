@@ -143,6 +143,15 @@ declare namespace PinejsClientCoreFactory {
 		options?: ODataOptions
 	}
 
+	export class Poll {
+		constructor(requestFn: () => Promise<any>, intervalTime?: number);
+		on: (name: string, fn: (data: any) => void) => { unsubscribe: () => void };
+		start: () => void;
+		stop: () => void;
+		destroy: () => void;
+		setPollInterval: (interval: number) => void;
+	}
+
 	export abstract class PinejsClientCore<T, PromiseObj extends PromiseLike<{}> = Promise<{}>, PromiseResult extends PromiseLike<number | AnyObject | AnyObject[]> = Promise<number | AnyObject | AnyObject[]>> {
 		apiPrefix: string
 		passthrough: AnyObject
@@ -158,7 +167,9 @@ declare namespace PinejsClientCoreFactory {
 
 		query(params: Params): PromiseResult
 
-		get(params: Params): PromiseResult
+		subscribe(params: Params): Poll
+
+		get(params: Params & { pollInterval?: number }): PromiseResult
 
 		put(params: Params): PromiseObj
 
