@@ -84,7 +84,7 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 		throw new Error('The Promise implementation must support .reject')
 	}
 
-	const isPrimitive = (value?: any): value is string | number | boolean | Date => {
+	const isPrimitive = (value?: any): value is null | string | number | boolean | Date => {
 		return value === null || utils.isString(value) || utils.isNumber(value) || utils.isBoolean(value) || utils.isDate(value)
 	}
 
@@ -144,7 +144,7 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 		return `${filter}`
 	}
 
-	const applyBinds = (filter: PinejsClientCoreFactory.FilterString, params: {[index: string]: PinejsClientCoreFactory.Filter}, parentKey?: string[]) => {
+	const applyBinds = (filter: string, params: {[index: string]: PinejsClientCoreFactory.Filter}, parentKey?: string[]) => {
 		for (const index in params) {
 			const param = params[index]
 			let paramStr = `(${buildFilter(param)})`
@@ -257,33 +257,35 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 			case '$raw': {
 				if (utils.isString(filter)) {
 					return addParentKey(filter, parentKey)
-				} else if (utils.isArray(filter)) {
-					const [ rawFilter, ...params ] = filter
-					if (!utils.isString(rawFilter)) {
-						throw new Error(`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`)
-					}
-					const mappedParams: {[index: string]: PinejsClientCoreFactory.Filter} = {}
-					for (var index = 0; index < params.length; index++) {
-						mappedParams[index + 1] = params[index]
-					}
-					return applyBinds(rawFilter, mappedParams, parentKey)
-				} else if (utils.isObject(filter)) {
-					const params = filter
-					const filterStr = filter.$string
-					if (!utils.isString(filterStr)) {
-						throw new Error(`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`)
-					}
-					const mappedParams: {[index: string]: PinejsClientCoreFactory.Filter} = {}
-					for (const index in params) {
-						if (index !== '$string') {
-							if (!/^[a-zA-Z0-9]+$/.test(index)) {
-								throw new Error(`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`)
-							}
-							mappedParams[index] = params[index] as PinejsClientCoreFactory.Filter
+				} else if (!isPrimitive(filter)) {
+					if (utils.isArray(filter)) {
+						const [ rawFilter, ...params ] = filter
+						if (!utils.isString(rawFilter)) {
+							throw new Error(`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`)
 						}
+						const mappedParams: {[index: string]: PinejsClientCoreFactory.Filter} = {}
+						for (var index = 0; index < params.length; index++) {
+							mappedParams[index + 1] = params[index]
+						}
+						return applyBinds(rawFilter, mappedParams, parentKey)
+					} else if (utils.isObject(filter)) {
+						const params = filter
+						const filterStr = filter.$string
+						if (!utils.isString(filterStr)) {
+							throw new Error(`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`)
+						}
+						const mappedParams: {[index: string]: PinejsClientCoreFactory.Filter} = {}
+						for (const index in params) {
+							if (index !== '$string') {
+								if (!/^[a-zA-Z0-9]+$/.test(index)) {
+									throw new Error(`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`)
+								}
+								mappedParams[index] = params[index] as PinejsClientCoreFactory.Filter
+							}
+						}
+						return applyBinds(filterStr, mappedParams, parentKey)
 					}
-					return applyBinds(filterStr, mappedParams, parentKey)
-				} else {
+				 } else {
 					throw new Error(`Expected string/array/object for ${operator}, got: ${typeof filter}`)
 				}
 			}
@@ -754,7 +756,7 @@ declare namespace PinejsClientCoreFactory {
 		isNumber(v?: any): v is number
 		isBoolean(v?: any): v is boolean
 		isObject(v?: any): v is object
-		isArray<T>(v?: any): v is Array<T>
+		isArray(v?: any): v is any[]
 		isDate(v?: any): v is Date
 	}
 	interface PromiseRejector {
@@ -831,7 +833,7 @@ declare namespace PinejsClientCoreFactory {
 	}
 
 	export interface FilterArray extends Array<Filter> {}
-	export type FilterString = string
+	export type FilterBaseType = string | number | null | boolean | Date
 	// Strictly speaking `[ string, ...Filter ]` but there isn't a way to type that yet
 	export type RawFilter = string | (string | Filter)[] | {
 		$string: string
@@ -841,7 +843,7 @@ declare namespace PinejsClientCoreFactory {
 		$alias: string
 		$expr: Filter
 	}
-	export type Filter = number | FilterString | FilterObj | FilterArray
+	export type Filter = FilterObj | FilterArray | FilterBaseType
 
 	export interface ResourceExpand extends ResourceObj<Expand> {}
 	export type ExpandObject = ODataOptions & ResourceExpand
