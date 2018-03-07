@@ -76,6 +76,114 @@ const isValidOption = (key: string): key is keyof PinejsClientCoreFactory.ODataO
 		key === '$select'
 }
 
+
+type PollOnObj = {
+	unsubscribe: () => void
+}
+class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.AnyObject | PinejsClientCoreFactory.AnyObject[]> = Promise<number | PinejsClientCoreFactory.AnyObject | PinejsClientCoreFactory.AnyObject[]>> {
+	private subscribers: {
+		error: Array<(response: PromiseResult) => void>,
+		data: Array<(err: any) => void>,
+	} = {
+		error: [],
+		data: [],
+	}
+
+	private stopped = false
+	private pollInterval: NodeJS.Timer
+
+	private requestFn: null | (() => PromiseResult)
+
+	constructor(
+		requestFn: () => PromiseResult,
+		private intervalTime = 10000
+	) {
+		this.requestFn = requestFn
+		this.start()
+	}
+
+	setPollInterval(intervalTime: number) {
+		this.intervalTime = intervalTime
+		this.stop()
+		this.start()
+	}
+
+	runRequest() {
+		if (this.stopped || this.requestFn == null) {
+			return
+		}
+		this.requestFn()
+		.then((response) => {
+			if (this.stopped) {
+				return
+			}
+
+			// Catch errors in event subscribers so that they don't trigger
+			// the 'catch' below, and that subsequent subscribers will still
+			// be called
+			this.subscribers.data.forEach((fn) => {
+				try {
+					fn(response)
+				} catch (error) {
+					console.error('pinejs-client error: Caught error in data event subscription:', error)
+				}
+			})
+
+			return null
+		}, (err: any) => {
+			if (this.stopped) {
+				return
+			}
+
+			this.subscribers.error.forEach((fn) => {
+				try {
+					fn(err)
+				} catch (error) {
+					console.error('pinejs-client error: Caught error in error event subscription:', error)
+				}
+			})
+
+			return null
+		})
+	}
+
+	on(name: 'error', fn: (response: PromiseResult) => void): PollOnObj
+	on(name: 'data', fn: (err: any) => void): PollOnObj
+	on(name: keyof Poll['subscribers'], fn: (value: any) => void): PollOnObj {
+		const subscribers = this.subscribers[name] as Array<(value: any) => void>
+		const index = subscribers.push(fn) - 1
+
+		return {
+			unsubscribe: () => delete this.subscribers[name][index]
+		}
+	}
+
+	start() {
+		this.stopped = false
+		this.runRequest()
+		this.pollInterval = setInterval(
+			() => this.runRequest(),
+			this.intervalTime
+		)
+
+		return
+	}
+
+	stop() {
+		clearInterval(this.pollInterval)
+		this.stopped = true
+	}
+
+	destroy() {
+		this.stop()
+		this.requestFn = null
+		this.subscribers = {
+			error: [],
+			data: [],
+		}
+	}
+}
+
 function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: PinejsClientCoreFactory.PromiseRejector) {
 	if(!isUtil(utils)) {
 		throw new Error('The utils implementation must support ' + requiredUtilMethods.join(', '))
@@ -609,6 +717,40 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 			return this.get(params)
 		}
 
+		subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
+			const singular = utils.isObject(params) && params.id != null
+			let pollInterval: PinejsClientCoreFactory.SubscribeParamsObj['pollInterval']
+
+			// precompile the URL string to improve performance
+			const compiledUrl = this.compile(params)
+			if (utils.isString(params)) {
+				params = compiledUrl
+			} else {
+				params.url = compiledUrl
+				pollInterval = params.pollInterval
+			}
+
+			const requestFn = () => {
+				return this.request(params, { method: 'GET' }).then((data: {d: any[]}) => {
+					if (!utils.isObject(data)) {
+						throw new Error(`Response was not a JSON object: '${typeof data}'`)
+					}
+					if (data.d == null) {
+						throw new Error("Invalid response received, the 'd' property is missing.")
+					}
+					if (singular) {
+						if (data.d.length > 1) {
+							throw new Error('Returned multiple results when only one was expected.')
+						}
+						return data.d[0]
+					}
+					return data.d
+				}) as PromiseResult
+			}
+
+			return new Poll(requestFn, pollInterval)
+		}
+
 		put(params: PinejsClientCoreFactory.Params) {
 			return this.request(params, { method: 'PUT' })
 		}
@@ -669,13 +811,19 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 
 		request(params: PinejsClientCoreFactory.Params, overrides: { method?: PinejsClientCoreFactory.ODataMethod } = {}): PromiseObj {
 			try {
-				let { method, body, passthrough = {} } = params
+				let method: PinejsClientCoreFactory.ParamsObj['method']
+				let body: PinejsClientCoreFactory.ParamsObj['body']
+				let passthrough: PinejsClientCoreFactory.ParamsObj['passthrough'] = {}
+				let apiPrefix: PinejsClientCoreFactory.ParamsObj['apiPrefix']
+
 
 				if (utils.isString(params)) {
 					method = 'GET'
+				} else {
+					({ method, body, passthrough = {}, apiPrefix } = params)
 				}
 
-				const apiPrefix = defaults(params.apiPrefix, this.apiPrefix)
+				apiPrefix = defaults(apiPrefix, this.apiPrefix)
 				const url = apiPrefix + this.compile(params)
 
 				method = defaults(method, overrides.method, 'GET')
@@ -877,7 +1025,7 @@ declare namespace PinejsClientCoreFactory {
 		[index: string]: any
 	}
 
-	export type Params = {
+	interface ParamsObj {
 		apiPrefix?: string
 		method?: ODataMethod
 		resource?: string
@@ -894,6 +1042,13 @@ declare namespace PinejsClientCoreFactory {
 		customOptions?: AnyObject
 		options?: ODataOptions
 	}
+
+	export type Params = ParamsObj | string
+
+	interface SubscribeParamsObj extends ParamsObj {
+		pollInterval?: number
+	}
+	export type SubscribeParams = SubscribeParamsObj | string
 }
 
 export = PinejsClientCoreFactory
