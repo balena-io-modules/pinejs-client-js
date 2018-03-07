@@ -90,7 +90,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 
 	private stopped = false
-	private pollInterval: NodeJS.Timer
+	private pollInterval?: number
 
 	private requestFn: null | (() => PromiseResult)
 
@@ -170,7 +170,9 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 
 	stop() {
-		clearInterval(this.pollInterval)
+		if (this.pollInterval) {
+			clearInterval(this.pollInterval)
+		}
 		this.stopped = true
 	}
 

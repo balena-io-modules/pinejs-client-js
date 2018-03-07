@@ -1,9 +1,9 @@
 {
-  "name": "pinejs-client",
+  "name": "pinejs-client-core",
   "version": "4.3.2",
-  "description": "This module provides wrappers that allow easier interaction with the pinejs API.",
-  "main": "request.js",
-  "types": "request.d.ts",
+  "description": "This module provides the core tools to enable easier interaction with the pinejs API.",
+  "main": "core.js",
+  "types": "core.ts",
   "repository": {
     "type": "git",
     "url": "git@github.com:resin-io/pinejs-client-js.git"
@@ -13,26 +13,19 @@
     "Lorenzo Stoakes <lorenzo@resin.io>"
   ],
   "scripts": {
-    "lint": "resin-lint request.coffee test",
+    "lint": "resin-lint test",
     "pretest": "npm run lint && npm run-script prepublishOnly",
     "test": "mocha",
     "prepublish": "require-npm4-to-publish",
-    "prepublishOnly": "coffee -c request.coffee && tsc"
+    "prepublishOnly": "tsc"
   },
   "license": "MIT",
-  "dependencies": {
-    "@types/bluebird": "^3.5.20",
-    "@types/es6-collections": "^0.5.31",
-    "@types/request": "^2.47.0",
-    "bluebird": "^3.0.6",
-    "bluebird-lru-cache": "^1.0.0",
-    "lodash": "^4.17.5",
-    "request": "^2.83.0",
-    "typed-error": "^2.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "bluebird": "^3.0.6",
     "chai": "^3.3.0",
     "coffee-script": "~1.12.7",
+    "lodash": "^4.17.5",
     "mocha": "^3.5.3",
     "require-npm4-to-publish": "^1.0.0",
     "resin-lint": "^1.5.0",
