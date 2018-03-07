@@ -653,7 +653,7 @@ testFilter(
 
 testLambda = (operator) ->
 	createFilter = (partialFilter) ->
-		"$#{operator}": partialFilter
+		"#{operator}": partialFilter
 
 	testFilter(
 		a:
@@ -661,7 +661,7 @@ testLambda = (operator) ->
 				$alias: 'b'
 				$expr:
 					b: c: 'd'
-		"a/#{operator}(b:b/c eq 'd')"
+		"a/#{operator.slice(1)}(b:b/c eq 'd')"
 	)
 
 	testFilter(
@@ -680,7 +680,7 @@ testLambda = (operator) ->
 	)
 
 # Test $any
-testLambda('any')
+testLambda('$any')
 
 # Test $all
-testLambda('all')
+testLambda('$all')
