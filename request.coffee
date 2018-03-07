@@ -1,7 +1,7 @@
 _ = require 'lodash'
 request = require 'request'
 Promise = require 'bluebird'
-PinejsClientCore = require './core'
+{ PinejsClientCoreFactory } = require './core'
 BluebirdLRU = require 'bluebird-lru-cache'
 TypedError = require 'typed-error'
 
@@ -12,7 +12,7 @@ class StatusError extends TypedError
 		super(@message)
 
 validParams = ['cache']
-module.exports = class PinejsClientRequest extends PinejsClientCore(_, Promise)
+module.exports = class PinejsClientRequest extends PinejsClientCoreFactory(_, Promise)
 	constructor: (params, backendParams) ->
 		super(params)
 		@backendParams = {}

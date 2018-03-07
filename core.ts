@@ -184,7 +184,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 }
 
-function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: PinejsClientCoreFactory.PromiseRejector) {
+export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: PinejsClientCoreFactory.PromiseRejector) {
 	if(!isUtil(utils)) {
 		throw new Error('The utils implementation must support ' + requiredUtilMethods.join(', '))
 	}
@@ -435,14 +435,13 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 			case '$any':
 			case '$all':
 				const lamda = filter as PinejsClientCoreFactory.Lambda
-				const lambdaName = operator.slice(1)
 				const alias = lamda.$alias
 				let expr = lamda.$expr
 				if (alias == null) {
-					throw new Error(`Lambda expression (${lambdaName}) has no alias defined.`)
+					throw new Error(`Lambda expression (${operator}) has no alias defined.`)
 				}
 				if (expr == null) {
-					throw new Error(`Lambda expression (${lambdaName}) has no expr defined.`)
+					throw new Error(`Lambda expression (${operator}) has no expr defined.`)
 				}
 				// Disable the expandFilter deprecation notice when inside a lambda expr
 				const deprecatedFn = deprecated.expandFilter = noop
@@ -453,11 +452,11 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 				finally {
 					deprecated.expandFilter = deprecatedFn
 				}
-				filterStr = `${lambdaName}(${alias}:${filterStr})`
+				filterStr = `${operator.slice(1)}(${alias}:${filterStr})`
 				return addParentKey(filterStr, parentKey, '/')
 			// break
 			default:
-				throw new Error(`Unrecognised operator: '${operator.slice(1)}'`)
+				throw new Error(`Unrecognised operator: '${operator}'`)
 		}
 	}
 
@@ -858,7 +857,7 @@ function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: P
 	return PinejsClientCore
 }
 
-declare namespace PinejsClientCoreFactory {
+export declare namespace PinejsClientCoreFactory {
 	export abstract class PinejsClientCore<T, PromiseObj extends PromiseLike<{}> = Promise<{}>, PromiseResult extends PromiseLike<number | AnyObject | AnyObject[]> = Promise<number | AnyObject | AnyObject[]>> {
 		apiPrefix: string
 		passthrough: AnyObject
@@ -1050,5 +1049,3 @@ declare namespace PinejsClientCoreFactory {
 	}
 	export type SubscribeParams = SubscribeParamsObj | string
 }
-
-export = PinejsClientCoreFactory
