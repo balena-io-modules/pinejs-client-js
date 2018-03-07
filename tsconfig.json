@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"module": "umd",
+		"module": "commonjs",
 		"moduleResolution": "node",
 		"noImplicitAny": true,
 		"noUnusedParameters": true,
