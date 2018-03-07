@@ -21,21 +21,21 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@types/bluebird": "^3.5.20",
+    "@types/es6-collections": "^0.5.31",
+    "@types/request": "^2.47.0",
     "bluebird": "^3.0.6",
     "bluebird-lru-cache": "^1.0.0",
-    "lodash": "^4.0.0",
+    "lodash": "^4.17.5",
     "request": "^2.83.0",
     "typed-error": "^2.0.0"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.12",
-    "@types/es6-collections": "^0.5.31",
-    "@types/request": "^2.0.3",
     "chai": "^3.3.0",
     "coffee-script": "~1.12.7",
     "mocha": "^3.5.3",
     "require-npm4-to-publish": "^1.0.0",
-    "resin-lint": "^1.4.2",
-    "typescript": "^2.5.3"
+    "resin-lint": "^1.5.0",
+    "typescript": "~2.5.3"
   }
 }
