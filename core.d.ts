@@ -92,11 +92,9 @@ declare namespace PinejsClientCoreFactory {
 	}
 	export type Filter = FilterObj | FilterArray | FilterBaseType
 
-	export interface ResourceExpand extends ResourceObj<Expand> {}
-	export type ExpandObject = ODataOptions & ResourceExpand
+	export interface ResourceExpand extends ResourceObj<ODataOptions> {}
 
-	export interface ExpandArray extends Array<Expand> {}
-	export type Expand = string | ExpandArray | ExpandObject
+	export type Expand = string | ResourceExpand[] | ResourceExpand
 
 	export type OrderBy = string | string[] | {
 		[index: string]: 'asc' | 'desc'
