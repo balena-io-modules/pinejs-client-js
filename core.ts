@@ -12,10 +12,6 @@ addDeprecated(
 	'expandFilter',
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.'
 )
-addDeprecated(
-	'customOptions',
-	'`customOptions` is deprecated, please use `options` instead.'
-)
 
 function defaults <T>(a: T | undefined, b: T | undefined, z: T): T
 function defaults <T>(a: T | undefined, z: T): T
@@ -795,13 +791,8 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 						return buildOption(option, value)
 					})
 				}
-				if (params.customOptions != null) {
-					deprecated.customOptions()
-					queryOptions = queryOptions.concat(
-						mapObj(params.customOptions, (value, option) => {
-							return buildOption(option, value)
-						})
-					)
+				if ((params as any).customOptions != null) {
+					throw new Error('`customOptions` has been removed, use `options` instead.')
 				}
 				if (queryOptions.length > 0) {
 					url += '?' + queryOptions.join('&')
@@ -1038,7 +1029,6 @@ export declare namespace PinejsClientCoreFactory {
 			PATCH: AnyObject
 			DELETE: AnyObject
 		}
-		customOptions?: AnyObject
 		options?: ODataOptions
 	}
 
