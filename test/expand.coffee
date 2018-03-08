@@ -1,10 +1,12 @@
 { test } = require './test'
+_ = require 'lodash'
 
 testExpand = (input, output) ->
 	resource = 'test'
-	url = resource + '?$expand=' + output
-	it "should compile #{JSON.stringify(input)} to #{url}", ->
-		test url, {
+	if not _.isError(output)
+		output = resource + '?$expand=' + output
+	it "should compile #{JSON.stringify(input)} to #{output}", ->
+		test output, {
 			resource
 			options:
 				$expand: input
@@ -30,13 +32,13 @@ testExpand(
 # String object
 testExpand(
 	a: 'b'
-	'a/b'
+	new Error(''''$expand: a: "b"' is invalid, use '$expand: a: $expand: "b"' instead.''')
 )
 
 testExpand(
 	a: 'b'
 	c: 'd'
-	'a/b,c/d'
+	new Error(''''$expand: a: "b"' is invalid, use '$expand: a: $expand: "b"' instead.''')
 )
 
 # Object array
@@ -44,7 +46,7 @@ testExpand(
 	[
 		a: 'b'
 	]
-	'a/b'
+	new Error(''''$expand: a: "b"' is invalid, use '$expand: a: $expand: "b"' instead.''')
 )
 
 testExpand(
@@ -53,7 +55,7 @@ testExpand(
 	,
 		c: 'd'
 	]
-	'a/b,c/d'
+	new Error(''''$expand: a: "b"' is invalid, use '$expand: a: $expand: "b"' instead.''')
 )
 
 # Array in object
@@ -62,7 +64,7 @@ testExpand(
 		'b'
 		'c'
 	]
-	'a/b,a/c'
+	new Error("'$expand: a: [...]' is invalid, use '$expand: a: {...}' instead.")
 )
 
 testExpand(
@@ -71,7 +73,7 @@ testExpand(
 	,
 		d: 'e'
 	]
-	'a/b/c,a/d/e'
+	new Error("'$expand: a: [...]' is invalid, use '$expand: a: {...}' instead.")
 )
 
 # Object in object
@@ -79,7 +81,7 @@ testExpand(
 	a:
 		b: 'c'
 		d: 'e'
-	'a/b/c,a/d/e'
+	new Error("'$expand: a: b: ...' is invalid, use '$expand: a: $expand: b: ...' instead.")
 )
 
 # Expand options
@@ -111,7 +113,7 @@ testExpand(
 		b: 'c'
 		$filter: d: 'e'
 		$select: ['f', 'g']
-	"a/b/c,a($filter=d eq 'e'&$select=f,g)"
+	new Error("'$expand: a: b: ...' is invalid, use '$expand: a: $expand: b: ...' instead.")
 )
 
 testExpand(
@@ -121,7 +123,7 @@ testExpand(
 		$filter: d: 'e'
 		$select: ['f', 'g']
 	]
-	"a($filter=b eq 'c'),a($filter=d eq 'e'&$select=f,g)"
+	new Error("'$expand: a: [...]' is invalid, use '$expand: a: {...}' instead.")
 )
 
 testExpand

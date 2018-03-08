@@ -9,14 +9,6 @@ const addDeprecated = (name: string, message: string) => {
 	}
 }
 addDeprecated(
-	'expandObject',
-	'`$expand: a: b: ...` is deprecated, please use `$expand: a: $expand: b: ...` instead.'
-)
-addDeprecated(
-	'expandPrimitive',
-	'`$expand: a: "b"` is deprecated, please use `$expand: a: $expand: "b"` instead.'
-)
-addDeprecated(
 	'expandFilter',
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.'
 )
@@ -579,9 +571,8 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		return `${option}=${compiledValue}`
 	}
 
-	const handleExpandObject = (expand: PinejsClientCoreFactory.ExpandObject, parentKey: string[]) => {
+	const handleExpandOptions = (expand: PinejsClientCoreFactory.ODataOptions, parentKey: string) => {
 		const expandOptions = []
-		const expands = []
 		for (const key in expand) {
 			if (expand.hasOwnProperty(key)) {
 				const value = expand[key]
@@ -589,48 +580,55 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 					if(!isValidOption(key)) {
 						throw new Error(`Unknown key option '${key}'`)
 					}
-					if (parentKey.length === 0) {
-						throw new Error('Cannot have expand options without first expanding something!')
-					}
 					expandOptions.push(buildOption(key, value))
 				} else {
-					if (parentKey.length > 0) {
-						deprecated.expandObject()
-					}
-					const expandedKeys = parentKey.concat(key)
-					expands.push(buildExpand(value, expandedKeys))
+					throw new Error(`'$expand: ${parentKey}: ${key}: ...' is invalid, use '$expand: ${parentKey}: $expand: ${key}: ...' instead.`)
 				}
 			}
 		}
-		if (expandOptions.length > 0 || expands.length == 0) {
-			let expandStr = expandOptions.join('&')
-			expandStr = escapeResource(parentKey) + `(${expandStr})`
-			expands.push(expandStr)
+		let expandStr = expandOptions.join('&')
+		expandStr = escapeResource(parentKey) + `(${expandStr})`
+		return expandStr
+	}
+	const handleExpandObject = (expand: PinejsClientCoreFactory.ResourceExpand) => {
+		const expands = []
+		for (const key in expand) {
+			if (expand.hasOwnProperty(key)) {
+				if (key[0] === '$') {
+					throw new Error('Cannot have expand options without first expanding something!')
+				}
+				const value = expand[key]
+				if (isPrimitive(value)) {
+					const jsonValue = JSON.stringify(value)
+					throw new Error(`'$expand: ${key}: ${jsonValue}' is invalid, use '$expand: ${key}: $expand: ${jsonValue}' instead.`)
+				}
+				if (utils.isArray(value)) {
+					throw new Error(`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`)
+				}
+				expands.push(handleExpandOptions(value, key))
+			}
 		}
 		return expands
 	}
 
-	const handleExpandArray = (expands: PinejsClientCoreFactory.ExpandArray, parentKey?: string[]) => {
+	const handleExpandArray = (expands: PinejsClientCoreFactory.ResourceExpand[]) => {
 		if (expands.length < 1) {
 			throw new Error(`Expand arrays must have at least 1 elements, got: ${JSON.stringify(expands)}`)
 		}
 
 		return map(expands, (expand) => {
-			return buildExpand(expand, parentKey)
+			return buildExpand(expand)
 		})
 	}
 
-	const buildExpand = (expand: PinejsClientCoreFactory.Expand, parentKey: string[] = []): string => {
+	const buildExpand = (expand: PinejsClientCoreFactory.Expand): string => {
 		if (isPrimitive(expand)) {
-			if (parentKey.length > 0) {
-				deprecated.expandPrimitive()
-			}
-			return escapeResource(parentKey.concat(expand))
+			return escapeResource(expand)
 		} else if (utils.isArray(expand)) {
-			const expandStr = handleExpandArray(expand, parentKey)
+			const expandStr = handleExpandArray(expand)
 			return join(expandStr)
 		} else if (utils.isObject(expand)) {
-			const expandStr = handleExpandObject(expand, parentKey)
+			const expandStr = handleExpandObject(expand)
 			return join(expandStr)
 		} else {
 			throw new Error(`Unknown type for expand '${typeof expand}'`)
@@ -996,11 +994,9 @@ export declare namespace PinejsClientCoreFactory {
 	}
 	export type Filter = FilterObj | FilterArray | FilterBaseType
 
-	export interface ResourceExpand extends ResourceObj<Expand> {}
-	export type ExpandObject = ODataOptions & ResourceExpand
+	export interface ResourceExpand extends ResourceObj<ODataOptions> {}
 
-	export interface ExpandArray extends Array<Expand> {}
-	export type Expand = string | ExpandArray | ExpandObject
+	export type Expand = string | ResourceExpand[] | ResourceExpand
 
 	export type OrderBy = string | string[] | {
 		[index: string]: 'asc' | 'desc'
