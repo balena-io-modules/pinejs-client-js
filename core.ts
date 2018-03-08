@@ -76,6 +76,8 @@ const isValidOption = (key: string): key is keyof PinejsClientCoreFactory.ODataO
 		key === '$select'
 }
 
+// Workaround the fact that `setInterval` returns a different type in nodejs vs browsers
+const setIntervalResult = false as true && setInterval(() => {}, 0)
 
 type PollOnObj = {
 	unsubscribe: () => void
@@ -90,7 +92,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 
 	private stopped = false
-	private pollInterval?: number
+	private pollInterval?: typeof setIntervalResult
 
 	private requestFn: null | (() => PromiseResult)
 
