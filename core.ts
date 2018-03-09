@@ -21,7 +21,6 @@ function defaults <T>(...args: (T | undefined)[]): T | undefined {
 			return arg
 		}
 	}
-	return
 }
 const map = <T, R>(arr: T[], fn: (value: T) => R): R[] => {
 	const results = []
@@ -65,7 +64,8 @@ const isValidOption = (key: string): key is keyof PinejsClientCoreFactory.ODataO
 }
 
 // Workaround the fact that `setInterval` returns a different type in nodejs vs browsers
-const setIntervalResult = false as true && setInterval(() => {}, 0)
+// TODO: typescript 2.8 will introduce `ReturnType` as a better way to do this
+const _setIntervalResult = false as true && setInterval(() => {}, 0)
 
 type PollOnObj = {
 	unsubscribe: () => void
@@ -80,7 +80,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 
 	private stopped = false
-	private pollInterval?: typeof setIntervalResult
+	private pollInterval?: typeof _setIntervalResult
 
 	private requestFn: null | (() => PromiseResult)
 
@@ -155,8 +155,6 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 			() => this.runRequest(),
 			this.intervalTime
 		)
-
-		return
 	}
 
 	stop() {
@@ -177,7 +175,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 }
 
 export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: PinejsClientCoreFactory.PromiseRejector) {
-	if(!isUtil(utils)) {
+	if (!isUtil(utils)) {
 		throw new Error('The utils implementation must support ' + requiredUtilMethods.join(', '))
 	}
 	if (!isPromiseRejector(Promise)) {
@@ -364,7 +362,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 							throw new Error(`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`)
 						}
 						const mappedParams: {[index: string]: PinejsClientCoreFactory.Filter} = {}
-						for (var index = 0; index < params.length; index++) {
+						for (let index = 0; index < params.length; index++) {
 							mappedParams[index + 1] = params[index]
 						}
 						return applyBinds(rawFilter, mappedParams, parentKey)
