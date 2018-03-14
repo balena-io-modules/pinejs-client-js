@@ -4,7 +4,7 @@ _ = require 'lodash'
 Promise = require 'bluebird'
 { PinejsClientCoreFactory } = require '../core'
 
-PinejsClientCore = PinejsClientCoreFactory(_, Promise)
+PinejsClientCore = PinejsClientCoreFactory(Promise)
 core = new PinejsClientCore()
 exports.test = (expected, params) ->
 	if _.isError(expected)

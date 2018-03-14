@@ -46,18 +46,9 @@ const isBoolean = (v: any): v is boolean =>
 const isDate = (v: any): v is Date =>
 	Object.prototype.toString.call(v) === '[object Date]'
 
-const requiredUtilMethods = ['isObject']
-const isUtil = (obj: any): obj is PinejsClientCoreFactory.Util => {
-	if (obj == null) {
-		return false
-	}
-	for (const method of requiredUtilMethods) {
-		if (obj[method] == null) {
-			return false
-		}
-	}
-	return true
-}
+const isObject = (v: any): v is object =>
+	typeof v === 'object'
+
 const isPromiseRejector = (obj: any): obj is PinejsClientCoreFactory.PromiseRejector => {
 	return obj != null && obj.reject != null
 }
@@ -181,10 +172,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 }
 
-export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Promise: PinejsClientCoreFactory.PromiseRejector) {
-	if (!isUtil(utils)) {
-		throw new Error('The utils implementation must support ' + requiredUtilMethods.join(', '))
-	}
+export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.PromiseRejector) {
 	if (!isPromiseRejector(Promise)) {
 		throw new Error('The Promise implementation must support .reject')
 	}
@@ -269,7 +257,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			const filterArr = handleFilterArray(filter)
 			const filterStr = bracketJoin(filterArr, op)
 			return addParentKey(filterStr, parentKey)
-		} else if (utils.isObject(filter)) {
+		} else if (isObject(filter)) {
 			const result = handleFilterObject(filter)
 			if (result.length < 1) {
 				throw new Error(`${operator} objects must have at least 1 property, got: ${JSON.stringify(filter)}`)
@@ -302,7 +290,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			let filterStr = bracketJoin(filterArr, ',', true)
 			filterStr = fnName + filterStr
 			return addParentKey(filterStr, parentKey)
-		} else if (utils.isObject(filter)) {
+		} else if (isObject(filter)) {
 			const filterArr = handleFilterObject(filter)
 			let filterStr = bracketJoin(filterArr, ',', true)
 			filterStr = fnName + filterStr
@@ -373,7 +361,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 							mappedParams[index + 1] = params[index]
 						}
 						return applyBinds(rawFilter, mappedParams, parentKey)
-					} else if (utils.isObject(filter)) {
+					} else if (isObject(filter)) {
 						const params = filter
 						const filterStr = filter.$string
 						if (!isString(filterStr)) {
@@ -413,7 +401,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 				} else if (Array.isArray(filter)) {
 					const filterStr = handleFilterArray(filter, parentKey, 1)
 					return bracketJoin(filterStr, ' or ')
-				} else if (utils.isObject(filter)) {
+				} else if (isObject(filter)) {
 					const filterArr = handleFilterObject(filter, parentKey)
 					if (filterArr.length < 1) {
 						throw new Error(`${operator} objects must have at least 1 property, got: ${JSON.stringify(filter)}`)
@@ -496,7 +484,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			const filterArr = handleFilterArray(filter)
 			const filterStr = bracketJoin(filterArr, defaults(joinStr, ' or '))
 			return addParentKey(filterStr, parentKey)
-		} else if (utils.isObject(filter)) {
+		} else if (isObject(filter)) {
 			const filterArr = handleFilterObject(filter, parentKey)
 			return bracketJoin(filterArr, defaults(joinStr, ' and '))
 		} else {
@@ -515,7 +503,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 				return buildOrderBy(value)
 			})
 			return join(result)
-		} else if (utils.isObject(orderby)) {
+		} else if (isObject(orderby)) {
 			const result = mapObj(orderby, (dir, key) => {
 				if (dir !== 'asc' && dir !== 'desc') {
 					throw new Error(`'$orderby' direction must be 'asc' or 'desc'`)
@@ -628,7 +616,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		} else if (Array.isArray(expand)) {
 			const expandStr = handleExpandArray(expand)
 			return join(expandStr)
-		} else if (utils.isObject(expand)) {
+		} else if (isObject(expand)) {
 			const expandStr = handleExpandObject(expand)
 			return join(expandStr)
 		} else {
@@ -659,7 +647,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 				params = { apiPrefix: params }
 			}
 
-			if (utils.isObject(params)) {
+			if (isObject(params)) {
 				for (const validParam of validParams) {
 					const value = params[validParam]
 					if (value != null) {
@@ -687,19 +675,19 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			}
 
 			let cloneBackendParams: typeof backendParams = {}
-			if (utils.isObject(this.backendParams)) {
+			if (isObject(this.backendParams)) {
 				cloneBackendParams = { ...this.backendParams }
 			}
-			if (utils.isObject(backendParams)) {
+			if (isObject(backendParams)) {
 				cloneBackendParams = { ...cloneBackendParams, ...backendParams }
 			}
 			return new (this.constructor as { new (params: string | PinejsClientCoreFactory.Params, backendParams: PinejsClientCoreFactory.AnyObject): T })(cloneParams, cloneBackendParams)
 		}
 
 		get(params: PinejsClientCoreFactory.Params): PromiseResult {
-			const singular = utils.isObject(params) && params.id != null
+			const singular = isObject(params) && params.id != null
 			return this.request(params, { method: 'GET' }).then((data: {d: any[]}) => {
-				if (!utils.isObject(data)) {
+				if (!isObject(data)) {
 					throw new Error(`Response was not a JSON object: '${typeof data}'`)
 				}
 				if (data.d == null) {
@@ -720,7 +708,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		}
 
 		subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
-			const singular = utils.isObject(params) && params.id != null
+			const singular = isObject(params) && params.id != null
 			let pollInterval: PinejsClientCoreFactory.SubscribeParamsObj['pollInterval']
 
 			// precompile the URL string to improve performance
@@ -734,7 +722,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 
 			const requestFn = () => {
 				return this.request(params, { method: 'GET' }).then((data: {d: any[]}) => {
-					if (!utils.isObject(data)) {
+					if (!isObject(data)) {
 						throw new Error(`Response was not a JSON object: '${typeof data}'`)
 					}
 					if (data.d == null) {
@@ -896,9 +884,6 @@ export declare namespace PinejsClientCoreFactory {
 
 	export type PromiseResultTypes = number | PinejsClientCoreFactory.AnyObject | PinejsClientCoreFactory.AnyObject[]
 
-	export interface Util {
-		isObject(v?: any): v is object
-	}
 	interface PromiseRejector {
 		reject(err: any): PromiseLike<any>
 	}
