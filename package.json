@@ -14,9 +14,10 @@
   ],
   "scripts": {
     "lint": "resin-lint angular.coffee core.coffee request.coffee test",
-    "pretest": "npm run lint && npm run-script prepublish",
+    "pretest": "npm run lint && npm run-script prepublishOnly",
     "test": "mocha",
-    "prepublish": "coffee -c angular.coffee core.coffee request.coffee"
+    "prepublish": "require-npm4-to-publish",
+    "prepublishOnly": "coffee -c angular.coffee core.coffee request.coffee"
   },
   "license": "MIT",
   "dependencies": {
@@ -32,6 +33,7 @@
     "chai": "^3.3.0",
     "coffee-script": "~1.11.0",
     "mocha": "^3.5.3",
+    "require-npm4-to-publish": "^1.0.0",
     "resin-lint": "^1.3.0"
   }
 }
