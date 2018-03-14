@@ -40,7 +40,10 @@ const NumberIsFinite = (Number as any).isFinite || (
 const isString = (v: any): v is string =>
 	typeof v === 'string'
 
-const requiredUtilMethods = ['isBoolean', 'isObject', 'isDate']
+const isBoolean = (v: any): v is boolean =>
+	v === true || v === false
+
+const requiredUtilMethods = ['isObject', 'isDate']
 const isUtil = (obj: any): obj is PinejsClientCoreFactory.Util => {
 	if (obj == null) {
 		return false
@@ -184,7 +187,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	}
 
 	const isPrimitive = (value?: any): value is null | string | number | boolean | Date => {
-		return value === null || isString(value) || NumberIsFinite(value) || utils.isBoolean(value) || utils.isDate(value)
+		return value === null || isString(value) || NumberIsFinite(value) || isBoolean(value) || utils.isDate(value)
 	}
 
 	// Escape a resource name (string), or resource path (array)
@@ -205,7 +208,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			return `'${encodeURIComponent(value)}'`
 		} else if (utils.isDate(value)) {
 			return `datetime'${value.toISOString()}'`
-		} else if (value === null || NumberIsFinite(value) || utils.isBoolean(value)) {
+		} else if (value === null || NumberIsFinite(value) || isBoolean(value)) {
 			return value
 		} else {
 			throw new Error('Not a valid value: ' + typeof value)
@@ -891,7 +894,6 @@ export declare namespace PinejsClientCoreFactory {
 	export type PromiseResultTypes = number | PinejsClientCoreFactory.AnyObject | PinejsClientCoreFactory.AnyObject[]
 
 	export interface Util {
-		isBoolean(v?: any): v is boolean
 		isObject(v?: any): v is object
 		isDate(v?: any): v is Date
 	}
