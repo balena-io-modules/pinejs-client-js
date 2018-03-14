@@ -43,7 +43,10 @@ const isString = (v: any): v is string =>
 const isBoolean = (v: any): v is boolean =>
 	v === true || v === false
 
-const requiredUtilMethods = ['isObject', 'isDate']
+const isDate = (v: any): v is Date =>
+	Object.prototype.toString.call(v) === '[object Date]'
+
+const requiredUtilMethods = ['isObject']
 const isUtil = (obj: any): obj is PinejsClientCoreFactory.Util => {
 	if (obj == null) {
 		return false
@@ -187,7 +190,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	}
 
 	const isPrimitive = (value?: any): value is null | string | number | boolean | Date => {
-		return value === null || isString(value) || NumberIsFinite(value) || isBoolean(value) || utils.isDate(value)
+		return value === null || isString(value) || NumberIsFinite(value) || isBoolean(value) || isDate(value)
 	}
 
 	// Escape a resource name (string), or resource path (array)
@@ -206,7 +209,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		if (isString(value)) {
 			value = value.replace(/'/g, "''")
 			return `'${encodeURIComponent(value)}'`
-		} else if (utils.isDate(value)) {
+		} else if (isDate(value)) {
 			return `datetime'${value.toISOString()}'`
 		} else if (value === null || NumberIsFinite(value) || isBoolean(value)) {
 			return value
@@ -895,7 +898,6 @@ export declare namespace PinejsClientCoreFactory {
 
 	export interface Util {
 		isObject(v?: any): v is object
-		isDate(v?: any): v is Date
 	}
 	interface PromiseRejector {
 		reject(err: any): PromiseLike<any>
