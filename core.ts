@@ -33,7 +33,7 @@ const mapObj = <T, R>(obj: {[index: string]: T}, fn: (value: T, key: string) => 
 	return results
 }
 
-const requiredUtilMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isArray', 'isDate']
+const requiredUtilMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isDate']
 const isUtil = (obj: any): obj is PinejsClientCoreFactory.Util => {
 	if (obj == null) {
 		return false
@@ -184,7 +184,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	const escapeResource = (resource: string | string[]) => {
 		if (utils.isString(resource)) {
 			return encodeURIComponent(resource)
-		} else if (utils.isArray(resource)) {
+		} else if (Array.isArray(resource)) {
 			return resource.map(encodeURIComponent).join('/')
 		} else {
 			throw new Error('Not a valid resource: ' + typeof resource)
@@ -208,7 +208,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	const join = (strOrArray: string | string[], separator = ',') => {
 		if (utils.isString(strOrArray)) {
 			return strOrArray
-		} else if (utils.isArray(strOrArray)) {
+		} else if (Array.isArray(strOrArray)) {
 			return strOrArray.join(separator)
 		} else {
 			throw new Error('Expected a string or array, got: ' + typeof strOrArray)
@@ -252,7 +252,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		if (isPrimitive(filter)) {
 			const filterStr = escapeValue(filter)
 			return addParentKey(filterStr, parentKey, op)
-		} else if (utils.isArray(filter)) {
+		} else if (Array.isArray(filter)) {
 			const filterArr = handleFilterArray(filter)
 			const filterStr = bracketJoin(filterArr, op)
 			return addParentKey(filterStr, parentKey)
@@ -284,7 +284,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			}
 			operands.push(escapeValue(filter))
 			return `${fnName}(${operands.join()})`
-		} else if (utils.isArray(filter)) {
+		} else if (Array.isArray(filter)) {
 			const filterArr = handleFilterArray(filter)
 			let filterStr = bracketJoin(filterArr, ',', true)
 			filterStr = fnName + filterStr
@@ -350,7 +350,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 				if (utils.isString(filter)) {
 					return addParentKey(filter, parentKey)
 				} else if (!isPrimitive(filter)) {
-					if (utils.isArray(filter)) {
+					if (Array.isArray(filter)) {
 						const [ rawFilter, ...params ] = filter
 						if (!utils.isString(rawFilter)) {
 							throw new Error(`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`)
@@ -397,7 +397,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 				if (isPrimitive(filter)) {
 					const filterStr = escapeValue(filter)
 					return addParentKey(filterStr, parentKey, ' eq ')
-				} else if (utils.isArray(filter)) {
+				} else if (Array.isArray(filter)) {
 					const filterStr = handleFilterArray(filter, parentKey, 1)
 					return bracketJoin(filterStr, ' or ')
 				} else if (utils.isObject(filter)) {
@@ -479,7 +479,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		if (isPrimitive(filter)) {
 			const filterStr = escapeValue(filter)
 			return addParentKey(filterStr, parentKey)
-		} else if (utils.isArray(filter)) {
+		} else if (Array.isArray(filter)) {
 			const filterArr = handleFilterArray(filter)
 			const filterStr = bracketJoin(filterArr, defaults(joinStr, ' or '))
 			return addParentKey(filterStr, parentKey)
@@ -494,9 +494,9 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	const buildOrderBy = (orderby: PinejsClientCoreFactory.OrderBy): string => {
 		if (utils.isString(orderby)) {
 			return orderby
-		} else if (utils.isArray(orderby)) {
+		} else if (Array.isArray(orderby)) {
 			const result = orderby.map((value) => {
-				if (utils.isArray(value)) {
+				if (Array.isArray(value)) {
 					throw new Error(`'$orderby' cannot have nested arrays`)
 				}
 				return buildOrderBy(value)
@@ -540,7 +540,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			break
 			case '$select':
 				const select = value
-				if (utils.isString(select) || utils.isArray(select)) {
+				if (utils.isString(select) || Array.isArray(select)) {
 					compiledValue = join(select as string | string[])
 				} else {
 					throw new Error(`'${option}' option has to be either a string or array`)
@@ -548,7 +548,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			break
 			default:
 				// Unknown values are left as-is
-				if (utils.isArray(value)) {
+				if (Array.isArray(value)) {
 					compiledValue = join(value as string[])
 				} else if (utils.isString(value)) {
 					compiledValue = value
@@ -590,7 +590,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 					const jsonValue = JSON.stringify(value)
 					throw new Error(`'$expand: ${key}: ${jsonValue}' is invalid, use '$expand: ${key}: $expand: ${jsonValue}' instead.`)
 				}
-				if (utils.isArray(value)) {
+				if (Array.isArray(value)) {
 					throw new Error(`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`)
 				}
 				expands.push(handleExpandOptions(value, key))
@@ -612,7 +612,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	const buildExpand = (expand: PinejsClientCoreFactory.Expand): string => {
 		if (isPrimitive(expand)) {
 			return escapeResource(expand)
-		} else if (utils.isArray(expand)) {
+		} else if (Array.isArray(expand)) {
 			const expandStr = handleExpandArray(expand)
 			return join(expandStr)
 		} else if (utils.isObject(expand)) {
@@ -888,7 +888,6 @@ export declare namespace PinejsClientCoreFactory {
 		isNumber(v?: any): v is number
 		isBoolean(v?: any): v is boolean
 		isObject(v?: any): v is object
-		isArray(v?: any): v is any[]
 		isDate(v?: any): v is Date
 	}
 	interface PromiseRejector {
