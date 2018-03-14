@@ -37,7 +37,10 @@ const NumberIsFinite = (Number as any).isFinite || (
 	(v: any): v is number => typeof v === 'number' && isFinite(v)
 )
 
-const requiredUtilMethods = ['isString', 'isBoolean', 'isObject', 'isDate']
+const isString = (v: any): v is string =>
+	typeof v === 'string'
+
+const requiredUtilMethods = ['isBoolean', 'isObject', 'isDate']
 const isUtil = (obj: any): obj is PinejsClientCoreFactory.Util => {
 	if (obj == null) {
 		return false
@@ -181,12 +184,12 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	}
 
 	const isPrimitive = (value?: any): value is null | string | number | boolean | Date => {
-		return value === null || utils.isString(value) || NumberIsFinite(value) || utils.isBoolean(value) || utils.isDate(value)
+		return value === null || isString(value) || NumberIsFinite(value) || utils.isBoolean(value) || utils.isDate(value)
 	}
 
 	// Escape a resource name (string), or resource path (array)
 	const escapeResource = (resource: string | string[]) => {
-		if (utils.isString(resource)) {
+		if (isString(resource)) {
 			return encodeURIComponent(resource)
 		} else if (Array.isArray(resource)) {
 			return resource.map(encodeURIComponent).join('/')
@@ -197,7 +200,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 
 	// Escape a primitive value
 	const escapeValue = (value: null | string | number | boolean | Date) => {
-		if (utils.isString(value)) {
+		if (isString(value)) {
 			value = value.replace(/'/g, "''")
 			return `'${encodeURIComponent(value)}'`
 		} else if (utils.isDate(value)) {
@@ -210,7 +213,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	}
 
 	const join = (strOrArray: string | string[], separator = ',') => {
-		if (utils.isString(strOrArray)) {
+		if (isString(strOrArray)) {
 			return strOrArray
 		} else if (Array.isArray(strOrArray)) {
 			return strOrArray.join(separator)
@@ -351,12 +354,12 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 				return filterFunction(filter, operator, parentKey)
 			// break
 			case '$raw': {
-				if (utils.isString(filter)) {
+				if (isString(filter)) {
 					return addParentKey(filter, parentKey)
 				} else if (!isPrimitive(filter)) {
 					if (Array.isArray(filter)) {
 						const [ rawFilter, ...params ] = filter
-						if (!utils.isString(rawFilter)) {
+						if (!isString(rawFilter)) {
 							throw new Error(`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`)
 						}
 						const mappedParams: {[index: string]: PinejsClientCoreFactory.Filter} = {}
@@ -367,7 +370,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 					} else if (utils.isObject(filter)) {
 						const params = filter
 						const filterStr = filter.$string
-						if (!utils.isString(filterStr)) {
+						if (!isString(filterStr)) {
 							throw new Error(`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`)
 						}
 						const mappedParams: {[index: string]: PinejsClientCoreFactory.Filter} = {}
@@ -496,7 +499,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	}
 
 	const buildOrderBy = (orderby: PinejsClientCoreFactory.OrderBy): string => {
-		if (utils.isString(orderby)) {
+		if (isString(orderby)) {
 			return orderby
 		} else if (Array.isArray(orderby)) {
 			const result = orderby.map((value) => {
@@ -544,7 +547,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			break
 			case '$select':
 				const select = value
-				if (utils.isString(select) || Array.isArray(select)) {
+				if (isString(select) || Array.isArray(select)) {
 					compiledValue = join(select as string | string[])
 				} else {
 					throw new Error(`'${option}' option has to be either a string or array`)
@@ -554,7 +557,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 				// Unknown values are left as-is
 				if (Array.isArray(value)) {
 					compiledValue = join(value as string[])
-				} else if (utils.isString(value)) {
+				} else if (isString(value)) {
 					compiledValue = value
 				} else {
 					throw new Error(`Unknown type for option ${typeof value}`)
@@ -646,7 +649,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 
 		// `backendParams` must be used by a backend for any additional parameters it may have.
 		constructor(params: string | PinejsClientCoreFactory.Params) {
-			if (utils.isString(params)) {
+			if (isString(params)) {
 				params = { apiPrefix: params }
 			}
 
@@ -663,7 +666,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 
 		// `backendParams` must be used by a backend for any additional parameters it may have.
 		clone(params: string | PinejsClientCoreFactory.Params, backendParams?: PinejsClientCoreFactory.AnyObject): T {
-			if (utils.isString(params)) {
+			if (isString(params)) {
 				params = { apiPrefix: params }
 			}
 
@@ -716,7 +719,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 
 			// precompile the URL string to improve performance
 			const compiledUrl = this.compile(params)
-			if (utils.isString(params)) {
+			if (isString(params)) {
 				params = compiledUrl
 			} else {
 				params.url = compiledUrl
@@ -761,7 +764,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		}
 
 		compile(params: PinejsClientCoreFactory.Params) {
-			if (utils.isString(params)) {
+			if (isString(params)) {
 				return params
 			} else if (params.url != null) {
 				return params.url
@@ -805,7 +808,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 				let apiPrefix: PinejsClientCoreFactory.ParamsObj['apiPrefix']
 
 
-				if (utils.isString(params)) {
+				if (isString(params)) {
 					method = 'GET'
 				} else {
 					({ method, body, passthrough = {}, apiPrefix } = params)
@@ -888,7 +891,6 @@ export declare namespace PinejsClientCoreFactory {
 	export type PromiseResultTypes = number | PinejsClientCoreFactory.AnyObject | PinejsClientCoreFactory.AnyObject[]
 
 	export interface Util {
-		isString(v?: any): v is string
 		isBoolean(v?: any): v is boolean
 		isObject(v?: any): v is object
 		isDate(v?: any): v is Date
