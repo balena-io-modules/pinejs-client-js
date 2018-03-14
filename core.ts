@@ -22,13 +22,7 @@ function defaults <T>(...args: (T | undefined)[]): T | undefined {
 		}
 	}
 }
-const map = <T, R>(arr: T[], fn: (value: T) => R): R[] => {
-	const results = []
-	for (const key of arr) {
-		results.push(fn(key))
-	}
-	return results
-}
+
 const mapObj = <T, R>(obj: {[index: string]: T}, fn: (value: T, key: string) => R): R[] => {
 	const results = []
 	for (const key in obj) {
@@ -191,7 +185,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		if (utils.isString(resource)) {
 			return encodeURIComponent(resource)
 		} else if (utils.isArray(resource)) {
-			return map(resource, encodeURIComponent).join('/')
+			return resource.map(encodeURIComponent).join('/')
 		} else {
 			throw new Error('Not a valid resource: ' + typeof resource)
 		}
@@ -475,7 +469,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			throw new Error(`Filter arrays must have at least ${minElements} elements, got: ${JSON.stringify(filter)}`)
 		}
 
-		return map(filter, (value) => {
+		return filter.map((value) => {
 			return buildFilter(value, parentKey)
 		})
 	}
@@ -501,7 +495,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 		if (utils.isString(orderby)) {
 			return orderby
 		} else if (utils.isArray(orderby)) {
-			const result = map(orderby, (value) => {
+			const result = orderby.map((value) => {
 				if (utils.isArray(value)) {
 					throw new Error(`'$orderby' cannot have nested arrays`)
 				}
@@ -610,7 +604,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			throw new Error(`Expand arrays must have at least 1 elements, got: ${JSON.stringify(expands)}`)
 		}
 
-		return map(expands, (expand) => {
+		return expands.map((expand) => {
 			return buildExpand(expand)
 		})
 	}
