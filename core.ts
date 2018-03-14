@@ -33,7 +33,11 @@ const mapObj = <T, R>(obj: {[index: string]: T}, fn: (value: T, key: string) => 
 	return results
 }
 
-const requiredUtilMethods = ['isString', 'isNumber', 'isBoolean', 'isObject', 'isDate']
+const NumberIsFinite = (Number as any).isFinite || (
+	(v: any): v is number => typeof v === 'number' && isFinite(v)
+)
+
+const requiredUtilMethods = ['isString', 'isBoolean', 'isObject', 'isDate']
 const isUtil = (obj: any): obj is PinejsClientCoreFactory.Util => {
 	if (obj == null) {
 		return false
@@ -177,7 +181,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 	}
 
 	const isPrimitive = (value?: any): value is null | string | number | boolean | Date => {
-		return value === null || utils.isString(value) || utils.isNumber(value) || utils.isBoolean(value) || utils.isDate(value)
+		return value === null || utils.isString(value) || NumberIsFinite(value) || utils.isBoolean(value) || utils.isDate(value)
 	}
 
 	// Escape a resource name (string), or resource path (array)
@@ -198,7 +202,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			return `'${encodeURIComponent(value)}'`
 		} else if (utils.isDate(value)) {
 			return `datetime'${value.toISOString()}'`
-		} else if (value === null || utils.isNumber(value) || utils.isBoolean(value)) {
+		} else if (value === null || NumberIsFinite(value) || utils.isBoolean(value)) {
 			return value
 		} else {
 			throw new Error('Not a valid value: ' + typeof value)
@@ -533,7 +537,7 @@ export function PinejsClientCoreFactory(utils: PinejsClientCoreFactory.Util, Pro
 			case '$top':
 			case '$skip':
 				const num = value
-				if (!utils.isNumber(num)) {
+				if (!NumberIsFinite(num)) {
 					throw new Error(`'${option}' option has to be a number`)
 				}
 				compiledValue = '' + num
@@ -885,7 +889,6 @@ export declare namespace PinejsClientCoreFactory {
 
 	export interface Util {
 		isString(v?: any): v is string
-		isNumber(v?: any): v is number
 		isBoolean(v?: any): v is boolean
 		isObject(v?: any): v is object
 		isDate(v?: any): v is Date
