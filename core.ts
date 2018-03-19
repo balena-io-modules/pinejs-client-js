@@ -61,9 +61,9 @@ const isValidOption = (key: string): key is keyof PinejsClientCoreFactory.ODataO
 		key === '$select'
 }
 
-// Workaround the fact that `setInterval` returns a different type in nodejs vs browsers
+// Workaround the fact that `setTimeout` returns a different type in nodejs vs browsers
 // TODO: typescript 2.8 will introduce `ReturnType` as a better way to do this
-const _setIntervalResult = false as true && setInterval(() => {}, 0)
+const _setTimeoutResult = false as true && setTimeout(() => {}, 0)
 
 type PollOnObj = {
 	unsubscribe: () => void
@@ -78,7 +78,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 
 	private stopped = false
-	private pollInterval?: typeof _setIntervalResult
+	private pollInterval?: typeof _setTimeoutResult
 
 	private requestFn: null | (() => PromiseResult)
 
@@ -92,8 +92,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 
 	setPollInterval(intervalTime: number) {
 		this.intervalTime = intervalTime
-		this.stop()
-		this.start()
+		this.restartTimeout()
 	}
 
 	runRequest() {
@@ -105,6 +104,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 			if (this.stopped) {
 				return
 			}
+			this.restartTimeout()
 
 			// Catch errors in event subscribers so that they don't trigger
 			// the 'catch' below, and that subsequent subscribers will still
@@ -122,6 +122,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 			if (this.stopped) {
 				return
 			}
+			this.restartTimeout()
 
 			this.subscribers.error.forEach((fn) => {
 				try {
@@ -149,15 +150,11 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	start() {
 		this.stopped = false
 		this.runRequest()
-		this.pollInterval = setInterval(
-			() => this.runRequest(),
-			this.intervalTime
-		)
 	}
 
 	stop() {
 		if (this.pollInterval) {
-			clearInterval(this.pollInterval)
+			clearTimeout(this.pollInterval)
 		}
 		this.stopped = true
 	}
@@ -169,6 +166,19 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 			error: [],
 			data: [],
 		}
+	}
+
+	private restartTimeout() {
+		if(this.stopped) {
+			return
+		}
+		if (this.pollInterval) {
+			clearTimeout(this.pollInterval)
+		}
+		this.pollInterval = setTimeout(
+			() => this.runRequest(),
+			this.intervalTime
+		)
 	}
 }
 
