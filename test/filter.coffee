@@ -1,20 +1,6 @@
 { test } = require './test'
 _ = require 'lodash'
 
-
-testFilter = (input, output) ->
-	resource = 'test'
-	input =
-		a: 'b'
-		d: 'e'
-	output = "((a eq 'b') and (d eq 'e'))"
-	it "should compile #{JSON.stringify(input)} to #{output}", ->
-		test output, {
-			resource
-			options:
-				$filter: input
-		}
-
 testFilter = (input, output) ->
 	resource = 'test'
 	if not _.isError(output)
@@ -23,7 +9,7 @@ testFilter = (input, output) ->
 		test output, {
 			resource
 			options:
-				filter: input
+				$filter: input
 		}
 
 testFilter(
@@ -112,6 +98,11 @@ testFunction = (funcName) ->
 		filter = {}
 		filter['$' + funcName] = partialFilter
 		return filter
+
+	testFilter(
+		createFilter(null)
+		"#{funcName}()"
+	)
 
 	testFilter(
 		createFilter
@@ -662,7 +653,7 @@ testFilter(
 
 testLambda = (operator) ->
 	createFilter = (partialFilter) ->
-		"$#{operator}": partialFilter
+		"#{operator}": partialFilter
 
 	testFilter(
 		a:
@@ -670,7 +661,7 @@ testLambda = (operator) ->
 				$alias: 'b'
 				$expr:
 					b: c: 'd'
-		"a/#{operator}(b:b/c eq 'd')"
+		"a/#{operator.slice(1)}(b:b/c eq 'd')"
 	)
 
 	testFilter(
@@ -689,7 +680,7 @@ testLambda = (operator) ->
 	)
 
 # Test $any
-testLambda('any')
+testLambda('$any')
 
 # Test $all
-testLambda('all')
+testLambda('$all')
