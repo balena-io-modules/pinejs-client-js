@@ -16,6 +16,7 @@ testOrderBy = _.partial(testOption, '$orderby')
 testTop = _.partial(testOption, '$top')
 testSkip = _.partial(testOption, '$skip')
 testSelect = _.partial(testOption, '$select')
+testCustom = _.partial(testOption, 'custom')
 
 
 testOrderBy(
@@ -99,4 +100,19 @@ testSelect(
 testSelect(
 	1
 	new Error("'$select' option has to be either a string or array")
+)
+
+testCustom(
+	'a'
+	'a'
+)
+
+testCustom(
+	1
+	'1'
+)
+
+testCustom(
+	true
+	'true'
 )

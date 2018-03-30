@@ -33,8 +33,10 @@ const mapObj = <T, R>(obj: {[index: string]: T}, fn: (value: T, key: string) => 
 	return results
 }
 
-const NumberIsFinite = (Number as any).isFinite || (
-	(v: any): v is number => typeof v === 'number' && isFinite(v)
+const NumberIsFinite: (
+	(v: any) => v is number
+ ) = (Number as any).isFinite || (
+	(v) => typeof v === 'number' && isFinite(v)
 )
 
 const isString = (v: any): v is string =>
@@ -563,6 +565,8 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 					compiledValue = join(value as string[])
 				} else if (isString(value)) {
 					compiledValue = value
+				} else if (isBoolean(value) || NumberIsFinite(value)) {
+					compiledValue = value.toString()
 				} else {
 					throw new Error(`Unknown type for option ${typeof value}`)
 				}
