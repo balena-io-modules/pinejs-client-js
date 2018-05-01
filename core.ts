@@ -184,7 +184,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 }
 
-export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.PromiseRejector) {
+export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.PromiseRejector): typeof PinejsClientCoreFactory.PinejsClientCore {
 	if (!isPromiseRejector(Promise)) {
 		throw new Error('The Promise implementation must support .reject')
 	}
