@@ -486,7 +486,7 @@ testFilter(
 			$in: [
 				'c'
 			]
-	"a/b eq 'c'"
+	"a/b in ('c')"
 )
 
 testFilter(
@@ -496,7 +496,7 @@ testFilter(
 				'c'
 				'd'
 			]
-	"(a/b eq 'c') or (a/b eq 'd')"
+	"a/b in ('c', 'd')"
 )
 
 testFilter(
