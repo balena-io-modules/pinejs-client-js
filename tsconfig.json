@@ -10,7 +10,8 @@
 		"strictNullChecks": true,
 		"sourceMap": true,
 		"target": "es5",
-		"declaration": true
+		"declaration": true,
+		"skipLibCheck": true
 	},
 	"include": [
 		"*.ts"
