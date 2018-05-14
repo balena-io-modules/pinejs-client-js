@@ -611,7 +611,10 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 			}
 		}
 		let expandStr = expandOptions.join('&')
-		expandStr = escapeResource(parentKey) + `(${expandStr})`
+		if (expandStr.length > 0) {
+			expandStr = `(${expandStr})`
+		}
+		expandStr = escapeResource(parentKey) + expandStr
 		return expandStr
 	}
 	const handleExpandObject = (expand: PinejsClientCoreFactory.ResourceExpand) => {
