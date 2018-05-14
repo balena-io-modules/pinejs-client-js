@@ -108,7 +108,7 @@ testFunction = (funcName) ->
 		createFilter
 			a: 'b'
 			c: 'd'
-		"#{funcName}((a eq 'b'),(c eq 'd'))"
+		"#{funcName}(a eq 'b',c eq 'd')"
 	)
 
 	testFilter(
@@ -117,7 +117,7 @@ testFunction = (funcName) ->
 		,
 			c: 'd'
 		]
-		"#{funcName}((a eq 'b'),(c eq 'd'))"
+		"#{funcName}(a eq 'b',c eq 'd')"
 	)
 
 	testFilter(
@@ -137,7 +137,7 @@ testFunction = (funcName) ->
 		a: createFilter
 			b: 'c'
 			d: 'e'
-		"a eq #{funcName}((b eq 'c'),(d eq 'e'))"
+		"a eq #{funcName}(b eq 'c',d eq 'e')"
 	)
 
 testOperator('ne')

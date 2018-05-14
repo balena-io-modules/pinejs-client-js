@@ -319,12 +319,12 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 			return [ `${fnName}(${operands.join()})` ]
 		} else if (Array.isArray(filter)) {
 			const filterArr = handleFilterArray(filter)
-			let filterStr = bracketJoin(filterArr, ',').join('')
+			let filterStr = filterArr.map((subArr) => subArr.join('')).join(',')
 			filterStr = `${fnName}(${filterStr})`
 			return addParentKey(filterStr, parentKey)
 		} else if (isObject(filter)) {
 			const filterArr = handleFilterObject(filter)
-			let filterStr = bracketJoin(filterArr, ',').join('')
+			let filterStr = filterArr.map((subArr) => subArr.join('')).join(',')
 			filterStr = `${fnName}(${filterStr})`
 			return addParentKey(filterStr, parentKey)
 		} else {
