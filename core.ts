@@ -229,34 +229,54 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 	}
 
 	// Join together a bunch of statements making sure the whole lot is correctly parenthesised
-	// `forceOuterBrackets` forces the outer brackets to be included when there is only one element (eg a 1 param function)
-	const bracketJoin = (arr: string[], separator: string, forceOuterBrackets = false) => {
-		const str = arr.join(`)${separator}(`)
-		if (arr.length > 1) {
-			return `((${str}))`
+	const bracketJoin = (arr: string[][], separator: string) => {
+		if (arr.length === 1) {
+			return arr[0]
 		}
-		if (forceOuterBrackets) {
-			return `(${str})`
-		}
-		return str
+		const resultArr: string[] = []
+		arr.map((subArr) => {
+			if (subArr.length > 1) {
+				return `(${subArr.join('')})`
+			}
+			return subArr[0]
+		}).forEach((str, i) => {
+			if (i !== 0) {
+				resultArr.push(separator)
+			}
+			resultArr.push(str)
+		})
+		return resultArr
 	}
 
 	// Add the parentKey + operator if (it exists.) {
-	const addParentKey = (filter: string | boolean | number | null, parentKey?: string[], operator = ' eq ') => {
+	const addParentKey = (filter: string[] | string | boolean | number | null, parentKey?: string[], operator = ' eq ') => {
 		if (parentKey != null) {
-			return escapeResource(parentKey) + operator + filter
+			if (Array.isArray(filter)) {
+				if (filter.length === 1) {
+					filter = filter[0]
+				} else {
+					filter = `(${filter.join('')})`
+				}
+			} else {
+				filter = `${filter}`
+			}
+			return [ escapeResource(parentKey), operator, filter ]
 		}
-		return `${filter}`
+		if (Array.isArray(filter)) {
+			return filter
+		}
+		return [ `${filter}` ]
 	}
 
 	const applyBinds = (filter: string, params: {[index: string]: PinejsClientCoreFactory.Filter}, parentKey?: string[]) => {
 		for (const index in params) {
 			const param = params[index]
-			let paramStr = `(${buildFilter(param)})`
+			let paramStr = `(${buildFilter(param).join('')})`
 			// Escape $ for filter.replace
 			paramStr = paramStr.replace(/\$/g, '$$$$')
 			filter = filter.replace(new RegExp(`\\$${index}([^a-zA-Z0-9]|$)`, 'g'), `${paramStr}$1`)
 		}
+		filter = `(${filter})`
 		return addParentKey(filter, parentKey)
 	}
 
@@ -288,7 +308,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 		filter: PinejsClientCoreFactory.FilterFunctionValue,
 		fnIdentifier: PinejsClientCoreFactory.FilterFunctionKey,
 		parentKey?: string[]
-	) => {
+	): string[] => {
 		const fnName = fnIdentifier.slice(1)
 		if (isPrimitive(filter)) {
 			const operands = []
@@ -296,16 +316,16 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 				operands.push(escapeResource(parentKey))
 			}
 			operands.push(escapeValue(filter))
-			return `${fnName}(${operands.join()})`
+			return [ `${fnName}(${operands.join()})` ]
 		} else if (Array.isArray(filter)) {
 			const filterArr = handleFilterArray(filter)
-			let filterStr = bracketJoin(filterArr, ',', true)
-			filterStr = fnName + filterStr
+			let filterStr = filterArr.map((subArr) => subArr.join('')).join(',')
+			filterStr = `${fnName}(${filterStr})`
 			return addParentKey(filterStr, parentKey)
 		} else if (isObject(filter)) {
 			const filterArr = handleFilterObject(filter)
-			let filterStr = bracketJoin(filterArr, ',', true)
-			filterStr = fnName + filterStr
+			let filterStr = filterArr.map((subArr) => subArr.join('')).join(',')
+			filterStr = `${fnName}(${filterStr})`
 			return addParentKey(filterStr, parentKey)
 		} else {
 			throw new Error(`Expected null/string/number/obj/array, got: ${typeof filter}`)
@@ -313,7 +333,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 	}
 
 	// Handle special cases for all the different $ operators.
-	const handleFilterOperator = (filter: PinejsClientCoreFactory.Filter, operator: keyof PinejsClientCoreFactory.FilterObj, parentKey?: string[]): string => {
+	const handleFilterOperator = (filter: PinejsClientCoreFactory.Filter, operator: keyof PinejsClientCoreFactory.FilterObj, parentKey?: string[]): string[] => {
 		switch (operator) {
 			case '$ne':
 			case '$eq':
@@ -361,6 +381,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 			// break
 			case '$raw': {
 				if (isString(filter)) {
+					filter = `(${filter})`
 					return addParentKey(filter, parentKey)
 				} else if (!isPrimitive(filter)) {
 					if (Array.isArray(filter)) {
@@ -425,7 +446,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 			}
 			// break
 			case '$not': {
-				const filterStr = `not(${buildFilter(filter)})`
+				const filterStr = `not(${buildFilter(filter).join('')})`
 				return addParentKey(filterStr, parentKey)
 			}
 			// break
@@ -444,7 +465,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 				const deprecatedFn = deprecated.expandFilter = noop
 				let filterStr
 				try {
-					filterStr = buildFilter(expr)
+					filterStr = buildFilter(expr).join('')
 				}
 				finally {
 					deprecated.expandFilter = deprecatedFn
@@ -488,7 +509,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 	}
 
 	// Turn a filter query object into an OData $filter string
-	const buildFilter = (filter: PinejsClientCoreFactory.Filter, parentKey?: string[], joinStr?: string): string => {
+	const buildFilter = (filter: PinejsClientCoreFactory.Filter, parentKey?: string[], joinStr?: string): string[] => {
 		if (isPrimitive(filter)) {
 			const filterStr = escapeValue(filter)
 			return addParentKey(filterStr, parentKey)
@@ -535,7 +556,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 		let compiledValue: string = ''
 		switch (option) {
 			case '$filter':
-				compiledValue = buildFilter(value as PinejsClientCoreFactory.Filter)
+				compiledValue = buildFilter(value as PinejsClientCoreFactory.Filter).join('')
 			break
 			case '$expand':
 				compiledValue = buildExpand(value as PinejsClientCoreFactory.Expand)
@@ -590,7 +611,10 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 			}
 		}
 		let expandStr = expandOptions.join('&')
-		expandStr = escapeResource(parentKey) + `(${expandStr})`
+		if (expandStr.length > 0) {
+			expandStr = `(${expandStr})`
+		}
+		expandStr = escapeResource(parentKey) + expandStr
 		return expandStr
 	}
 	const handleExpandObject = (expand: PinejsClientCoreFactory.ResourceExpand) => {

@@ -87,7 +87,7 @@ testExpand(
 # Expand options
 testExpand(
 	a: {}
-	'a()'
+	'a'
 )
 
 testExpand(

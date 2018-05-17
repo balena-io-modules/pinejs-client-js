@@ -15,13 +15,13 @@ testFilter = (input, output) ->
 testFilter(
 	a: 'b'
 	d: 'e'
-	"((a eq 'b') and (d eq 'e'))"
+	"(a eq 'b') and (d eq 'e')"
 )
 
 testFilter(
 	a: "b'c"
 	d: "e''f'''g"
-	"((a eq 'b''c') and (d eq 'e''''f''''''g'))"
+	"(a eq 'b''c') and (d eq 'e''''f''''''g')"
 )
 
 testOperator = (operator) ->
@@ -32,7 +32,7 @@ testOperator = (operator) ->
 		createFilter
 			a: 'b'
 			c: 'd'
-		"((a eq 'b') #{operator} (c eq 'd'))"
+		"(a eq 'b') #{operator} (c eq 'd')"
 	)
 
 	testFilter(
@@ -41,7 +41,7 @@ testOperator = (operator) ->
 		,
 			c: 'd'
 		]
-		"((a eq 'b') #{operator} (c eq 'd'))"
+		"(a eq 'b') #{operator} (c eq 'd')"
 	)
 
 	testFilter(
@@ -54,7 +54,7 @@ testOperator = (operator) ->
 			'b'
 			'c'
 		]
-		"a eq (('b') #{operator} ('c'))"
+		"a eq ('b' #{operator} 'c')"
 	)
 
 	testFilter(
@@ -80,7 +80,7 @@ testOperator = (operator) ->
 	testFilter(
 		a: createFilter
 			$raw: rawDatetime
-		"a #{operator} #{rawDatetime}"
+		"a #{operator} (#{rawDatetime})"
 	)
 
 	testFilter(
@@ -90,7 +90,7 @@ testOperator = (operator) ->
 			,
 				$: 'c'
 			]
-		"a #{operator} ((b) or (c))"
+		"a #{operator} (b or c)"
 	)
 
 testFunction = (funcName) ->
@@ -108,7 +108,7 @@ testFunction = (funcName) ->
 		createFilter
 			a: 'b'
 			c: 'd'
-		"#{funcName}((a eq 'b'),(c eq 'd'))"
+		"#{funcName}(a eq 'b',c eq 'd')"
 	)
 
 	testFilter(
@@ -117,7 +117,7 @@ testFunction = (funcName) ->
 		,
 			c: 'd'
 		]
-		"#{funcName}((a eq 'b'),(c eq 'd'))"
+		"#{funcName}(a eq 'b',c eq 'd')"
 	)
 
 	testFilter(
@@ -130,14 +130,14 @@ testFunction = (funcName) ->
 			'b'
 			'c'
 		]
-		"a eq #{funcName}(('b'),('c'))"
+		"a eq #{funcName}('b','c')"
 	)
 
 	testFilter(
 		a: createFilter
 			b: 'c'
 			d: 'e'
-		"a eq #{funcName}((b eq 'c'),(d eq 'e'))"
+		"a eq #{funcName}(b eq 'c',d eq 'e')"
 	)
 
 testOperator('ne')
@@ -185,7 +185,7 @@ testFilter(
 	,
 		e: 'f'
 	]
-	"((((a eq 'b') eq (c eq 'd'))) ne (e eq 'f'))"
+	"((a eq 'b') eq (c eq 'd')) ne (e eq 'f')"
 )
 
 testFilter(
@@ -198,7 +198,7 @@ testFilter(
 			e: 'f'
 			g: 'h'
 	]
-	"((((a eq 'b') eq (c eq 'd'))) or (((e eq 'f') ne (g eq 'h'))))"
+	"((a eq 'b') eq (c eq 'd')) or ((e eq 'f') ne (g eq 'h'))"
 )
 
 testFilter(
@@ -211,7 +211,7 @@ testFilter(
 	,
 		c: 'd'
 	]
-	"((((a eq 'b') eq (d eq 'e'))) ne (c eq 'd'))"
+	"((a eq 'b') eq (d eq 'e')) ne (c eq 'd')"
 )
 
 testFilter(
@@ -224,7 +224,7 @@ testFilter(
 	a:
 		b: 'c'
 		d: 'e'
-	"((a/b eq 'c') and (a/d eq 'e'))"
+	"(a/b eq 'c') and (a/d eq 'e')"
 )
 
 testFilter(
@@ -241,7 +241,7 @@ testFilter(
 		'c'
 		'd'
 	]
-	"a eq (('c') or ('d'))"
+	"a eq ('c' or 'd')"
 )
 
 testFilter(
@@ -250,7 +250,7 @@ testFilter(
 			'c'
 			'd'
 		]
-	"a/b eq (('c') or ('d'))"
+	"a/b eq ('c' or 'd')"
 )
 
 testFilter(
@@ -259,20 +259,20 @@ testFilter(
 			b: 'c'
 			'd'
 		]
-	"a eq ((b eq 'c') or ('d'))"
+	"a eq ((b eq 'c') or 'd')"
 )
 
 testFilter(
 	a:
 		b: 'c'
 		$eq: 'd'
-	"((a/b eq 'c') and (a eq 'd'))"
+	"(a/b eq 'c') and (a eq 'd')"
 )
 
 # Test raw strings
 testFilter(
 	$raw: "(a/b eq 'c' and a eq 'd')"
-	"(a/b eq 'c' and a eq 'd')"
+	"((a/b eq 'c' and a eq 'd'))"
 )
 
 testFilter(
@@ -286,7 +286,7 @@ testFilter(
 	,
 		$raw: 'a le c'
 	]
-	'((a ge b) or (a le c))'
+	'(a ge b) or (a le c)'
 )
 
 testFilter(
@@ -318,7 +318,7 @@ testFilter(
 		'c'
 		'd'
 	]
-	"a/b eq ('c') and a eq ('d')"
+	"(a/b eq ('c') and a eq ('d'))"
 )
 
 testFilter(
@@ -337,7 +337,7 @@ testFilter(
 			2
 		]
 	]
-	"a/b eq (c eq 'd') and a eq (((1) add (2)))"
+	"(a/b eq (c eq 'd') and a eq (1 add 2))"
 )
 
 testFilter(
@@ -345,7 +345,7 @@ testFilter(
 		'a/b eq $1'
 		$raw: '$$'
 	]
-	'a/b eq ($$)'
+	'(a/b eq (($$)))'
 )
 
 testFilter(
@@ -353,7 +353,7 @@ testFilter(
 		'a/b eq $10 and a eq $1'
 		[1..10]...
 	]
-	'a/b eq (10) and a eq (1)'
+	'(a/b eq (10) and a eq (1))'
 )
 
 
@@ -363,7 +363,7 @@ testFilter(
 		$string: 'a/b eq $1 and a eq $2'
 		1: 'c'
 		2: 'd'
-	"a/b eq ('c') and a eq ('d')"
+	"(a/b eq ('c') and a eq ('d'))"
 )
 
 testFilter(
@@ -386,14 +386,14 @@ testFilter(
 			1
 			2
 		]
-	"a/b eq (c eq 'd') and a eq (((1) add (2)))"
+	"(a/b eq (c eq 'd') and a eq (1 add 2))"
 )
 
 testFilter(
 	$raw:
 		$string: 'a/b eq $1'
 		1: $raw: '$$'
-	'a/b eq ($$)'
+	'(a/b eq (($$)))'
 )
 
 testFilter(
@@ -401,7 +401,7 @@ testFilter(
 		$string: 'a/b eq $10 and a eq $1'
 		1: 1
 		10: 10
-	'a/b eq (10) and a eq (1)'
+	'(a/b eq (10) and a eq (1))'
 )
 
 testFilter(
@@ -410,7 +410,7 @@ testFilter(
 		a: 'a'
 		b: 'b'
 		b2: 'b2'
-	"a eq ('a') and b eq ('b') or b eq ('b2')"
+	"(a eq ('a') and b eq ('b') or b eq ('b2'))"
 )
 
 
@@ -422,7 +422,7 @@ testFilter(
 				'c'
 				'd'
 			]
-	"a/b eq (('c') and ('d'))"
+	"a/b eq ('c' and 'd')"
 )
 
 testFilter(
@@ -444,7 +444,7 @@ testFilter(
 				'c'
 				'd'
 			]
-	"a/b eq (('c') or ('d'))"
+	"a/b eq ('c' or 'd')"
 )
 
 testFilter(
@@ -475,7 +475,7 @@ testFilter(
 				'c'
 				'd'
 			]
-	"((a/b eq 'c') or (a/b eq 'd'))"
+	"(a/b eq 'c') or (a/b eq 'd')"
 )
 
 testFilter(
@@ -486,7 +486,7 @@ testFilter(
 			,
 				e: 'f'
 			]
-	"((a/b/c eq 'd') or (a/b/e eq 'f'))"
+	"(a/b/c eq 'd') or (a/b/e eq 'f')"
 )
 
 testFilter(
@@ -503,7 +503,7 @@ testFilter(
 			$in:
 				c: 'd'
 				e: 'f'
-	"((a/b/c eq 'd') or (a/b/e eq 'f'))"
+	"(a/b/c eq 'd') or (a/b/e eq 'f')"
 )
 
 testFilter(
@@ -529,7 +529,7 @@ testFilter(
 	$not:
 		a: 'b'
 		c: 'd'
-	"not(((a eq 'b') and (c eq 'd')))"
+	"not((a eq 'b') and (c eq 'd'))"
 )
 
 testFilter(
@@ -538,7 +538,7 @@ testFilter(
 	,
 		c: 'd'
 	]
-	"not(((a eq 'b') or (c eq 'd')))"
+	"not((a eq 'b') or (c eq 'd'))"
 )
 
 testFilter(
@@ -553,7 +553,7 @@ testFilter(
 			'b'
 			'c'
 		]
-	"a eq not((('b') or ('c')))"
+	"a eq not('b' or 'c')"
 )
 
 testFilter(
@@ -561,7 +561,7 @@ testFilter(
 		$not:
 			b: 'c'
 			d: 'e'
-	"a eq not(((b eq 'c') and (d eq 'e')))"
+	"a eq not((b eq 'c') and (d eq 'e'))"
 )
 
 testFilter(
@@ -571,7 +571,7 @@ testFilter(
 		,
 			d: 'e'
 		]
-	"a eq not(((b eq 'c') or (d eq 'e')))"
+	"a eq not((b eq 'c') or (d eq 'e'))"
 )
 
 # Test $add
@@ -648,7 +648,7 @@ testFilter(
 	,
 		$tolower: 'b'
 	]
-	"((tolower(a)) eq (tolower('b')))"
+	"tolower(a) eq tolower('b')"
 )
 
 testLambda = (operator) ->
