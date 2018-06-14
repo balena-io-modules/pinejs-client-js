@@ -17,6 +17,7 @@ testTop = _.partial(testOption, '$top')
 testSkip = _.partial(testOption, '$skip')
 testSelect = _.partial(testOption, '$select')
 testCustom = _.partial(testOption, 'custom')
+testParam = _.partial(testOption, '@param')
 
 
 testOrderBy(
@@ -115,4 +116,19 @@ testCustom(
 testCustom(
 	true
 	'true'
+)
+
+testParam(
+	'test'
+	"'test'"
+)
+
+testParam(
+	1
+	'1'
+)
+
+testParam(
+	{}
+	new Error("Unknown type for parameter alias option '@param': object")
 )

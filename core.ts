@@ -485,6 +485,12 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 			}
 			if (key[0] === '$') {
 				return handleFilterOperator(value, key, parentKey)
+			} else if (key[0] === '@') {
+				if (!isString(value)) {
+					throw new Error(`Parameter alias reference must be a string, got: ${typeof value}`)
+				}
+				const parameterAlias = `@${encodeURIComponent(value)}`
+				return addParentKey(parameterAlias, parentKey)
 			} else {
 				let keys = [key]
 				if (parentKey != null) {
@@ -581,8 +587,15 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 				}
 			break
 			default:
+				// Escape parameter aliases as primitives
+				if(option[0] === '@') {
+					if (!isPrimitive(value)) {
+						throw new Error(`Unknown type for parameter alias option '${option}': ${typeof value}`)
+					}
+					compiledValue = '' + escapeValue(value)
+				}
 				// Unknown values are left as-is
-				if (Array.isArray(value)) {
+				else if (Array.isArray(value)) {
 					compiledValue = join(value as string[])
 				} else if (isString(value)) {
 					compiledValue = value

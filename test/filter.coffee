@@ -30,6 +30,13 @@ testOperator = (operator) ->
 
 	testFilter(
 		createFilter
+			a: '@': 'b'
+			c: '@': 'd'
+		"(a eq @b) #{operator} (c eq @d)"
+	)
+
+	testFilter(
+		createFilter
 			a: 'b'
 			c: 'd'
 		"(a eq 'b') #{operator} (c eq 'd')"
@@ -267,6 +274,11 @@ testFilter(
 		b: 'c'
 		$eq: 'd'
 	"(a/b eq 'c') and (a eq 'd')"
+)
+
+testFilter(
+	'@': true
+	new Error('Parameter alias reference must be a string, got: boolean')
 )
 
 # Test raw strings
