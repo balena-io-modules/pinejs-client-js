@@ -4,10 +4,19 @@ _ = require 'lodash'
 testFilter = (input, output) ->
 	resource = 'test'
 	if not _.isError(output)
+		countOutput = resource + '/$count?$filter=' + output
 		output = resource + '?$filter=' + output
+	else
+		countOutput = output
 	it "should compile #{JSON.stringify(input)} to #{output}", ->
 		test output, {
 			resource
+			options:
+				$filter: input
+		}
+	it "should compile #{JSON.stringify(input)} to #{countOutput}", ->
+		test countOutput, {
+			resource: "#{resource}/$count"
 			options:
 				$filter: input
 		}
@@ -620,6 +629,23 @@ testFilter(
 		b:
 			$: ['c', 'd']
 	'a/b eq c/d'
+)
+
+# test $count
+testFilter(
+	$eq: [
+		$: 'a/$count'
+		true
+	]
+	new Error('/$count can only be used for top level or expanded resources')
+)
+
+testFilter(
+	$eq: [
+		$: [ 'a', '$count' ]
+		true
+	]
+	new Error('/$count can only be used for top level or expanded resources')
 )
 
 # Test functions
