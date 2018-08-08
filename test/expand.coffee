@@ -145,3 +145,31 @@ testExpand
 				$expand: 'c'
 				$select: [ 'd', 'e' ]
 	'a($expand=b($expand=c&$select=d,e))'
+
+
+
+testExpand(
+	'a/$count': $filter: b: 'c'
+	"a/$count($filter=b eq 'c')"
+)
+
+testExpand(
+	a: $expand: 'b/$count'
+	'a($expand=b/$count)'
+)
+
+testExpand(
+	a: $expand: [
+		'b/$count'
+		'c'
+	]
+	'a($expand=b/$count,c)'
+)
+
+testExpand
+	a:
+		$expand:
+			b:
+				$expand: 'c/$count'
+				$filter: d: 'e'
+	"a($expand=b($expand=c/$count&$filter=d eq 'e'))"

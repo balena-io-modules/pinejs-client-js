@@ -54,7 +54,7 @@ const isObject = (v: any): v is object =>
 const isPromiseRejector = (obj: any): obj is PinejsClientCoreFactory.PromiseRejector => {
 	return obj != null && obj.reject != null
 }
-const isValidOption = (key: string): key is keyof PinejsClientCoreFactory.ODataOptions => {
+const isValidOption = (key: string): key is keyof PinejsClientCoreFactory.ODataOptions & string => {
 	return key === '$filter' ||
 		key === '$expand' ||
 		key === '$orderby' ||
@@ -62,6 +62,9 @@ const isValidOption = (key: string): key is keyof PinejsClientCoreFactory.ODataO
 		key === '$skip' ||
 		key === '$select'
 }
+const encodedSlash = encodeURIComponent('/')
+const encodedCount = encodeURIComponent('$count')
+const trailingCountRegex = new RegExp(`(?:(?:${encodedSlash})|/)${encodedCount}$`)
 
 // Workaround the fact that `setTimeout` returns a different type in nodejs vs browsers
 // TODO: typescript 2.8 will introduce `ReturnType` as a better way to do this
@@ -193,8 +196,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 		return value === null || isString(value) || NumberIsFinite(value) || isBoolean(value) || isDate(value)
 	}
 
-	// Escape a resource name (string), or resource path (array)
-	const escapeResource = (resource: string | string[]) => {
+	const baseEscapeResource = (resource: string | string[]) => {
 		if (isString(resource)) {
 			return encodeURIComponent(resource)
 		} else if (Array.isArray(resource)) {
@@ -202,6 +204,21 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 		} else {
 			throw new Error('Not a valid resource: ' + typeof resource)
 		}
+	}
+
+	// Escape a resource name (string), or resource path (array)
+	const escapeResource = (resource: string | string[]) => {
+		const encodedResource = baseEscapeResource(resource)
+
+		if (trailingCountRegex.test(encodedResource)) {
+			throw new Error('/$count can only be used for top level or expanded resources')
+		}
+
+		return encodedResource
+	}
+
+	const escapeCountableResource = (resource: string | string[]) => {
+		return baseEscapeResource(resource).replace(trailingCountRegex, '/$count')
 	}
 
 	// Escape a primitive value
@@ -627,7 +644,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 		if (expandStr.length > 0) {
 			expandStr = `(${expandStr})`
 		}
-		expandStr = escapeResource(parentKey) + expandStr
+		expandStr = escapeCountableResource(parentKey) + expandStr
 		return expandStr
 	}
 	const handleExpandObject = (expand: PinejsClientCoreFactory.ResourceExpand) => {
@@ -663,7 +680,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 
 	const buildExpand = (expand: PinejsClientCoreFactory.Expand): string => {
 		if (isPrimitive(expand)) {
-			return escapeResource(expand)
+			return escapeCountableResource(expand)
 		} else if (Array.isArray(expand)) {
 			const expandStr = handleExpandArray(expand)
 			return join(expandStr)
@@ -817,7 +834,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 				if (params.resource == null) {
 					throw new Error('Either the url or resource must be specified.')
 				}
-				let url = params.resource
+				let url = escapeCountableResource(params.resource)
 
 				if (params.hasOwnProperty('id')) {
 					if (params.id == null) {
