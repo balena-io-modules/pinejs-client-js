@@ -449,6 +449,11 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 					const filterStr = escapeValue(filter)
 					return addParentKey(filterStr, parentKey, ' eq ')
 				} else if (Array.isArray(filter)) {
+					if (filter.every(isPrimitive)) {
+						const filterStr = handleFilterArray(filter, undefined, 1)
+						const inStr = bracketJoin(filterStr, ', ').join('')
+						return addParentKey(`(${inStr})`, parentKey, ' in ')
+					}
 					const filterStr = handleFilterArray(filter, parentKey, 1)
 					return bracketJoin(filterStr, ' or ')
 				} else if (isObject(filter)) {
