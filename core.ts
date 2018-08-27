@@ -673,7 +673,7 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 		return expands
 	}
 
-	const handleExpandArray = (expands: PinejsClientCoreFactory.ResourceExpand[]) => {
+	const handleExpandArray = (expands: Array<string | PinejsClientCoreFactory.ResourceExpand>) => {
 		if (expands.length < 1) {
 			throw new Error(`Expand arrays must have at least 1 elements, got: ${JSON.stringify(expands)}`)
 		}
@@ -1045,7 +1045,7 @@ export declare namespace PinejsClientCoreFactory {
 
 	export interface ResourceExpand extends ResourceObj<ODataOptions> {}
 
-	export type Expand = string | ResourceExpand[] | ResourceExpand
+	export type Expand = string | ResourceExpand | Array<string | ResourceExpand>
 
 	export type OrderBy = string | string[] | {
 		[index: string]: 'asc' | 'desc'
