@@ -557,6 +557,9 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 		if (isString(orderby)) {
 			return orderby
 		} else if (Array.isArray(orderby)) {
+			if (orderby.length === 0) {
+				throw new Error(`'$orderby' arrays have to have at least 1 element`)
+			}
 			const result = orderby.map((value) => {
 				if (Array.isArray(value)) {
 					throw new Error(`'$orderby' cannot have nested arrays`)
@@ -602,8 +605,14 @@ export function PinejsClientCoreFactory(Promise: PinejsClientCoreFactory.Promise
 			break
 			case '$select':
 				const select = value
-				if (isString(select) || Array.isArray(select)) {
-					compiledValue = join(select as string | string[])
+				if (isString(select)) {
+					compiledValue = join(select)
+				}
+				else if (Array.isArray(select)) {
+					if (select.length === 0) {
+						throw new Error(`'${option}' arrays have to have at least 1 element`)
+					}
+					compiledValue = join(select as string[])
 				} else {
 					throw new Error(`'${option}' option has to be either a string or array`)
 				}

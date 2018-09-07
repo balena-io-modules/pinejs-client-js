@@ -61,6 +61,11 @@ testOrderBy(
 )
 
 testOrderBy(
+	[]
+	new Error("'$orderby' arrays have to have at least 1 element")
+)
+
+testOrderBy(
 	1
 	new Error("'$orderby' option has to be either a string, array, or object")
 )
@@ -96,6 +101,11 @@ testSelect(
 testSelect(
 	[ 'a', 'b' ]
 	'a,b'
+)
+
+testSelect(
+	[]
+	new Error("'$select' arrays have to have at least 1 element")
 )
 
 testSelect(
