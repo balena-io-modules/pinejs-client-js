@@ -66,10 +66,6 @@ const encodedSlash = encodeURIComponent('/')
 const encodedCount = encodeURIComponent('$count')
 const trailingCountRegex = new RegExp(`(?:(?:${encodedSlash})|/)${encodedCount}$`)
 
-// Workaround the fact that `setTimeout` returns a different type in nodejs vs browsers
-// TODO: typescript 2.8 will introduce `ReturnType` as a better way to do this
-const _setTimeoutResult = false as true && setTimeout(() => {}, 0)
-
 type PollOnObj = {
 	unsubscribe: () => void
 }
@@ -83,7 +79,7 @@ class Poll<PromiseResult extends PromiseLike<number | PinejsClientCoreFactory.An
 	}
 
 	private stopped = false
-	private pollInterval?: typeof _setTimeoutResult
+	private pollInterval?: ReturnType<typeof setTimeout>
 
 	private requestFn: null | (() => PromiseResult)
 
