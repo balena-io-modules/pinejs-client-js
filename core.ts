@@ -949,7 +949,7 @@ export declare namespace PinejsClientCoreFactory {
 
 		compile(params: Params): string
 
-		request(params: Params, overrides: { method?: ODataMethod }): PromiseObj
+		request(params: Params, overrides?: { method?: ODataMethod }): PromiseObj
 
 		abstract _request(
 			params: {
