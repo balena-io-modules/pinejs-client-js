@@ -1087,10 +1087,7 @@ export declare namespace PinejsClientCoreFactory {
 		body?: AnyObject
 		passthrough?: AnyObject
 		passthroughByMethod?: {
-			GET: AnyObject
-			POST: AnyObject
-			PATCH: AnyObject
-			DELETE: AnyObject
+			[method in ODataMethod]: AnyObject
 		}
 		options?: ODataOptions
 	}
