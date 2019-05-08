@@ -1,0 +1,481 @@
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: f50e3d25ffab0b147a5008016da815454d8dbbf9
+    subject: Fix `passthroughByMethod` typing
+  date: "2019-01-22T11:28:59Z"
+  version: 5.3.6
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 918bdaab09ddb265eb02fed6745c5a03cbc6b6c5
+    subject: Make the abstract `overrides` signature optional
+  date: "2018-10-18T09:55:44Z"
+  version: 5.3.5
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+      signed-off-by: Pagan Gazzard <page@resin.io>
+    hash: 375ffac6da15f19be9a5776528a3764c1ab9fab7
+    subject: Switch to using `ReturnType` now that we can
+  date: "2018-09-11T12:58:36Z"
+  version: 5.3.4
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+      signed-off-by: Pagan Gazzard <page@resin.io>
+    hash: ff0524342af496beb651f279842170a935295636
+    subject: Throw errors on empty $select or $orderby arrays as they're invalid
+  date: "2018-09-07T14:40:36Z"
+  version: 5.3.3
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+      signed-off-by: Pagan Gazzard <page@resin.io>
+    hash: d1a3b1f3bd918c21d2d489f17cc37a8ae3ccb72a
+    subject: Fix expand type
+  date: "2018-08-27T10:46:18Z"
+  version: 5.3.2
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+      signed-off-by: Pagan Gazzard <page@resin.io>
+    hash: b8a8305aa68fa057a07fccc8e75a018a5326d545
+    subject: Use a native in for `$in` when all elements are primitive
+  date: "2018-08-15T18:04:30Z"
+  version: 5.3.1
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: minor
+      signed-off-by: Pagan Gazzard <page@resin.io>
+    hash: 6046548aa8e5e4b44f6c20bbb1fd617253a18ddf
+    subject: Explicitly allow suffixing `/$count` onto resources
+  date: "2018-08-08T19:55:40Z"
+  version: 5.3.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: minor
+    hash: bc6770375fd0f74d775e1473c84651b52f05e28d
+    subject: Add support for parameter aliases
+  date: "2018-06-14T19:24:44Z"
+  version: 5.2.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: minor
+    hash: 243353f281884543a0fc24932a6b3c124f2e777d
+    subject: Remove unnecessarily nested brackets.
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: minor
+    hash: 7a1e53912688f51e0e44ff4d3f1880deaacaeaaf
+    subject: Remove unnecessary brackets from function call parameters.
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: minor
+    hash: ef7b7393f87dac2a97546774028ec33a8fa327cf
+    subject: Remove unnecessary brackets from expands with an empty options object.
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 66f63b07ba837e59850f14dbca5d857de3573e87
+    subject: Exclude `node_modules` from tsconfig.json
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: bd3db3abc53e8c70ac729f60290c11ca9ffbdd86
+    subject: Skip lib checks in tsconfig.json
+  date: "2018-05-17T17:07:26Z"
+  version: 5.1.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: fdb24967256476eec09e3596e9a5f266265ca75a
+    subject: Switch to using generated declaration files for types
+  date: "2018-05-01T08:07:11Z"
+  version: 5.0.3
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: eb7c1052d3b9f737ee454ce595f348baf37ddc1d
+    subject: Add node 10 to the circleci tests
+  date: "2018-04-30T21:08:21Z"
+  version: 5.0.2
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: d2550e0292e2328c717bff470a14650c79354418
+    subject: Allow numbers and booleans for custom options.coffee
+  date: "2018-03-30T09:54:34Z"
+  version: 5.0.1
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: ca4631f300a6b785b3a071465089484ba7210d71
+    subject: Remove bower.json
+  - author: Pagan Gazzard
+    body: ""
+    hash: 4784892cb5b3185474274543609a31d0c63d68fc
+    subject: Separate the angular backend to pinejs-client-angular
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: minor
+    hash: 3d0e14ce1e99b5f5e1d65eebfd28c92080568a21
+    subject: Convert core to typescript
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: b1c8c5b05792d2cf3ebd7bfb2b9b91eb7f4e6b4d
+    subject: Remove deprecated automatic $ prefixing for `options`, and deprecate
+      `customOptions`
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 0d12699aab2febd41e7204beb71817ff3d9e20f8
+    subject: Move type dependencies from dev to normal dependencies, so they are available
+      to users of this module.
+  - author: Pagan Gazzard
+    body: ""
+    hash: 8a0602ca1851cba813e75ec87c6d4dd7f6211951
+    subject: Port "Filters can now accept values of different base types."
+  - author: Pagan Gazzard
+    body: ""
+    hash: 92ae2f191620c061a5d1af9d9e40d5cdffe49622
+    subject: Port "Add 'subscribe' method for repeated requests for the same resource"
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: 64611326cf50cd4a327f45ab4655403a6ef625ea
+    subject: Switch to a commonjs module in preference to UMD
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: c7b12cac5c1dcabf294fab643570e817f9ae8a20
+    subject: Include the `$` in error messages to avoid potential confusion
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: 0012ae5c70986aee4076b3ff504a5f3cc2561b57
+    subject: Switch to a named `PinejsClientCoreFactory` export, rather than directly
+      exporting the function
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: eeb464e2133d07f685da77d305e926abf9ad54ed
+    subject: Separate the request backend to pinejs-client-request
+  - author: Pagan Gazzard
+    body: ""
+    hash: 238bcfffe48aba91a94ac7124efba3f643cbc224
+    subject: Update README
+  - author: Pagan Gazzard
+    body: ""
+    hash: a3bc30d4239207ad7afed35368097ac5967fbc91
+    subject: Fix the `pollInterval` typing for nodejs vs browsers
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: cf30cde705ece4a49726e4cb799bc66fb185bf97
+    subject: Remove deprecated expand behaviour
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: 309dd3bc5a4240094e6e34c055d436cf54bfaf5b
+    subject: Remove deprecated `customOptions`
+  - author: Pagan Gazzard
+    body: ""
+    hash: 97aed40b91909adcf3276d7911409651431dfa77
+    subject: Review comments
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: 41b9c6544ad0583511e9a976f9cd6db3bb082012
+    subject: Switch to `Array.prototype.map` dropping support for some very old browsers.
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: af5473cca5e3bfd86c08e8eefc79e5b612ffe624
+    subject: Stop requiring that an `isArray` function be provided and instead use
+      `Array.isArray`, drops supports for some very old browsers.
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: ac071e274156d8059323ca9596abdd225008a8c4
+    subject: Stop requiring that an `isNumber` function be provided and instead use
+      `Number.isFinite` semantics for number checking
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: c3133ea74d67230595a388b3bdef3b477d0b2dea
+    subject: Stop requiring that an `isString` function be provided and instead use
+      a simple check that requires only primitive strings be used (not wrapped in
+      a String object)
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: 75de5056c65bfbb5aeb6de65fa75e4396b653e00
+    subject: Stop requiring that an `isBoolean` function be provided and instead use
+      a simple check that requires only primitive booleans be used (not wrapped in
+      a Boolean object)
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: 2f69f66a2fdf24a79c2de3ce15601d7f30d1eef4
+    subject: Stop requiring an `isDate` function be provided
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: major
+    hash: 474cb4398a155aadf287e75c3253655c0170e2e6
+    subject: Stop requiring a utils object be provided as the final `isObject` function
+      is now handled internally.
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: cb5583eff3d2b46e0eb57e891c9aa2443a01d8e0
+    subject: Change to the subscribe pollInterval to be the amount of time between
+      the response of one poll until the start of the next, avoiding cases where we
+      can have multiple ongoing requests if the interval is lower than the response
+      time.
+  date: "2018-03-29T01:44:30Z"
+  version: 5.0.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: edab6abb0f3c7c11b328f71338d3d726f234d18a
+    subject: Switch to circleci and enable auto-publishing
+  date: "2018-03-14T16:49:34Z"
+  version: 4.3.2
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 6d6029a085c95eca1813f27d75697d0145e3b13a
+    subject: Fix expand typings, by making sure that the ODataOptions are only valid
+      within a resource expand
+  date: "2018-03-08T08:05:59Z"
+  version: 4.3.1
+- commits:
+  - author: Lucian Buzzo
+    body: |-
+      The subscribe method takes the same parameters as the get method and returns an
+      event emitter. The emitter will periodically run the request specified in the
+      parameters and emit the response.
+      Connects to #50
+    footers:
+      change-type: minor
+    hash: d097a58cad8a9cb073417a2a0827399f28bf9753
+    subject: Add 'subscribe' method for repeated requests for the same resource
+  date: "2018-01-29T06:04:40Z"
+  version: 4.3.0
+- commits:
+  - author: Giovanni Garufi
+    body: |-
+      In particular null | Date |boolean have been added.
+      Previously it would only accept number | string
+    footers:
+      change-type: patch
+    hash: ccb76ebf460ab229fbd864da2a8b0b8b31a5e60e
+    subject: Filters can now accept values of different base types.
+  date: "2017-11-17T19:38:47Z"
+  version: 4.2.4
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: ec5bf1f1020294166e83a397b93d552fb45ec0b9
+    subject: Fix typing for request, previously no class type was defined due to exporting
+      a class expression.
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 557a96e668c98adb49e434e528f405700a5c9b7c
+    subject: Add a .travis.yml to test on travisci
+  date: "2017-10-23T16:49:32Z"
+  version: 4.2.3
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 20f709ad10e056b6b7e11324a792d24afe862c6b
+    subject: Allow passing in the promise types in order to get a correctly typed
+      promise returned
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 79c36f143f7f70a20b934104310ccd74aff6a5e3
+    subject: Fix type of `_request` in request.d.ts
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 984699e5b618d252daccae60dc0a3aa8082fb74b
+    subject: Fix type for the Promise.reject
+  date: "2017-10-02T15:48:35Z"
+  version: 4.2.2
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: f40f59803e61fdad8246a3f7ed21590defa6e9bf
+    subject: Fixed util typings
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 9f55c00728ae8b55ed39a4fbaa3f65056026fe6c
+    subject: Fix clone typings
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 4ea2928c64185d0794f5f92dde34b540cba96e73
+    subject: Export the AnyObject type so it can be used for typing that we know the
+      response will match it
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 194647abe1d0a392a3f13264fba2c81757f4686a
+    subject: Merge properties into FilterObj directly, as the & merging doesn't work
+      as expected
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 4cf59b8e649156c075f5ad3fc2e227afa03f2a36
+    subject: Export a lot more of the types so they can be used by external typescript
+  - author: Pagan Gazzard
+    body: ""
+    footers:
+      change-type: patch
+    hash: 62ff0cd11b7588b1f22ee835cf17b6ab7b154267
+    subject: Correctly type _request as a member function rather than a property
+  date: "2017-09-28T09:20:12Z"
+  version: 4.2.1
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    hash: ad1c0b3035107c008a04138e8491838021b0ad98
+    subject: Allow options starting with $ to be used, and deprecating options that
+      do not have the prefix
+  date: "2017-09-26T17:18:20Z"
+  version: 4.2.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    hash: ba6da62313823f72c811d1c8e1b7427c11f84c4e
+    subject: Fix types definition to make `backendParams` optional
+  date: "2017-08-21T16:24:33Z"
+  version: 4.1.1
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    hash: 8db0d36f264d333bfc163ce46156e6e747b508aa
+    subject: Add types for request and core.
+  date: "2017-06-14T21:57:20Z"
+  version: 4.1.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    hash: e1ad6edefeedc950051b7adf452f11480aacdf48
+    subject: Add support for properly validating the contents of `$orderby`, `$select`,
+      `$skip`, and `$top`
+  - author: Pagan Gazzard
+    body: ""
+    hash: 572470aec93d873a210db81613530995cccb9157
+    subject: Improve the orderby support
+  - author: Tim Perry
+    body: ""
+    hash: 4ebaa945eeb5ba96171c4044f14aef149811f387
+    subject: v3.1.0
+  date: "2017-04-04T23:15:09Z"
+  version: 4.0.0
+- commits:
+  - author: Tim Perry
+    body: ""
+    hash: f042490e8d2dd0e1eecef66c12f66f940d2c2854
+    subject: Allow empty expand objects
+  date: "2017-03-12T22:27:35Z"
+  version: 3.1.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    hash: 6eec6e358015545d30c40b331cf7acace12ec9ce
+    subject: Add support for dates
+  date: "2016-12-08T01:24:03Z"
+  version: 3.0.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    hash: ab8cd2ba2ba255858f631caaa7ae8a670e640850
+    subject: Update dev dependencies
+  - author: Pagan Gazzard
+    body: ""
+    hash: 3280e6d6ad3727c4e2d4702817a02aac7d017cf7
+    subject: Add linting for tests as well.
+  - author: Pagan Gazzard
+    body: ""
+    hash: 459e8951d403e77a422cbb99b839d9a23cdfdc74
+    subject: Throw an error if the id property is set but is empty.
+  date: "2016-09-30T20:30:17Z"
+  version: 2.4.0
+- commits:
+  - author: Pagan Gazzard
+    body: ""
+    hash: 95c43ebd3c76950be063733cfffd55a87e592d7c
+    subject: Add resin-lint
+  date: "2016-06-22T20:19:19Z"
+  version: 2.3.2
