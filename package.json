@@ -13,22 +13,33 @@
     "Lorenzo Stoakes <lorenzo@resin.io>"
   ],
   "scripts": {
-    "lint": "resin-lint test",
+    "lint:coffee": "resin-lint test/",
+    "lint:typescript": "resin-lint --typescript core.ts",
+    "lint": "npm run lint:coffee && npm run lint:typescript",
     "pretest": "npm run lint && npm run-script prepublishOnly",
     "test": "mocha",
     "prepublish": "require-npm4-to-publish",
-    "prepublishOnly": "tsc"
+    "prepublishOnly": "tsc",
+    "prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"*.ts\""
   },
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "bluebird": "^3.5.2",
-    "chai": "^4.1.2",
+    "bluebird": "^3.5.4",
+    "chai": "^4.2.0",
     "coffee-script": "~1.12.7",
-    "lodash": "^4.17.5",
-    "mocha": "^5.2.0",
+    "husky": "^2.2.0",
+    "lint-staged": "^8.1.6",
+    "lodash": "^4.17.11",
+    "mocha": "^6.1.4",
+    "prettier": "^1.17.0",
     "require-npm4-to-publish": "^1.0.0",
-    "resin-lint": "^1.5.7",
-    "typescript": "^3.0.3"
+    "resin-lint": "^2.0.1",
+    "typescript": "^3.4.5"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   }
 }
