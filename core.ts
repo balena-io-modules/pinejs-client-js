@@ -200,6 +200,30 @@ class Poll<
 	}
 }
 
+const transformGetResult = (params: PinejsClientCoreFactory.Params) => {
+	const singular = isObject(params) && params.id != null;
+
+	return (data: { d: any[] }): PinejsClientCoreFactory.PromiseResultTypes => {
+		if (!isObject(data)) {
+			throw new Error(`Response was not a JSON object: '${typeof data}'`);
+		}
+		if (data.d == null) {
+			throw new Error(
+				"Invalid response received, the 'd' property is missing.",
+			);
+		}
+		if (singular) {
+			if (data.d.length > 1) {
+				throw new Error(
+					'Returned multiple results when only one was expected.',
+				);
+			}
+			return data.d[0];
+		}
+		return data.d;
+	};
+};
+
 const isPrimitive = (
 	value?: unknown,
 ): value is null | string | number | boolean | Date => {
@@ -899,27 +923,8 @@ abstract class PinejsClientCoreTemplate<
 	}
 
 	get(params: PinejsClientCoreFactory.Params): PromiseResult {
-		const singular = isObject(params) && params.id != null;
 		return this.request(params, { method: 'GET' }).then(
-			(data: { d: any[] }) => {
-				if (!isObject(data)) {
-					throw new Error(`Response was not a JSON object: '${typeof data}'`);
-				}
-				if (data.d == null) {
-					throw new Error(
-						"Invalid response received, the 'd' property is missing.",
-					);
-				}
-				if (singular) {
-					if (data.d.length > 1) {
-						throw new Error(
-							'Returned multiple results when only one was expected.',
-						);
-					}
-					return data.d[0];
-				}
-				return data.d;
-			},
+			transformGetResult(params),
 		) as PromiseResult;
 	}
 
@@ -928,7 +933,6 @@ abstract class PinejsClientCoreTemplate<
 	}
 
 	subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
-		const singular = isObject(params) && params.id != null;
 		let pollInterval: PinejsClientCoreFactory.SubscribeParamsObj['pollInterval'];
 
 		// precompile the URL string to improve performance
@@ -940,27 +944,11 @@ abstract class PinejsClientCoreTemplate<
 			pollInterval = params.pollInterval;
 		}
 
+		const transformFn = transformGetResult(params);
+
 		const requestFn = () => {
 			return this.request(params, { method: 'GET' }).then(
-				(data: { d: any[] }) => {
-					if (!isObject(data)) {
-						throw new Error(`Response was not a JSON object: '${typeof data}'`);
-					}
-					if (data.d == null) {
-						throw new Error(
-							"Invalid response received, the 'd' property is missing.",
-						);
-					}
-					if (singular) {
-						if (data.d.length > 1) {
-							throw new Error(
-								'Returned multiple results when only one was expected.',
-							);
-						}
-						return data.d[0];
-					}
-					return data.d;
-				},
+				transformFn,
 			) as PromiseResult;
 		};
 
