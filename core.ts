@@ -277,6 +277,17 @@ const escapeValue = (value: null | string | number | boolean | Date) => {
 	}
 };
 
+const escapeParameterAlias = (
+	value: PinejsClientCoreFactory.Filter,
+): string => {
+	if (!isString(value)) {
+		throw new Error(
+			`Parameter alias reference must be a string, got: ${typeof value}`,
+		);
+	}
+	return `@${encodeURIComponent(value)}`;
+};
+
 const join = (strOrArray: string | string[], separator = ',') => {
 	if (isString(strOrArray)) {
 		return strOrArray;
@@ -609,12 +620,7 @@ const handleFilterObject = (
 		if (key[0] === '$') {
 			return handleFilterOperator(value, key, parentKey);
 		} else if (key[0] === '@') {
-			if (!isString(value)) {
-				throw new Error(
-					`Parameter alias reference must be a string, got: ${typeof value}`,
-				);
-			}
-			const parameterAlias = `@${encodeURIComponent(value)}`;
+			const parameterAlias = escapeParameterAlias(value);
 			return addParentKey(parameterAlias, parentKey);
 		} else {
 			let keys = [key];
@@ -983,10 +989,18 @@ abstract class PinejsClientCoreTemplate<
 			let url = escapeCountableResource(params.resource);
 
 			if (params.hasOwnProperty('id')) {
-				if (params.id == null) {
+				const { id } = params;
+				if (id == null) {
 					throw new Error('If the id property is set it must be non-null');
 				}
-				url += `(${escapeValue(params.id)})`;
+				let value: string;
+
+				if (isObject(id) && '@' in id) {
+					value = escapeParameterAlias(id['@']);
+				} else {
+					value = '' + escapeValue(id);
+				}
+				url += `(${value})`;
 			}
 
 			let queryOptions: string[] = [];
@@ -1155,6 +1169,8 @@ export declare namespace PinejsClientCoreFactory {
 	type FilterFunctionValue = Filter;
 
 	export interface FilterObj extends ResourceObj<Filter | undefined> {
+		'@'?: string;
+
 		$raw?: RawFilter;
 
 		$?: string | string[];
@@ -1261,7 +1277,13 @@ export declare namespace PinejsClientCoreFactory {
 
 	export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-	type ResourceId = string | number | Date;
+	type ResourceId =
+		| string
+		| number
+		| Date
+		| {
+				'@': string;
+		  };
 
 	type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';
 

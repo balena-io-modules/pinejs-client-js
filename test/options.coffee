@@ -1,6 +1,16 @@
 { test } = require './test'
 _ = require 'lodash'
 
+testId = (input, output) ->
+	resource = 'test'
+	if not _.isError(output)
+		output = "#{resource}(#{output})"
+	it "should compile #{JSON.stringify(input)} to #{output}", ->
+		test output, {
+			resource
+			id: input
+		}
+
 testOption = (option, input, output) ->
 	resource = 'test'
 	if not _.isError(output)
@@ -19,6 +29,9 @@ testSelect = _.partial(testOption, '$select')
 testCustom = _.partial(testOption, 'custom')
 testParam = _.partial(testOption, '@param')
 
+testId(1, '1')
+testId('Bob', "'Bob'")
+testId({ '@': 'param' }, '@param')
 
 testOrderBy(
 	'a'
