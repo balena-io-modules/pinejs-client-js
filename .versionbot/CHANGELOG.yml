@@ -1,4 +1,14 @@
 - commits:
+    - subject: Add automatic formatting via prettier
+      hash: a345d32f295acfa8ed4e5b815c24e1e7fdb335f2
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.3.8
+  date: 2019-05-09T17:38:43.260Z
+- commits:
     - subject: 'Remove node 4 build, add node 12'
       hash: 8d549277d80746feadbdd8a6bba37eb076270440
       body: ''
