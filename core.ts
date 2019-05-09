@@ -866,6 +866,19 @@ const validParams: PinejsClientCoreFactory.SharedParam[] = [
 	'passthroughByMethod',
 ];
 
+export interface PreparedFn<
+	T extends {
+		[index: string]: null | string | number | boolean | Date;
+	},
+	U
+> {
+	(
+		parameterAliases?: T,
+		body?: PinejsClientCoreFactory.ParamsObj['body'],
+		passthrough?: PinejsClientCoreFactory.ParamsObj['passthrough'],
+	): U;
+}
+
 abstract class PinejsClientCoreTemplate<
 	T,
 	PromiseObj extends PromiseLike<{}> = Promise<{}>,
@@ -941,22 +954,10 @@ abstract class PinejsClientCoreTemplate<
 	subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
 		let pollInterval: PinejsClientCoreFactory.SubscribeParamsObj['pollInterval'];
 
-		// precompile the URL string to improve performance
-		const compiledUrl = this.compile(params);
-		if (isString(params)) {
-			params = compiledUrl;
-		} else {
-			params.url = compiledUrl;
+		const requestFn = this.prepare(params);
+		if (!isString(params)) {
 			pollInterval = params.pollInterval;
 		}
-
-		const transformFn = transformGetResult(params);
-
-		const requestFn = () => {
-			return this.request(params, { method: 'GET' }).then(
-				transformFn,
-			) as PromiseResult;
-		};
 
 		return new Poll(requestFn, pollInterval);
 	}
@@ -977,7 +978,87 @@ abstract class PinejsClientCoreTemplate<
 		return this.request(params, { method: 'DELETE' });
 	}
 
-	compile(params: PinejsClientCoreFactory.Params) {
+	prepare<
+		T extends {
+			[index: string]: null | string | number | boolean | Date;
+		}
+	>(
+		params: string | (PinejsClientCoreFactory.ParamsObj & { method?: 'GET' }),
+	): PreparedFn<T, PromiseResult>;
+	prepare<
+		T extends {
+			[index: string]: null | string | number | boolean | Date;
+		}
+	>(
+		params: PinejsClientCoreFactory.ParamsObj & {
+			method: Exclude<PinejsClientCoreFactory.ParamsObj['method'], 'GET'>;
+		},
+	): PreparedFn<T, PromiseObj>;
+	prepare<
+		T extends {
+			[index: string]: null | string | number | boolean | Date;
+		}
+	>(
+		params: PinejsClientCoreFactory.Params,
+	): PreparedFn<T, PromiseObj | PromiseResult> {
+		// precompile the URL string to improve performance
+		const compiledUrl = this.compile(params);
+		const paramsObj: PinejsClientCoreFactory.ParamsObj = isString(params)
+			? { method: 'GET' }
+			: params;
+		const urlQueryParamsStr = compiledUrl.indexOf('?') === -1 ? '?' : '&';
+		if (paramsObj.method == null) {
+			paramsObj.method = 'GET';
+		} else {
+			paramsObj.method = paramsObj.method.toUpperCase() as typeof paramsObj.method;
+		}
+		const { body: defaultBody } = paramsObj;
+		const { passthrough: defaultPassthrough } = paramsObj;
+
+		const transformFn =
+			paramsObj.method === 'GET' ? transformGetResult(params) : undefined;
+
+		return (parameterAliases, body, passthrough) => {
+			if (body != null) {
+				paramsObj.body = {
+					...defaultBody,
+					...body,
+				};
+			} else if (defaultBody != null) {
+				paramsObj.body = { ...defaultBody };
+			}
+			if (passthrough != null) {
+				paramsObj.passthrough = {
+					...defaultPassthrough,
+					...passthrough,
+				};
+			} else if (defaultPassthrough != null) {
+				paramsObj.passthrough = { ...defaultPassthrough };
+			}
+			if (parameterAliases != null) {
+				paramsObj.url =
+					compiledUrl +
+					urlQueryParamsStr +
+					mapObj(parameterAliases, (value, option) => {
+						if (!isPrimitive(value)) {
+							throw new Error(
+								`Unknown type for parameter alias option '${option}': ${typeof value}`,
+							);
+						}
+						return `@${option}=${escapeValue(value)}`;
+					}).join('&');
+			} else {
+				paramsObj.url = compiledUrl;
+			}
+			const result = this.request(paramsObj);
+			if (transformFn != null) {
+				return result.then(transformFn) as PromiseResult;
+			}
+			return result;
+		};
+	}
+
+	compile(params: PinejsClientCoreFactory.Params): string {
 		if (isString(params)) {
 			return params;
 		} else if (params.url != null) {
@@ -1306,6 +1387,7 @@ export declare namespace PinejsClientCoreFactory {
 	export type Params = ParamsObj | string;
 
 	interface SubscribeParamsObj extends ParamsObj {
+		method?: 'GET';
 		pollInterval?: number;
 	}
 	export type SubscribeParams = SubscribeParamsObj | string;
