@@ -1,6 +1,6 @@
 {
   "name": "pinejs-client-core",
-  "version": "5.3.9",
+  "version": "5.3.10",
   "description": "This module provides the core tools to enable easier interaction with the pinejs API.",
   "main": "core.js",
   "types": "core.d.ts",

@@ -1,4 +1,14 @@
 - commits:
+    - subject: Deduplicate transformation of GET results
+      hash: dd856e24072f652684adf63af97408ee0ba7389c
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.3.10
+  date: 2019-05-10T09:44:09.422Z
+- commits:
     - subject: 'Simplify how we expose types, which means `subscribe` is now exposed'
       hash: f81e0cc59e75e0f9ffc71d9f122b9cfab9c05165
       body: ''
