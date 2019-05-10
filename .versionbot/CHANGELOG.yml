@@ -1,4 +1,14 @@
 - commits:
+    - subject: Add support for parameter aliases in resource ids
+      hash: a4e6a640a3ced56bcd3ef7bf22770338e089a90d
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 5.4.0
+  date: 2019-05-10T09:57:46.863Z
+- commits:
     - subject: Deduplicate transformation of GET results
       hash: dd856e24072f652684adf63af97408ee0ba7389c
       body: ''
