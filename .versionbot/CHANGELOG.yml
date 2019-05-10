@@ -1,4 +1,14 @@
 - commits:
+    - subject: 'Simplify how we expose types, which means `subscribe` is now exposed'
+      hash: f81e0cc59e75e0f9ffc71d9f122b9cfab9c05165
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.3.9
+  date: 2019-05-10T08:57:16.276Z
+- commits:
     - subject: Add automatic formatting via prettier
       hash: a345d32f295acfa8ed4e5b815c24e1e7fdb335f2
       body: ''
