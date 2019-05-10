@@ -200,721 +200,747 @@ class Poll<
 	}
 }
 
-export function PinejsClientCoreFactory(
-	Promise: PinejsClientCoreFactory.PromiseRejector,
-): typeof PinejsClientCoreFactory.PinejsClientCore {
-	if (!isPromiseRejector(Promise)) {
-		throw new Error('The Promise implementation must support .reject');
+const isPrimitive = (
+	value?: unknown,
+): value is null | string | number | boolean | Date => {
+	return (
+		value === null ||
+		isString(value) ||
+		NumberIsFinite(value) ||
+		isBoolean(value) ||
+		isDate(value)
+	);
+};
+
+const baseEscapeResource = (resource: string | string[]) => {
+	if (isString(resource)) {
+		return encodeURIComponent(resource);
+	} else if (Array.isArray(resource)) {
+		return resource.map(encodeURIComponent).join('/');
+	} else {
+		throw new Error('Not a valid resource: ' + typeof resource);
+	}
+};
+
+// Escape a resource name (string), or resource path (array)
+const escapeResource = (resource: string | string[]) => {
+	const encodedResource = baseEscapeResource(resource);
+
+	if (trailingCountRegex.test(encodedResource)) {
+		throw new Error(
+			'/$count can only be used for top level or expanded resources',
+		);
 	}
 
-	const isPrimitive = (
-		value?: any,
-	): value is null | string | number | boolean | Date => {
-		return (
-			value === null ||
-			isString(value) ||
-			NumberIsFinite(value) ||
-			isBoolean(value) ||
-			isDate(value)
-		);
-	};
+	return encodedResource;
+};
 
-	const baseEscapeResource = (resource: string | string[]) => {
-		if (isString(resource)) {
-			return encodeURIComponent(resource);
-		} else if (Array.isArray(resource)) {
-			return resource.map(encodeURIComponent).join('/');
-		} else {
-			throw new Error('Not a valid resource: ' + typeof resource);
-		}
-	};
+const escapeCountableResource = (resource: string | string[]) => {
+	return baseEscapeResource(resource).replace(trailingCountRegex, '/$count');
+};
 
-	// Escape a resource name (string), or resource path (array)
-	const escapeResource = (resource: string | string[]) => {
-		const encodedResource = baseEscapeResource(resource);
+// Escape a primitive value
+const escapeValue = (value: null | string | number | boolean | Date) => {
+	if (isString(value)) {
+		value = value.replace(/'/g, "''");
+		return `'${encodeURIComponent(value)}'`;
+	} else if (isDate(value)) {
+		return `datetime'${value.toISOString()}'`;
+	} else if (value === null || NumberIsFinite(value) || isBoolean(value)) {
+		return value;
+	} else {
+		throw new Error('Not a valid value: ' + typeof value);
+	}
+};
 
-		if (trailingCountRegex.test(encodedResource)) {
-			throw new Error(
-				'/$count can only be used for top level or expanded resources',
-			);
-		}
+const join = (strOrArray: string | string[], separator = ',') => {
+	if (isString(strOrArray)) {
+		return strOrArray;
+	} else if (Array.isArray(strOrArray)) {
+		return strOrArray.join(separator);
+	} else {
+		throw new Error('Expected a string or array, got: ' + typeof strOrArray);
+	}
+};
 
-		return encodedResource;
-	};
-
-	const escapeCountableResource = (resource: string | string[]) => {
-		return baseEscapeResource(resource).replace(trailingCountRegex, '/$count');
-	};
-
-	// Escape a primitive value
-	const escapeValue = (value: null | string | number | boolean | Date) => {
-		if (isString(value)) {
-			value = value.replace(/'/g, "''");
-			return `'${encodeURIComponent(value)}'`;
-		} else if (isDate(value)) {
-			return `datetime'${value.toISOString()}'`;
-		} else if (value === null || NumberIsFinite(value) || isBoolean(value)) {
-			return value;
-		} else {
-			throw new Error('Not a valid value: ' + typeof value);
-		}
-	};
-
-	const join = (strOrArray: string | string[], separator = ',') => {
-		if (isString(strOrArray)) {
-			return strOrArray;
-		} else if (Array.isArray(strOrArray)) {
-			return strOrArray.join(separator);
-		} else {
-			throw new Error('Expected a string or array, got: ' + typeof strOrArray);
-		}
-	};
-
-	// Join together a bunch of statements making sure the whole lot is correctly parenthesised
-	const bracketJoin = (arr: string[][], separator: string) => {
-		if (arr.length === 1) {
-			return arr[0];
-		}
-		const resultArr: string[] = [];
-		arr
-			.map(subArr => {
-				if (subArr.length > 1) {
-					return `(${subArr.join('')})`;
-				}
-				return subArr[0];
-			})
-			.forEach((str, i) => {
-				if (i !== 0) {
-					resultArr.push(separator);
-				}
-				resultArr.push(str);
-			});
-		return resultArr;
-	};
-
-	// Add the parentKey + operator if (it exists.) {
-	const addParentKey = (
-		filter: string[] | string | boolean | number | null,
-		parentKey?: string[],
-		operator = ' eq ',
-	) => {
-		if (parentKey != null) {
-			if (Array.isArray(filter)) {
-				if (filter.length === 1) {
-					filter = filter[0];
-				} else {
-					filter = `(${filter.join('')})`;
-				}
-			} else {
-				filter = `${filter}`;
+// Join together a bunch of statements making sure the whole lot is correctly parenthesised
+const bracketJoin = (arr: string[][], separator: string) => {
+	if (arr.length === 1) {
+		return arr[0];
+	}
+	const resultArr: string[] = [];
+	arr
+		.map(subArr => {
+			if (subArr.length > 1) {
+				return `(${subArr.join('')})`;
 			}
-			return [escapeResource(parentKey), operator, filter];
-		}
+			return subArr[0];
+		})
+		.forEach((str, i) => {
+			if (i !== 0) {
+				resultArr.push(separator);
+			}
+			resultArr.push(str);
+		});
+	return resultArr;
+};
+
+// Add the parentKey + operator if it exists.
+const addParentKey = (
+	filter: string[] | string | boolean | number | null,
+	parentKey?: string[],
+	operator = ' eq ',
+) => {
+	if (parentKey != null) {
 		if (Array.isArray(filter)) {
-			return filter;
-		}
-		return [`${filter}`];
-	};
-
-	const applyBinds = (
-		filter: string,
-		params: { [index: string]: PinejsClientCoreFactory.Filter },
-		parentKey?: string[],
-	) => {
-		for (const index in params) {
-			const param = params[index];
-			let paramStr = `(${buildFilter(param).join('')})`;
-			// Escape $ for filter.replace
-			paramStr = paramStr.replace(/\$/g, '$$$$');
-			filter = filter.replace(
-				new RegExp(`\\$${index}([^a-zA-Z0-9]|$)`, 'g'),
-				`${paramStr}$1`,
-			);
-		}
-		filter = `(${filter})`;
-		return addParentKey(filter, parentKey);
-	};
-
-	const filterOperation = (
-		filter: PinejsClientCoreFactory.FilterOperationValue,
-		operator: PinejsClientCoreFactory.FilterOperationKey,
-		parentKey?: string[],
-	) => {
-		const op = ' ' + operator.slice(1) + ' ';
-		if (isPrimitive(filter)) {
-			const filterStr = escapeValue(filter);
-			return addParentKey(filterStr, parentKey, op);
-		} else if (Array.isArray(filter)) {
-			const filterArr = handleFilterArray(filter);
-			const filterStr = bracketJoin(filterArr, op);
-			return addParentKey(filterStr, parentKey);
-		} else if (isObject(filter)) {
-			const result = handleFilterObject(filter);
-			if (result.length < 1) {
-				throw new Error(
-					`${operator} objects must have at least 1 property, got: ${JSON.stringify(
-						filter,
-					)}`,
-				);
-			}
-			if (result.length === 1) {
-				return addParentKey(result[0], parentKey, op);
+			if (filter.length === 1) {
+				filter = filter[0];
 			} else {
-				const filterStr = bracketJoin(result, op);
-				return addParentKey(filterStr, parentKey);
+				filter = `(${filter.join('')})`;
 			}
 		} else {
-			throw new Error(
-				'Expected null/string/number/bool/obj/array, got: ' + typeof filter,
-			);
+			filter = `${filter}`;
 		}
-	};
-	const filterFunction = (
-		filter: PinejsClientCoreFactory.FilterFunctionValue,
-		fnIdentifier: PinejsClientCoreFactory.FilterFunctionKey,
-		parentKey?: string[],
-	): string[] => {
-		const fnName = fnIdentifier.slice(1);
-		if (isPrimitive(filter)) {
-			const operands = [];
-			if (parentKey != null) {
-				operands.push(escapeResource(parentKey));
-			}
-			operands.push(escapeValue(filter));
-			return [`${fnName}(${operands.join()})`];
-		} else if (Array.isArray(filter)) {
-			const filterArr = handleFilterArray(filter);
-			let filterStr = filterArr.map(subArr => subArr.join('')).join(',');
-			filterStr = `${fnName}(${filterStr})`;
-			return addParentKey(filterStr, parentKey);
-		} else if (isObject(filter)) {
-			const filterArr = handleFilterObject(filter);
-			let filterStr = filterArr.map(subArr => subArr.join('')).join(',');
-			filterStr = `${fnName}(${filterStr})`;
-			return addParentKey(filterStr, parentKey);
-		} else {
-			throw new Error(
-				`Expected null/string/number/obj/array, got: ${typeof filter}`,
-			);
-		}
-	};
+		return [escapeResource(parentKey), operator, filter];
+	}
+	if (Array.isArray(filter)) {
+		return filter;
+	}
+	return [`${filter}`];
+};
 
-	// Handle special cases for all the different $ operators.
-	const handleFilterOperator = (
-		filter: PinejsClientCoreFactory.Filter,
-		operator: keyof PinejsClientCoreFactory.FilterObj,
-		parentKey?: string[],
-	): string[] => {
-		switch (operator) {
-			case '$ne':
-			case '$eq':
-			case '$gt':
-			case '$ge':
-			case '$lt':
-			case '$le':
-			case '$add':
-			case '$sub':
-			case '$mul':
-			case '$div':
-			case '$mod':
-				return filterOperation(filter, operator, parentKey);
-			// break
-			case '$contains':
-			case '$endswith':
-			case '$startswith':
-			case '$length':
-			case '$indexof':
-			case '$substring':
-			case '$tolower':
-			case '$toupper':
-			case '$trim':
-			case '$concat':
-			case '$year':
-			case '$month':
-			case '$day':
-			case '$hour':
-			case '$minute':
-			case '$second':
-			case '$fractionalseconds':
-			case '$date':
-			case '$time':
-			case '$totaloffsetminutes':
-			case '$now':
-			case '$maxdatetime':
-			case '$mindatetime':
-			case '$totalseconds':
-			case '$round':
-			case '$floor':
-			case '$ceiling':
-			case '$isof':
-			case '$cast':
-				return filterFunction(filter, operator, parentKey);
-			// break
-			case '$raw': {
-				if (isString(filter)) {
-					filter = `(${filter})`;
-					return addParentKey(filter, parentKey);
-				} else if (!isPrimitive(filter)) {
-					if (Array.isArray(filter)) {
-						const [rawFilter, ...params] = filter;
-						if (!isString(rawFilter)) {
-							throw new Error(
-								`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
-							);
-						}
-						const mappedParams: {
-							[index: string]: PinejsClientCoreFactory.Filter;
-						} = {};
-						for (let index = 0; index < params.length; index++) {
-							mappedParams[index + 1] = params[index];
-						}
-						return applyBinds(rawFilter, mappedParams, parentKey);
-					} else if (isObject(filter)) {
-						const params = filter;
-						const filterStr = filter.$string;
-						if (!isString(filterStr)) {
-							throw new Error(
-								`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
-							);
-						}
-						const mappedParams: {
-							[index: string]: PinejsClientCoreFactory.Filter;
-						} = {};
-						for (const index in params) {
-							if (index !== '$string') {
-								if (!/^[a-zA-Z0-9]+$/.test(index)) {
-									throw new Error(
-										`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
-									);
-								}
-								mappedParams[index] = params[
-									index
-								] as PinejsClientCoreFactory.Filter;
-							}
-						}
-						return applyBinds(filterStr, mappedParams, parentKey);
-					}
-				} else {
-					throw new Error(
-						`Expected string/array/object for ${operator}, got: ${typeof filter}`,
-					);
-				}
-			}
-			// break
-			case '$': {
-				const resource = escapeResource(filter as string | string[]);
-				return addParentKey(resource, parentKey);
-			}
-			// break
-			case '$and':
-			case '$or': {
-				const filterStr = buildFilter(
+const applyBinds = (
+	filter: string,
+	params: { [index: string]: PinejsClientCoreFactory.Filter },
+	parentKey?: string[],
+) => {
+	for (const index in params) {
+		const param = params[index];
+		let paramStr = `(${buildFilter(param).join('')})`;
+		// Escape $ for filter.replace
+		paramStr = paramStr.replace(/\$/g, '$$$$');
+		filter = filter.replace(
+			new RegExp(`\\$${index}([^a-zA-Z0-9]|$)`, 'g'),
+			`${paramStr}$1`,
+		);
+	}
+	filter = `(${filter})`;
+	return addParentKey(filter, parentKey);
+};
+
+const filterOperation = (
+	filter: PinejsClientCoreFactory.FilterOperationValue,
+	operator: PinejsClientCoreFactory.FilterOperationKey,
+	parentKey?: string[],
+) => {
+	const op = ' ' + operator.slice(1) + ' ';
+	if (isPrimitive(filter)) {
+		const filterStr = escapeValue(filter);
+		return addParentKey(filterStr, parentKey, op);
+	} else if (Array.isArray(filter)) {
+		const filterArr = handleFilterArray(filter);
+		const filterStr = bracketJoin(filterArr, op);
+		return addParentKey(filterStr, parentKey);
+	} else if (isObject(filter)) {
+		const result = handleFilterObject(filter);
+		if (result.length < 1) {
+			throw new Error(
+				`${operator} objects must have at least 1 property, got: ${JSON.stringify(
 					filter,
-					undefined,
-					` ${operator.slice(1)} `,
-				);
-				return addParentKey(filterStr, parentKey);
-			}
-			// break
-			case '$in': {
-				if (isPrimitive(filter)) {
-					const filterStr = escapeValue(filter);
-					return addParentKey(filterStr, parentKey, ' eq ');
-				} else if (Array.isArray(filter)) {
-					if (filter.every(isPrimitive)) {
-						const filterStr = handleFilterArray(filter, undefined, 1);
-						const inStr = bracketJoin(filterStr, ', ').join('');
-						return addParentKey(`(${inStr})`, parentKey, ' in ');
+				)}`,
+			);
+		}
+		if (result.length === 1) {
+			return addParentKey(result[0], parentKey, op);
+		} else {
+			const filterStr = bracketJoin(result, op);
+			return addParentKey(filterStr, parentKey);
+		}
+	} else {
+		throw new Error(
+			'Expected null/string/number/bool/obj/array, got: ' + typeof filter,
+		);
+	}
+};
+const filterFunction = (
+	filter: PinejsClientCoreFactory.FilterFunctionValue,
+	fnIdentifier: PinejsClientCoreFactory.FilterFunctionKey,
+	parentKey?: string[],
+): string[] => {
+	const fnName = fnIdentifier.slice(1);
+	if (isPrimitive(filter)) {
+		const operands = [];
+		if (parentKey != null) {
+			operands.push(escapeResource(parentKey));
+		}
+		operands.push(escapeValue(filter));
+		return [`${fnName}(${operands.join()})`];
+	} else if (Array.isArray(filter)) {
+		const filterArr = handleFilterArray(filter);
+		let filterStr = filterArr.map(subArr => subArr.join('')).join(',');
+		filterStr = `${fnName}(${filterStr})`;
+		return addParentKey(filterStr, parentKey);
+	} else if (isObject(filter)) {
+		const filterArr = handleFilterObject(filter);
+		let filterStr = filterArr.map(subArr => subArr.join('')).join(',');
+		filterStr = `${fnName}(${filterStr})`;
+		return addParentKey(filterStr, parentKey);
+	} else {
+		throw new Error(
+			`Expected null/string/number/obj/array, got: ${typeof filter}`,
+		);
+	}
+};
+
+// Handle special cases for all the different $ operators.
+const handleFilterOperator = (
+	filter: PinejsClientCoreFactory.Filter,
+	operator: keyof PinejsClientCoreFactory.FilterObj,
+	parentKey?: string[],
+): string[] => {
+	switch (operator) {
+		case '$ne':
+		case '$eq':
+		case '$gt':
+		case '$ge':
+		case '$lt':
+		case '$le':
+		case '$add':
+		case '$sub':
+		case '$mul':
+		case '$div':
+		case '$mod':
+			return filterOperation(filter, operator, parentKey);
+		// break
+		case '$contains':
+		case '$endswith':
+		case '$startswith':
+		case '$length':
+		case '$indexof':
+		case '$substring':
+		case '$tolower':
+		case '$toupper':
+		case '$trim':
+		case '$concat':
+		case '$year':
+		case '$month':
+		case '$day':
+		case '$hour':
+		case '$minute':
+		case '$second':
+		case '$fractionalseconds':
+		case '$date':
+		case '$time':
+		case '$totaloffsetminutes':
+		case '$now':
+		case '$maxdatetime':
+		case '$mindatetime':
+		case '$totalseconds':
+		case '$round':
+		case '$floor':
+		case '$ceiling':
+		case '$isof':
+		case '$cast':
+			return filterFunction(filter, operator, parentKey);
+		// break
+		case '$raw': {
+			if (isString(filter)) {
+				filter = `(${filter})`;
+				return addParentKey(filter, parentKey);
+			} else if (!isPrimitive(filter)) {
+				if (Array.isArray(filter)) {
+					const [rawFilter, ...params] = filter;
+					if (!isString(rawFilter)) {
+						throw new Error(
+							`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
+						);
 					}
-					const filterStr = handleFilterArray(filter, parentKey, 1);
-					return bracketJoin(filterStr, ' or ');
+					const mappedParams: {
+						[index: string]: PinejsClientCoreFactory.Filter;
+					} = {};
+					for (let index = 0; index < params.length; index++) {
+						mappedParams[index + 1] = params[index];
+					}
+					return applyBinds(rawFilter, mappedParams, parentKey);
 				} else if (isObject(filter)) {
-					const filterArr = handleFilterObject(filter, parentKey);
-					if (filterArr.length < 1) {
+					const params = filter;
+					const filterStr = filter.$string;
+					if (!isString(filterStr)) {
 						throw new Error(
-							`${operator} objects must have at least 1 property, got: ${JSON.stringify(
-								filter,
-							)}`,
+							`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
 						);
 					}
-					return bracketJoin(filterArr, ' or ');
-				} else {
-					throw new Error(
-						`Expected null/string/number/bool/obj/array, got: ${typeof filter}`,
-					);
+					const mappedParams: {
+						[index: string]: PinejsClientCoreFactory.Filter;
+					} = {};
+					for (const index in params) {
+						if (index !== '$string') {
+							if (!/^[a-zA-Z0-9]+$/.test(index)) {
+								throw new Error(
+									`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
+								);
+							}
+							mappedParams[index] = params[
+								index
+							] as PinejsClientCoreFactory.Filter;
+						}
+					}
+					return applyBinds(filterStr, mappedParams, parentKey);
 				}
-			}
-			// break
-			case '$not': {
-				const filterStr = `not(${buildFilter(filter).join('')})`;
-				return addParentKey(filterStr, parentKey);
-			}
-			// break
-			case '$any':
-			case '$all':
-				const lamda = filter as PinejsClientCoreFactory.Lambda;
-				const alias = lamda.$alias;
-				let expr = lamda.$expr;
-				if (alias == null) {
-					throw new Error(
-						`Lambda expression (${operator}) has no alias defined.`,
-					);
-				}
-				if (expr == null) {
-					throw new Error(
-						`Lambda expression (${operator}) has no expr defined.`,
-					);
-				}
-				// Disable the expandFilter deprecation notice when inside a lambda expr
-				const deprecatedFn = (deprecated.expandFilter = noop);
-				let filterStr;
-				try {
-					filterStr = buildFilter(expr).join('');
-				} finally {
-					deprecated.expandFilter = deprecatedFn;
-				}
-				filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
-				return addParentKey(filterStr, parentKey, '/');
-			// break
-			default:
-				throw new Error(`Unrecognised operator: '${operator}'`);
-		}
-	};
-
-	const handleFilterObject = (
-		filter: PinejsClientCoreFactory.FilterObj,
-		parentKey?: string[],
-	) => {
-		return mapObj(filter, (value, key) => {
-			if (value === undefined) {
-				throw new Error(
-					`'${key}' was present on a filter object but undefined, did you mean to use null instead?`,
-				);
-			}
-			if (key[0] === '$') {
-				return handleFilterOperator(value, key, parentKey);
-			} else if (key[0] === '@') {
-				if (!isString(value)) {
-					throw new Error(
-						`Parameter alias reference must be a string, got: ${typeof value}`,
-					);
-				}
-				const parameterAlias = `@${encodeURIComponent(value)}`;
-				return addParentKey(parameterAlias, parentKey);
 			} else {
-				let keys = [key];
-				if (parentKey != null) {
-					if (parentKey.length > 0) {
-						deprecated.expandFilter();
-					}
-					keys = parentKey.concat(keys);
-				}
-				return buildFilter(value, keys);
-			}
-		});
-	};
-
-	const handleFilterArray = (
-		filter: PinejsClientCoreFactory.FilterArray,
-		parentKey?: string[],
-		minElements = 2,
-	) => {
-		if (filter.length < minElements) {
-			throw new Error(
-				`Filter arrays must have at least ${minElements} elements, got: ${JSON.stringify(
-					filter,
-				)}`,
-			);
-		}
-
-		return filter.map(value => {
-			return buildFilter(value, parentKey);
-		});
-	};
-
-	// Turn a filter query object into an OData $filter string
-	const buildFilter = (
-		filter: PinejsClientCoreFactory.Filter,
-		parentKey?: string[],
-		joinStr?: string,
-	): string[] => {
-		if (isPrimitive(filter)) {
-			const filterStr = escapeValue(filter);
-			return addParentKey(filterStr, parentKey);
-		} else if (Array.isArray(filter)) {
-			const filterArr = handleFilterArray(filter);
-			const filterStr = bracketJoin(filterArr, defaults(joinStr, ' or '));
-			return addParentKey(filterStr, parentKey);
-		} else if (isObject(filter)) {
-			const filterArr = handleFilterObject(filter, parentKey);
-			return bracketJoin(filterArr, defaults(joinStr, ' and '));
-		} else {
-			throw new Error(
-				`Expected null/string/number/obj/array, got: ${typeof filter}`,
-			);
-		}
-	};
-
-	const buildOrderBy = (orderby: PinejsClientCoreFactory.OrderBy): string => {
-		if (isString(orderby)) {
-			return orderby;
-		} else if (Array.isArray(orderby)) {
-			if (orderby.length === 0) {
-				throw new Error(`'$orderby' arrays have to have at least 1 element`);
-			}
-			const result = orderby.map(value => {
-				if (Array.isArray(value)) {
-					throw new Error(`'$orderby' cannot have nested arrays`);
-				}
-				return buildOrderBy(value);
-			});
-			return join(result);
-		} else if (isObject(orderby)) {
-			const result = mapObj(orderby, (dir, key) => {
-				if (dir !== 'asc' && dir !== 'desc') {
-					throw new Error(`'$orderby' direction must be 'asc' or 'desc'`);
-				}
-				return `${key} ${dir}`;
-			});
-			if (result.length !== 1) {
 				throw new Error(
-					`'$orderby' objects must have exactly one element, got ${
-						result.length
-					} elements`,
+					`Expected string/array/object for ${operator}, got: ${typeof filter}`,
 				);
 			}
-			return result[0];
+		}
+		// break
+		case '$': {
+			const resource = escapeResource(filter as string | string[]);
+			return addParentKey(resource, parentKey);
+		}
+		// break
+		case '$and':
+		case '$or': {
+			const filterStr = buildFilter(
+				filter,
+				undefined,
+				` ${operator.slice(1)} `,
+			);
+			return addParentKey(filterStr, parentKey);
+		}
+		// break
+		case '$in': {
+			if (isPrimitive(filter)) {
+				const filterStr = escapeValue(filter);
+				return addParentKey(filterStr, parentKey, ' eq ');
+			} else if (Array.isArray(filter)) {
+				if (filter.every(isPrimitive)) {
+					const filterStr = handleFilterArray(filter, undefined, 1);
+					const inStr = bracketJoin(filterStr, ', ').join('');
+					return addParentKey(`(${inStr})`, parentKey, ' in ');
+				}
+				const filterStr = handleFilterArray(filter, parentKey, 1);
+				return bracketJoin(filterStr, ' or ');
+			} else if (isObject(filter)) {
+				const filterArr = handleFilterObject(filter, parentKey);
+				if (filterArr.length < 1) {
+					throw new Error(
+						`${operator} objects must have at least 1 property, got: ${JSON.stringify(
+							filter,
+						)}`,
+					);
+				}
+				return bracketJoin(filterArr, ' or ');
+			} else {
+				throw new Error(
+					`Expected null/string/number/bool/obj/array, got: ${typeof filter}`,
+				);
+			}
+		}
+		// break
+		case '$not': {
+			const filterStr = `not(${buildFilter(filter).join('')})`;
+			return addParentKey(filterStr, parentKey);
+		}
+		// break
+		case '$any':
+		case '$all':
+			const lamda = filter as PinejsClientCoreFactory.Lambda;
+			const alias = lamda.$alias;
+			let expr = lamda.$expr;
+			if (alias == null) {
+				throw new Error(
+					`Lambda expression (${operator}) has no alias defined.`,
+				);
+			}
+			if (expr == null) {
+				throw new Error(`Lambda expression (${operator}) has no expr defined.`);
+			}
+			// Disable the expandFilter deprecation notice when inside a lambda expr
+			const deprecatedFn = (deprecated.expandFilter = noop);
+			let filterStr;
+			try {
+				filterStr = buildFilter(expr).join('');
+			} finally {
+				deprecated.expandFilter = deprecatedFn;
+			}
+			filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
+			return addParentKey(filterStr, parentKey, '/');
+		// break
+		default:
+			throw new Error(`Unrecognised operator: '${operator}'`);
+	}
+};
+
+const handleFilterObject = (
+	filter: PinejsClientCoreFactory.FilterObj,
+	parentKey?: string[],
+) => {
+	return mapObj(filter, (value, key) => {
+		if (value === undefined) {
+			throw new Error(
+				`'${key}' was present on a filter object but undefined, did you mean to use null instead?`,
+			);
+		}
+		if (key[0] === '$') {
+			return handleFilterOperator(value, key, parentKey);
+		} else if (key[0] === '@') {
+			if (!isString(value)) {
+				throw new Error(
+					`Parameter alias reference must be a string, got: ${typeof value}`,
+				);
+			}
+			const parameterAlias = `@${encodeURIComponent(value)}`;
+			return addParentKey(parameterAlias, parentKey);
 		} else {
-			throw new Error(
-				`'$orderby' option has to be either a string, array, or object`,
-			);
-		}
-	};
-
-	const buildOption = (
-		option: string,
-		value: PinejsClientCoreFactory.ODataOptions[''],
-	) => {
-		let compiledValue: string = '';
-		switch (option) {
-			case '$filter':
-				compiledValue = buildFilter(
-					value as PinejsClientCoreFactory.Filter,
-				).join('');
-				break;
-			case '$expand':
-				compiledValue = buildExpand(value as PinejsClientCoreFactory.Expand);
-				break;
-			case '$orderby':
-				compiledValue = buildOrderBy(value as PinejsClientCoreFactory.OrderBy);
-				break;
-			case '$top':
-			case '$skip':
-				const num = value;
-				if (!NumberIsFinite(num)) {
-					throw new Error(`'${option}' option has to be a number`);
+			let keys = [key];
+			if (parentKey != null) {
+				if (parentKey.length > 0) {
+					deprecated.expandFilter();
 				}
-				compiledValue = '' + num;
-				break;
-			case '$select':
-				const select = value;
-				if (isString(select)) {
-					compiledValue = join(select);
-				} else if (Array.isArray(select)) {
-					if (select.length === 0) {
-						throw new Error(
-							`'${option}' arrays have to have at least 1 element`,
-						);
-					}
-					compiledValue = join(select as string[]);
-				} else {
-					throw new Error(
-						`'${option}' option has to be either a string or array`,
-					);
-				}
-				break;
-			default:
-				// Escape parameter aliases as primitives
-				if (option[0] === '@') {
-					if (!isPrimitive(value)) {
-						throw new Error(
-							`Unknown type for parameter alias option '${option}': ${typeof value}`,
-						);
-					}
-					compiledValue = '' + escapeValue(value);
-				}
-				// Unknown values are left as-is
-				else if (Array.isArray(value)) {
-					compiledValue = join(value as string[]);
-				} else if (isString(value)) {
-					compiledValue = value;
-				} else if (isBoolean(value) || NumberIsFinite(value)) {
-					compiledValue = value.toString();
-				} else {
-					throw new Error(`Unknown type for option ${typeof value}`);
-				}
-		}
-		return `${option}=${compiledValue}`;
-	};
-
-	const handleExpandOptions = (
-		expand: PinejsClientCoreFactory.ODataOptions,
-		parentKey: string,
-	) => {
-		const expandOptions = [];
-		for (const key in expand) {
-			if (expand.hasOwnProperty(key)) {
-				const value = expand[key];
-				if (key[0] === '$') {
-					if (!isValidOption(key)) {
-						throw new Error(`Unknown key option '${key}'`);
-					}
-					expandOptions.push(buildOption(key, value));
-				} else {
-					throw new Error(
-						`'$expand: ${parentKey}: ${key}: ...' is invalid, use '$expand: ${parentKey}: $expand: ${key}: ...' instead.`,
-					);
-				}
+				keys = parentKey.concat(keys);
 			}
+			return buildFilter(value, keys);
 		}
-		let expandStr = expandOptions.join('&');
-		if (expandStr.length > 0) {
-			expandStr = `(${expandStr})`;
+	});
+};
+
+const handleFilterArray = (
+	filter: PinejsClientCoreFactory.FilterArray,
+	parentKey?: string[],
+	minElements = 2,
+) => {
+	if (filter.length < minElements) {
+		throw new Error(
+			`Filter arrays must have at least ${minElements} elements, got: ${JSON.stringify(
+				filter,
+			)}`,
+		);
+	}
+
+	return filter.map(value => {
+		return buildFilter(value, parentKey);
+	});
+};
+
+// Turn a filter query object into an OData $filter string
+const buildFilter = (
+	filter: PinejsClientCoreFactory.Filter,
+	parentKey?: string[],
+	joinStr?: string,
+): string[] => {
+	if (isPrimitive(filter)) {
+		const filterStr = escapeValue(filter);
+		return addParentKey(filterStr, parentKey);
+	} else if (Array.isArray(filter)) {
+		const filterArr = handleFilterArray(filter);
+		const filterStr = bracketJoin(filterArr, defaults(joinStr, ' or '));
+		return addParentKey(filterStr, parentKey);
+	} else if (isObject(filter)) {
+		const filterArr = handleFilterObject(filter, parentKey);
+		return bracketJoin(filterArr, defaults(joinStr, ' and '));
+	} else {
+		throw new Error(
+			`Expected null/string/number/obj/array, got: ${typeof filter}`,
+		);
+	}
+};
+
+const buildOrderBy = (orderby: PinejsClientCoreFactory.OrderBy): string => {
+	if (isString(orderby)) {
+		return orderby;
+	} else if (Array.isArray(orderby)) {
+		if (orderby.length === 0) {
+			throw new Error(`'$orderby' arrays have to have at least 1 element`);
 		}
-		expandStr = escapeCountableResource(parentKey) + expandStr;
-		return expandStr;
-	};
-	const handleExpandObject = (
-		expand: PinejsClientCoreFactory.ResourceExpand,
-	) => {
-		const expands = [];
-		for (const key in expand) {
-			if (expand.hasOwnProperty(key)) {
-				if (key[0] === '$') {
-					throw new Error(
-						'Cannot have expand options without first expanding something!',
-					);
-				}
-				const value = expand[key];
-				if (isPrimitive(value)) {
-					const jsonValue = JSON.stringify(value);
-					throw new Error(
-						`'$expand: ${key}: ${jsonValue}' is invalid, use '$expand: ${key}: $expand: ${jsonValue}' instead.`,
-					);
-				}
-				if (Array.isArray(value)) {
-					throw new Error(
-						`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`,
-					);
-				}
-				expands.push(handleExpandOptions(value, key));
+		const result = orderby.map(value => {
+			if (Array.isArray(value)) {
+				throw new Error(`'$orderby' cannot have nested arrays`);
 			}
-		}
-		return expands;
-	};
-
-	const handleExpandArray = (
-		expands: Array<string | PinejsClientCoreFactory.ResourceExpand>,
-	) => {
-		if (expands.length < 1) {
-			throw new Error(
-				`Expand arrays must have at least 1 elements, got: ${JSON.stringify(
-					expands,
-				)}`,
-			);
-		}
-
-		return expands.map(expand => {
-			return buildExpand(expand);
+			return buildOrderBy(value);
 		});
-	};
-
-	const buildExpand = (expand: PinejsClientCoreFactory.Expand): string => {
-		if (isPrimitive(expand)) {
-			return escapeCountableResource(expand);
-		} else if (Array.isArray(expand)) {
-			const expandStr = handleExpandArray(expand);
-			return join(expandStr);
-		} else if (isObject(expand)) {
-			const expandStr = handleExpandObject(expand);
-			return join(expandStr);
-		} else {
-			throw new Error(`Unknown type for expand '${typeof expand}'`);
-		}
-	};
-
-	const validParams: PinejsClientCoreFactory.SharedParam[] = [
-		'apiPrefix',
-		'passthrough',
-		'passthroughByMethod',
-	];
-
-	abstract class PinejsClientCore<
-		T,
-		PromiseObj extends PromiseLike<{}> = Promise<{}>,
-		PromiseResult extends PromiseLike<
-			PinejsClientCoreFactory.PromiseResultTypes
-		> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
-	>
-		implements
-			PinejsClientCoreFactory.PinejsClientCore<T, PromiseObj, PromiseResult> {
-		apiPrefix: string = '/';
-		passthrough: PinejsClientCoreFactory.AnyObject = {};
-		passthroughByMethod: PinejsClientCoreFactory.AnyObject = {};
-		backendParams: PinejsClientCoreFactory.AnyObject;
-
-		// `backendParams` must be used by a backend for any additional parameters it may have.
-		constructor(params: string | PinejsClientCoreFactory.Params) {
-			if (isString(params)) {
-				params = { apiPrefix: params };
+		return join(result);
+	} else if (isObject(orderby)) {
+		const result = mapObj(orderby, (dir, key) => {
+			if (dir !== 'asc' && dir !== 'desc') {
+				throw new Error(`'$orderby' direction must be 'asc' or 'desc'`);
 			}
+			return `${key} ${dir}`;
+		});
+		if (result.length !== 1) {
+			throw new Error(
+				`'$orderby' objects must have exactly one element, got ${
+					result.length
+				} elements`,
+			);
+		}
+		return result[0];
+	} else {
+		throw new Error(
+			`'$orderby' option has to be either a string, array, or object`,
+		);
+	}
+};
 
-			if (isObject(params)) {
-				for (const validParam of validParams) {
-					const value = params[validParam];
-					if (value != null) {
-						this[validParam] = value;
-					}
+const buildOption = (
+	option: string,
+	value: PinejsClientCoreFactory.ODataOptions[''],
+) => {
+	let compiledValue: string = '';
+	switch (option) {
+		case '$filter':
+			compiledValue = buildFilter(value as PinejsClientCoreFactory.Filter).join(
+				'',
+			);
+			break;
+		case '$expand':
+			compiledValue = buildExpand(value as PinejsClientCoreFactory.Expand);
+			break;
+		case '$orderby':
+			compiledValue = buildOrderBy(value as PinejsClientCoreFactory.OrderBy);
+			break;
+		case '$top':
+		case '$skip':
+			const num = value;
+			if (!NumberIsFinite(num)) {
+				throw new Error(`'${option}' option has to be a number`);
+			}
+			compiledValue = '' + num;
+			break;
+		case '$select':
+			const select = value;
+			if (isString(select)) {
+				compiledValue = join(select);
+			} else if (Array.isArray(select)) {
+				if (select.length === 0) {
+					throw new Error(`'${option}' arrays have to have at least 1 element`);
 				}
+				compiledValue = join(select as string[]);
+			} else {
+				throw new Error(
+					`'${option}' option has to be either a string or array`,
+				);
+			}
+			break;
+		default:
+			// Escape parameter aliases as primitives
+			if (option[0] === '@') {
+				if (!isPrimitive(value)) {
+					throw new Error(
+						`Unknown type for parameter alias option '${option}': ${typeof value}`,
+					);
+				}
+				compiledValue = '' + escapeValue(value);
+			}
+			// Unknown values are left as-is
+			else if (Array.isArray(value)) {
+				compiledValue = join(value as string[]);
+			} else if (isString(value)) {
+				compiledValue = value;
+			} else if (isBoolean(value) || NumberIsFinite(value)) {
+				compiledValue = value.toString();
+			} else {
+				throw new Error(`Unknown type for option ${typeof value}`);
+			}
+	}
+	return `${option}=${compiledValue}`;
+};
+
+const handleExpandOptions = (
+	expand: PinejsClientCoreFactory.ODataOptions,
+	parentKey: string,
+) => {
+	const expandOptions = [];
+	for (const key in expand) {
+		if (expand.hasOwnProperty(key)) {
+			const value = expand[key];
+			if (key[0] === '$') {
+				if (!isValidOption(key)) {
+					throw new Error(`Unknown key option '${key}'`);
+				}
+				expandOptions.push(buildOption(key, value));
+			} else {
+				throw new Error(
+					`'$expand: ${parentKey}: ${key}: ...' is invalid, use '$expand: ${parentKey}: $expand: ${key}: ...' instead.`,
+				);
 			}
 		}
-
-		// `backendParams` must be used by a backend for any additional parameters it may have.
-		clone(
-			params: string | PinejsClientCoreFactory.Params,
-			backendParams?: PinejsClientCoreFactory.AnyObject,
-		): T {
-			if (isString(params)) {
-				params = { apiPrefix: params };
+	}
+	let expandStr = expandOptions.join('&');
+	if (expandStr.length > 0) {
+		expandStr = `(${expandStr})`;
+	}
+	expandStr = escapeCountableResource(parentKey) + expandStr;
+	return expandStr;
+};
+const handleExpandObject = (expand: PinejsClientCoreFactory.ResourceExpand) => {
+	const expands = [];
+	for (const key in expand) {
+		if (expand.hasOwnProperty(key)) {
+			if (key[0] === '$') {
+				throw new Error(
+					'Cannot have expand options without first expanding something!',
+				);
 			}
+			const value = expand[key];
+			if (isPrimitive(value)) {
+				const jsonValue = JSON.stringify(value);
+				throw new Error(
+					`'$expand: ${key}: ${jsonValue}' is invalid, use '$expand: ${key}: $expand: ${jsonValue}' instead.`,
+				);
+			}
+			if (Array.isArray(value)) {
+				throw new Error(
+					`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`,
+				);
+			}
+			expands.push(handleExpandOptions(value, key));
+		}
+	}
+	return expands;
+};
 
-			const cloneParams: typeof params = {};
+const handleExpandArray = (
+	expands: Array<string | PinejsClientCoreFactory.ResourceExpand>,
+) => {
+	if (expands.length < 1) {
+		throw new Error(
+			`Expand arrays must have at least 1 elements, got: ${JSON.stringify(
+				expands,
+			)}`,
+		);
+	}
+
+	return expands.map(expand => {
+		return buildExpand(expand);
+	});
+};
+
+const buildExpand = (expand: PinejsClientCoreFactory.Expand): string => {
+	if (isPrimitive(expand)) {
+		return escapeCountableResource(expand);
+	} else if (Array.isArray(expand)) {
+		const expandStr = handleExpandArray(expand);
+		return join(expandStr);
+	} else if (isObject(expand)) {
+		const expandStr = handleExpandObject(expand);
+		return join(expandStr);
+	} else {
+		throw new Error(`Unknown type for expand '${typeof expand}'`);
+	}
+};
+
+const validParams: PinejsClientCoreFactory.SharedParam[] = [
+	'apiPrefix',
+	'passthrough',
+	'passthroughByMethod',
+];
+
+abstract class PinejsClientCoreTemplate<
+	T,
+	PromiseObj extends PromiseLike<{}> = Promise<{}>,
+	PromiseResult extends PromiseLike<
+		PinejsClientCoreFactory.PromiseResultTypes
+	> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
+> {
+	apiPrefix: string = '/';
+	passthrough: PinejsClientCoreFactory.AnyObject = {};
+	passthroughByMethod: PinejsClientCoreFactory.AnyObject = {};
+	backendParams: PinejsClientCoreFactory.AnyObject;
+
+	// `backendParams` must be used by a backend for any additional parameters it may have.
+	constructor(params: string | PinejsClientCoreFactory.Params) {
+		if (isString(params)) {
+			params = { apiPrefix: params };
+		}
+
+		if (isObject(params)) {
 			for (const validParam of validParams) {
-				if (this[validParam] != null) {
-					cloneParams[validParam] = this[validParam];
-				}
-				if (params != null && params[validParam] != null) {
-					cloneParams[validParam] = params[validParam];
+				const value = params[validParam];
+				if (value != null) {
+					this[validParam] = value;
 				}
 			}
+		}
+	}
 
-			let cloneBackendParams: typeof backendParams = {};
-			if (isObject(this.backendParams)) {
-				cloneBackendParams = { ...this.backendParams };
-			}
-			if (isObject(backendParams)) {
-				cloneBackendParams = { ...cloneBackendParams, ...backendParams };
-			}
-			return new (this.constructor as {
-				new (
-					params: string | PinejsClientCoreFactory.Params,
-					backendParams: PinejsClientCoreFactory.AnyObject,
-				): T;
-			})(cloneParams, cloneBackendParams);
+	// `backendParams` must be used by a backend for any additional parameters it may have.
+	clone(
+		params: string | PinejsClientCoreFactory.Params,
+		backendParams?: PinejsClientCoreFactory.AnyObject,
+	): T {
+		if (isString(params)) {
+			params = { apiPrefix: params };
 		}
 
-		get(params: PinejsClientCoreFactory.Params): PromiseResult {
-			const singular = isObject(params) && params.id != null;
+		const cloneParams: typeof params = {};
+		for (const validParam of validParams) {
+			if (this[validParam] != null) {
+				cloneParams[validParam] = this[validParam];
+			}
+			if (params != null && params[validParam] != null) {
+				cloneParams[validParam] = params[validParam];
+			}
+		}
+
+		let cloneBackendParams: typeof backendParams = {};
+		if (isObject(this.backendParams)) {
+			cloneBackendParams = { ...this.backendParams };
+		}
+		if (isObject(backendParams)) {
+			cloneBackendParams = { ...cloneBackendParams, ...backendParams };
+		}
+		return new (this.constructor as {
+			new (
+				params: string | PinejsClientCoreFactory.Params,
+				backendParams: PinejsClientCoreFactory.AnyObject,
+			): T;
+		})(cloneParams, cloneBackendParams);
+	}
+
+	get(params: PinejsClientCoreFactory.Params): PromiseResult {
+		const singular = isObject(params) && params.id != null;
+		return this.request(params, { method: 'GET' }).then(
+			(data: { d: any[] }) => {
+				if (!isObject(data)) {
+					throw new Error(`Response was not a JSON object: '${typeof data}'`);
+				}
+				if (data.d == null) {
+					throw new Error(
+						"Invalid response received, the 'd' property is missing.",
+					);
+				}
+				if (singular) {
+					if (data.d.length > 1) {
+						throw new Error(
+							'Returned multiple results when only one was expected.',
+						);
+					}
+					return data.d[0];
+				}
+				return data.d;
+			},
+		) as PromiseResult;
+	}
+
+	query(params: PinejsClientCoreFactory.Params): PromiseResult {
+		return this.get(params);
+	}
+
+	subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
+		const singular = isObject(params) && params.id != null;
+		let pollInterval: PinejsClientCoreFactory.SubscribeParamsObj['pollInterval'];
+
+		// precompile the URL string to improve performance
+		const compiledUrl = this.compile(params);
+		if (isString(params)) {
+			params = compiledUrl;
+		} else {
+			params.url = compiledUrl;
+			pollInterval = params.pollInterval;
+		}
+
+		const requestFn = () => {
 			return this.request(params, { method: 'GET' }).then(
 				(data: { d: any[] }) => {
 					if (!isObject(data)) {
@@ -936,109 +962,94 @@ export function PinejsClientCoreFactory(
 					return data.d;
 				},
 			) as PromiseResult;
-		}
+		};
 
-		query(params: PinejsClientCoreFactory.Params) {
-			return this.get(params);
-		}
+		return new Poll(requestFn, pollInterval);
+	}
 
-		subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
-			const singular = isObject(params) && params.id != null;
-			let pollInterval: PinejsClientCoreFactory.SubscribeParamsObj['pollInterval'];
+	put(params: PinejsClientCoreFactory.Params) {
+		return this.request(params, { method: 'PUT' });
+	}
 
-			// precompile the URL string to improve performance
-			const compiledUrl = this.compile(params);
-			if (isString(params)) {
-				params = compiledUrl;
-			} else {
-				params.url = compiledUrl;
-				pollInterval = params.pollInterval;
+	patch(params: PinejsClientCoreFactory.Params) {
+		return this.request(params, { method: 'PATCH' });
+	}
+
+	post(params: PinejsClientCoreFactory.Params) {
+		return this.request(params, { method: 'POST' });
+	}
+
+	delete(params: PinejsClientCoreFactory.Params) {
+		return this.request(params, { method: 'DELETE' });
+	}
+
+	compile(params: PinejsClientCoreFactory.Params) {
+		if (isString(params)) {
+			return params;
+		} else if (params.url != null) {
+			return params.url;
+		} else {
+			if (params.resource == null) {
+				throw new Error('Either the url or resource must be specified.');
+			}
+			let url = escapeCountableResource(params.resource);
+
+			if (params.hasOwnProperty('id')) {
+				if (params.id == null) {
+					throw new Error('If the id property is set it must be non-null');
+				}
+				url += `(${escapeValue(params.id)})`;
 			}
 
-			const requestFn = () => {
-				return this.request(params, { method: 'GET' }).then(
-					(data: { d: any[] }) => {
-						if (!isObject(data)) {
-							throw new Error(
-								`Response was not a JSON object: '${typeof data}'`,
-							);
-						}
-						if (data.d == null) {
-							throw new Error(
-								"Invalid response received, the 'd' property is missing.",
-							);
-						}
-						if (singular) {
-							if (data.d.length > 1) {
-								throw new Error(
-									'Returned multiple results when only one was expected.',
-								);
-							}
-							return data.d[0];
-						}
-						return data.d;
-					},
-				) as PromiseResult;
-			};
-
-			return new Poll(requestFn, pollInterval);
-		}
-
-		put(params: PinejsClientCoreFactory.Params) {
-			return this.request(params, { method: 'PUT' });
-		}
-
-		patch(params: PinejsClientCoreFactory.Params) {
-			return this.request(params, { method: 'PATCH' });
-		}
-
-		post(params: PinejsClientCoreFactory.Params) {
-			return this.request(params, { method: 'POST' });
-		}
-
-		delete(params: PinejsClientCoreFactory.Params) {
-			return this.request(params, { method: 'DELETE' });
-		}
-
-		compile(params: PinejsClientCoreFactory.Params) {
-			if (isString(params)) {
-				return params;
-			} else if (params.url != null) {
-				return params.url;
-			} else {
-				if (params.resource == null) {
-					throw new Error('Either the url or resource must be specified.');
-				}
-				let url = escapeCountableResource(params.resource);
-
-				if (params.hasOwnProperty('id')) {
-					if (params.id == null) {
-						throw new Error('If the id property is set it must be non-null');
+			let queryOptions: string[] = [];
+			if (params.options != null) {
+				queryOptions = mapObj(params.options, (value, option) => {
+					if (option[0] === '$' && !isValidOption(option)) {
+						throw new Error(`Unknown odata option '${option}'`);
 					}
-					url += `(${escapeValue(params.id)})`;
-				}
-
-				let queryOptions: string[] = [];
-				if (params.options != null) {
-					queryOptions = mapObj(params.options, (value, option) => {
-						if (option[0] === '$' && !isValidOption(option)) {
-							throw new Error(`Unknown odata option '${option}'`);
-						}
-						return buildOption(option, value);
-					});
-				}
-				if ((params as any).customOptions != null) {
-					throw new Error(
-						'`customOptions` has been removed, use `options` instead.',
-					);
-				}
-				if (queryOptions.length > 0) {
-					url += '?' + queryOptions.join('&');
-				}
-				return url;
+					return buildOption(option, value);
+				});
 			}
+			if ((params as any).customOptions != null) {
+				throw new Error(
+					'`customOptions` has been removed, use `options` instead.',
+				);
+			}
+			if (queryOptions.length > 0) {
+				url += '?' + queryOptions.join('&');
+			}
+			return url;
 		}
+	}
 
+	abstract request(
+		params: PinejsClientCoreFactory.Params,
+		overrides?: { method?: PinejsClientCoreFactory.ODataMethod },
+	): PromiseObj;
+
+	abstract _request(
+		params: {
+			method: string;
+			url: string;
+			body?: PinejsClientCoreFactory.AnyObject;
+		} & PinejsClientCoreFactory.AnyObject,
+	): PromiseObj;
+}
+
+export function PinejsClientCoreFactory(
+	Promise: PinejsClientCoreFactory.PromiseRejector,
+): typeof PinejsClientCoreFactory.PinejsClientCore {
+	if (!isPromiseRejector(Promise)) {
+		throw new Error('The Promise implementation must support .reject');
+	}
+
+	abstract class PinejsClientCore<
+		T,
+		PromiseObj extends PromiseLike<{}> = Promise<{}>,
+		PromiseResult extends PromiseLike<
+			PinejsClientCoreFactory.PromiseResultTypes
+		> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
+	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
 		request(
 			params: PinejsClientCoreFactory.Params,
 			overrides: { method?: PinejsClientCoreFactory.ODataMethod } = {},
@@ -1076,14 +1087,6 @@ export function PinejsClientCoreFactory(
 				return Promise.reject(e) as PromiseObj;
 			}
 		}
-
-		abstract _request(
-			params: {
-				method: string;
-				url: string;
-				body?: PinejsClientCoreFactory.AnyObject;
-			} & PinejsClientCoreFactory.AnyObject,
-		): PromiseObj;
 	}
 
 	return PinejsClientCore;
@@ -1096,32 +1099,7 @@ export declare namespace PinejsClientCoreFactory {
 		PromiseResult extends PromiseLike<
 			number | AnyObject | AnyObject[]
 		> = Promise<number | AnyObject | AnyObject[]>
-	> {
-		apiPrefix: string;
-		passthrough: AnyObject;
-		passthroughByMethod: AnyObject;
-		backendParams: AnyObject;
-
-		// `backendParams` must be used by a backend for any additional parameters it may have.
-		constructor(params: string | Params, backendParams?: AnyObject);
-
-		// `backendParams` must be used by a backend for any additional parameters it may have.
-		clone(params: string | Params, backendParams?: AnyObject): T;
-
-		query(params: Params): PromiseResult;
-
-		get(params: Params): PromiseResult;
-
-		put(params: Params): PromiseObj;
-
-		patch(params: Params): PromiseObj;
-
-		post(params: Params): PromiseObj;
-
-		delete(params: Params): PromiseObj;
-
-		compile(params: Params): string;
-
+	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
 		request(params: Params, overrides?: { method?: ODataMethod }): PromiseObj;
 
 		abstract _request(
@@ -1133,10 +1111,7 @@ export declare namespace PinejsClientCoreFactory {
 		): PromiseObj;
 	}
 
-	export type PromiseResultTypes =
-		| number
-		| PinejsClientCoreFactory.AnyObject
-		| PinejsClientCoreFactory.AnyObject[];
+	export type PromiseResultTypes = number | AnyObject | AnyObject[];
 
 	interface PromiseRejector {
 		reject(err: any): PromiseLike<any>;
