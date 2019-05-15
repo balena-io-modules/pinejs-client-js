@@ -1,7 +1,9 @@
+interface Dictionary<T> {
+	[index: string]: T;
+}
+
 const noop = () => {};
-const deprecated: {
-	[index: string]: () => void;
-} = {};
+const deprecated: Dictionary<() => void> = {};
 const addDeprecated = (name: string, message: string) => {
 	deprecated[name] = () => {
 		console.warn('pinejs-client deprecated:', message);
@@ -24,7 +26,7 @@ function defaults<T>(...args: (T | undefined)[]): T | undefined {
 }
 
 const mapObj = <T, R>(
-	obj: { [index: string]: T },
+	obj: Dictionary<T>,
 	fn: (value: T, key: string) => R,
 ): R[] => {
 	const results = [];
@@ -226,7 +228,7 @@ const transformGetResult = (params: PinejsClientCoreFactory.Params) => {
 
 const isPrimitive = (
 	value?: unknown,
-): value is null | string | number | boolean | Date => {
+): value is PinejsClientCoreFactory.Primitive => {
 	return (
 		value === null ||
 		isString(value) ||
@@ -264,7 +266,7 @@ const escapeCountableResource = (resource: string | string[]) => {
 };
 
 // Escape a primitive value
-const escapeValue = (value: null | string | number | boolean | Date) => {
+const escapeValue = (value: PinejsClientCoreFactory.Primitive) => {
 	if (isString(value)) {
 		value = value.replace(/'/g, "''");
 		return `'${encodeURIComponent(value)}'`;
@@ -346,7 +348,7 @@ const addParentKey = (
 
 const applyBinds = (
 	filter: string,
-	params: { [index: string]: PinejsClientCoreFactory.Filter },
+	params: Dictionary<PinejsClientCoreFactory.Filter>,
 	parentKey?: string[],
 ) => {
 	for (const index in params) {
@@ -490,9 +492,7 @@ const handleFilterOperator = (
 							`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
 						);
 					}
-					const mappedParams: {
-						[index: string]: PinejsClientCoreFactory.Filter;
-					} = {};
+					const mappedParams: Dictionary<PinejsClientCoreFactory.Filter> = {};
 					for (let index = 0; index < params.length; index++) {
 						mappedParams[index + 1] = params[index];
 					}
@@ -505,9 +505,7 @@ const handleFilterOperator = (
 							`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
 						);
 					}
-					const mappedParams: {
-						[index: string]: PinejsClientCoreFactory.Filter;
-					} = {};
+					const mappedParams: Dictionary<PinejsClientCoreFactory.Filter> = {};
 					for (const index in params) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
@@ -866,6 +864,17 @@ const validParams: PinejsClientCoreFactory.SharedParam[] = [
 	'passthroughByMethod',
 ];
 
+export interface PreparedFn<
+	T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>,
+	U
+> {
+	(
+		parameterAliases?: T,
+		body?: PinejsClientCoreFactory.ParamsObj['body'],
+		passthrough?: PinejsClientCoreFactory.ParamsObj['passthrough'],
+	): U;
+}
+
 abstract class PinejsClientCoreTemplate<
 	T,
 	PromiseObj extends PromiseLike<{}> = Promise<{}>,
@@ -941,22 +950,10 @@ abstract class PinejsClientCoreTemplate<
 	subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
 		let pollInterval: PinejsClientCoreFactory.SubscribeParamsObj['pollInterval'];
 
-		// precompile the URL string to improve performance
-		const compiledUrl = this.compile(params);
-		if (isString(params)) {
-			params = compiledUrl;
-		} else {
-			params.url = compiledUrl;
+		const requestFn = this.prepare(params);
+		if (!isString(params)) {
 			pollInterval = params.pollInterval;
 		}
-
-		const transformFn = transformGetResult(params);
-
-		const requestFn = () => {
-			return this.request(params, { method: 'GET' }).then(
-				transformFn,
-			) as PromiseResult;
-		};
 
 		return new Poll(requestFn, pollInterval);
 	}
@@ -977,7 +974,75 @@ abstract class PinejsClientCoreTemplate<
 		return this.request(params, { method: 'DELETE' });
 	}
 
-	compile(params: PinejsClientCoreFactory.Params) {
+	prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
+		params: string | (PinejsClientCoreFactory.ParamsObj & { method?: 'GET' }),
+	): PreparedFn<T, PromiseResult>;
+	prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
+		params: PinejsClientCoreFactory.ParamsObj & {
+			method: Exclude<PinejsClientCoreFactory.ParamsObj['method'], 'GET'>;
+		},
+	): PreparedFn<T, PromiseObj>;
+	prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
+		params: PinejsClientCoreFactory.Params,
+	): PreparedFn<T, PromiseObj | PromiseResult> {
+		// precompile the URL string to improve performance
+		const compiledUrl = this.compile(params);
+		const paramsObj: PinejsClientCoreFactory.ParamsObj = isString(params)
+			? { method: 'GET' }
+			: params;
+		const urlQueryParamsStr = compiledUrl.indexOf('?') === -1 ? '?' : '&';
+		if (paramsObj.method == null) {
+			paramsObj.method = 'GET';
+		} else {
+			paramsObj.method = paramsObj.method.toUpperCase() as typeof paramsObj.method;
+		}
+		const { body: defaultBody } = paramsObj;
+		const { passthrough: defaultPassthrough } = paramsObj;
+
+		const transformFn =
+			paramsObj.method === 'GET' ? transformGetResult(params) : undefined;
+
+		return (parameterAliases, body, passthrough) => {
+			if (body != null) {
+				paramsObj.body = {
+					...defaultBody,
+					...body,
+				};
+			} else if (defaultBody != null) {
+				paramsObj.body = { ...defaultBody };
+			}
+			if (passthrough != null) {
+				paramsObj.passthrough = {
+					...defaultPassthrough,
+					...passthrough,
+				};
+			} else if (defaultPassthrough != null) {
+				paramsObj.passthrough = { ...defaultPassthrough };
+			}
+			if (parameterAliases != null) {
+				paramsObj.url =
+					compiledUrl +
+					urlQueryParamsStr +
+					mapObj(parameterAliases, (value, option) => {
+						if (!isPrimitive(value)) {
+							throw new Error(
+								`Unknown type for parameter alias option '${option}': ${typeof value}`,
+							);
+						}
+						return `@${option}=${escapeValue(value)}`;
+					}).join('&');
+			} else {
+				paramsObj.url = compiledUrl;
+			}
+			const result = this.request(paramsObj);
+			if (transformFn != null) {
+				return result.then(transformFn) as PromiseResult;
+			}
+			return result;
+		};
+	}
+
+	compile(params: PinejsClientCoreFactory.Params): string {
 		if (isString(params)) {
 			return params;
 		} else if (params.url != null) {
@@ -1119,10 +1184,6 @@ export declare namespace PinejsClientCoreFactory {
 		reject(err: any): PromiseLike<any>;
 	}
 
-	interface ResourceObj<T> {
-		[index: string]: T;
-	}
-
 	type FilterOperationKey =
 		| '$ne'
 		| '$eq'
@@ -1168,7 +1229,7 @@ export declare namespace PinejsClientCoreFactory {
 		| '$cast';
 	type FilterFunctionValue = Filter;
 
-	export interface FilterObj extends ResourceObj<Filter | undefined> {
+	export interface FilterObj extends Dictionary<Filter | undefined> {
 		'@'?: string;
 
 		$raw?: RawFilter;
@@ -1246,7 +1307,7 @@ export declare namespace PinejsClientCoreFactory {
 	};
 	export type Filter = FilterObj | FilterArray | FilterBaseType;
 
-	export interface ResourceExpand extends ResourceObj<ODataOptions> {}
+	export interface ResourceExpand extends Dictionary<ODataOptions> {}
 
 	export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
 
@@ -1257,6 +1318,9 @@ export declare namespace PinejsClientCoreFactory {
 				[index: string]: 'asc' | 'desc';
 		  };
 
+	export type Primitive = null | string | number | boolean | Date;
+	export type ParameterAlias = Primitive;
+
 	export interface ODataOptions {
 		$filter?: Filter;
 		$expand?: Expand;
@@ -1266,8 +1330,7 @@ export declare namespace PinejsClientCoreFactory {
 		$select?: string | string[];
 		[index: string]:
 			| undefined
-			| number
-			| string
+			| ParameterAlias
 			| string[]
 			| Filter
 			| Expand
@@ -1287,9 +1350,7 @@ export declare namespace PinejsClientCoreFactory {
 
 	type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';
 
-	export type AnyObject = {
-		[index: string]: any;
-	};
+	export type AnyObject = Dictionary<any>;
 
 	interface ParamsObj {
 		apiPrefix?: string;
@@ -1306,6 +1367,7 @@ export declare namespace PinejsClientCoreFactory {
 	export type Params = ParamsObj | string;
 
 	interface SubscribeParamsObj extends ParamsObj {
+		method?: 'GET';
 		pollInterval?: number;
 	}
 	export type SubscribeParams = SubscribeParamsObj | string;
