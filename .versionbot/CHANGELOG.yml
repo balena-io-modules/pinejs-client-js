@@ -1,4 +1,14 @@
 - commits:
+    - subject: Add a prepare method that prepares a query into a function
+      hash: eb7eccca7d90c453710575ebdf3adb9ef56835a7
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 5.5.0
+  date: 2019-05-15T11:51:46.450Z
+- commits:
     - subject: Add CODEOWNERS
       hash: e01174008f812e0c24ec1036aa1f9ff0bc716e85
       body: ''
