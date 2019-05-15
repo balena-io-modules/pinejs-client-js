@@ -1,4 +1,14 @@
 - commits:
+    - subject: Fix downstream declaration creation errors due to `Dictionary`
+      hash: a8a39edff8cc7e1d05fb9b67037718970e94296c
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.5.1
+  date: 2019-05-15T13:32:13.920Z
+- commits:
     - subject: Add a prepare method that prepares a query into a function
       hash: eb7eccca7d90c453710575ebdf3adb9ef56835a7
       body: ''
