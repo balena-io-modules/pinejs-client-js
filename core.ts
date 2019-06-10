@@ -697,9 +697,7 @@ const buildOrderBy = (orderby: PinejsClientCoreFactory.OrderBy): string => {
 		});
 		if (result.length !== 1) {
 			throw new Error(
-				`'$orderby' objects must have exactly one element, got ${
-					result.length
-				} elements`,
+				`'$orderby' objects must have exactly one element, got ${result.length} elements`,
 			);
 		}
 		return result[0];
@@ -897,7 +895,9 @@ abstract class PinejsClientCoreTemplate<
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					this[validParam] = value;
+					(this[validParam] as PinejsClientCoreTemplate<
+						T
+					>[typeof validParam]) = value;
 				}
 			}
 		}
@@ -915,10 +915,16 @@ abstract class PinejsClientCoreTemplate<
 		const cloneParams: typeof params = {};
 		for (const validParam of validParams) {
 			if (this[validParam] != null) {
-				cloneParams[validParam] = this[validParam];
+				(cloneParams[validParam] as PinejsClientCoreTemplate<
+					T
+				>[typeof validParam]) = this[validParam];
 			}
-			if (params != null && params[validParam] != null) {
-				cloneParams[validParam] = params[validParam];
+
+			const paramValue = params != null ? params[validParam] : undefined;
+			if (paramValue != null) {
+				(cloneParams[validParam] as PinejsClientCoreTemplate<
+					T
+				>[typeof validParam]) = paramValue;
 			}
 		}
 
