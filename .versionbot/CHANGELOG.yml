@@ -1,4 +1,14 @@
 - commits:
+    - subject: Remove unnecessary `string` type that is handled by the `Params` type
+      hash: 0ab1242860aa8b3ed4162a5ee25081c640297676
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.5.4
+  date: 2019-06-18T14:46:38.983Z
+- commits:
     - subject: Use an .npmrc to prevent creating a package-lock on each install
       hash: 993c4ae09c3ba50e1d48e4156e86a7c890e54749
       body: ''
