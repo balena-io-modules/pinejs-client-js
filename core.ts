@@ -886,7 +886,7 @@ abstract class PinejsClientCoreTemplate<
 	backendParams: PinejsClientCoreFactory.AnyObject;
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
-	constructor(params: string | PinejsClientCoreFactory.Params) {
+	constructor(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
 			params = { apiPrefix: params };
 		}
@@ -905,7 +905,7 @@ abstract class PinejsClientCoreTemplate<
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
 	clone(
-		params: string | PinejsClientCoreFactory.Params,
+		params: PinejsClientCoreFactory.Params,
 		backendParams?: PinejsClientCoreFactory.AnyObject,
 	): T {
 		if (isString(params)) {
@@ -937,7 +937,7 @@ abstract class PinejsClientCoreTemplate<
 		}
 		return new (this.constructor as {
 			new (
-				params: string | PinejsClientCoreFactory.Params,
+				params: PinejsClientCoreFactory.Params,
 				backendParams: PinejsClientCoreFactory.AnyObject,
 			): T;
 		})(cloneParams, cloneBackendParams);
