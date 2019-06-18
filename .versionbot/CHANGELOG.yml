@@ -1,4 +1,18 @@
 - commits:
+    - subject: Add some type casting so that it compiles on TypeScript 3.5
+      hash: 695c053ceab9b146a8b755f9b041eb03e70b5914
+      body: ''
+      footer:
+        Resolves: '#79'
+        resolves: '#79'
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+  version: 5.5.2
+  date: 2019-06-10T10:48:07.772Z
+- commits:
     - subject: Fix downstream declaration creation errors due to `Dictionary`
       hash: a8a39edff8cc7e1d05fb9b67037718970e94296c
       body: ''
