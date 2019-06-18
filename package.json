@@ -25,17 +25,17 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "bluebird": "^3.5.4",
+    "bluebird": "^3.5.5",
     "chai": "^4.2.0",
     "coffee-script": "~1.12.7",
-    "husky": "^2.2.0",
-    "lint-staged": "^8.1.6",
+    "husky": "^2.4.1",
+    "lint-staged": "^8.2.1",
     "lodash": "^4.17.11",
     "mocha": "^6.1.4",
-    "prettier": "^1.17.0",
+    "prettier": "^1.18.2",
     "require-npm4-to-publish": "^1.0.0",
     "resin-lint": "^2.0.1",
-    "typescript": "^3.4.5"
+    "typescript": "^3.5.2"
   },
   "husky": {
     "hooks": {
