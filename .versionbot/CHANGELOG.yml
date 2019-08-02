@@ -1,4 +1,21 @@
 - commits:
+    - subject: 'Add ''upsert'' method supporting natural keys, requires Pinejs ^10.19.1'
+      hash: c8ebfceec3ecc1cc57ee6942db35730c6d993192
+      body: |
+        Detects unique constrain errors by 409 statusCodes.
+        Because of this, the upsert() method is only
+        supported when Pinejs ^10.19.0 is used.
+      footer:
+        Resolves: '#77'
+        resolves: '#77'
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+  version: 5.6.0
+  date: 2019-07-12T20:46:17.091Z
+- commits:
     - subject: Remove unnecessary `string` type that is handled by the `Params` type
       hash: 0ab1242860aa8b3ed4162a5ee25081c640297676
       body: ''
