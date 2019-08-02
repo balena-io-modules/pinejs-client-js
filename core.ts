@@ -2,6 +2,9 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
+// TODO: Drop once we bump the minimum supported TS version to v3.5
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
 const noop = () => {};
 const deprecated: Dictionary<() => void> = {};
 const addDeprecated = (name: string, message: string) => {
@@ -55,6 +58,7 @@ const isPromiseRejector = (
 ): obj is PinejsClientCoreFactory.PromiseRejector => {
 	return obj != null && obj.reject != null;
 };
+
 const isValidOption = (
 	key: string,
 ): key is keyof PinejsClientCoreFactory.ODataOptions & string => {
@@ -980,6 +984,57 @@ abstract class PinejsClientCoreTemplate<
 		return this.request(params, { method: 'DELETE' });
 	}
 
+	upsert(params: PinejsClientCoreFactory.UpsertParams) {
+		const { id, body, ...restParams } = params;
+
+		if (!isObject(id)) {
+			throw new Error('The id property must be an object');
+		}
+
+		const naturalKeyProps = Object.keys(params.id);
+		if (naturalKeyProps.length === 0) {
+			throw new Error(
+				'The id property must be an object with the natural key of the model',
+			);
+		}
+
+		if (body == null) {
+			throw new Error('The body property is missing');
+		}
+
+		const postParams = {
+			...restParams,
+			body: {
+				...body,
+				...id,
+			},
+		};
+		return this.post(postParams).then(undefined, err => {
+			const isUniqueKeyViolationResponse =
+				err.statusCode === 409 && /unique/i.test(err.body);
+
+			if (!isUniqueKeyViolationResponse) {
+				throw err;
+			}
+
+			const { options } = restParams;
+			const $filter =
+				options == null || options.$filter == null
+					? id
+					: { $and: [options.$filter, id] };
+
+			const patchParams = {
+				...restParams,
+				options: {
+					...options,
+					$filter,
+				},
+				body,
+			};
+			return this.patch(patchParams);
+		});
+	}
+
 	prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
 		params: string | (PinejsClientCoreFactory.ParamsObj & { method?: 'GET' }),
 	): PreparedFn<T, PromiseResult>;
@@ -1377,4 +1432,10 @@ export declare namespace PinejsClientCoreFactory {
 		pollInterval?: number;
 	}
 	export type SubscribeParams = SubscribeParamsObj | string;
+
+	export interface UpsertParams extends Omit<ParamsObj, 'id' | 'method'> {
+		id: Dictionary<Primitive>;
+		resource: string;
+		body: AnyObject;
+	}
 }
