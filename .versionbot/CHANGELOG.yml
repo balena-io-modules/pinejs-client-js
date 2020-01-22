@@ -1,4 +1,14 @@
 - commits:
+    - subject: Switch most CODEOWNERS entries to a team
+      hash: 3ef7e0db285ae54f96aee3f52319ac8d8c4d61e8
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.6.1
+  date: 2020-01-22T16:38:22.045Z
+- commits:
     - subject: 'Add ''upsert'' method supporting natural keys, requires Pinejs ^10.19.1'
       hash: c8ebfceec3ecc1cc57ee6942db35730c6d993192
       body: |
