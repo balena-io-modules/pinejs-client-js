@@ -20,22 +20,6 @@ addDeprecated(
 	'query',
 	'`query(params)` is deprecated, please use `get(params)` instead.',
 );
-for (const method of [
-	'prepare',
-	'subscribe',
-	'compile',
-	'request',
-	'get',
-	'put',
-	'post',
-	'patch',
-	'delete',
-]) {
-	addDeprecated(
-		`${method}StringParams`,
-		`\`${method}(url)\` is deprecated, please use \`${method}({ url })\` instead.`,
-	);
-}
 addDeprecated(
 	'requestOverrides',
 	'request(params, overrides)` is deprecated, please use `request({ ...params, ...overrides })` instead.',
@@ -879,7 +863,7 @@ abstract class PinejsClientCoreTemplate<
 	public backendParams: PinejsClientCoreFactory.AnyObject;
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
-	constructor(params: PinejsClientCoreFactory.Params) {
+	constructor(params: string | PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
 			params = { apiPrefix: params };
 		}
@@ -898,7 +882,7 @@ abstract class PinejsClientCoreTemplate<
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
 	public clone(
-		params: PinejsClientCoreFactory.Params,
+		params: string | PinejsClientCoreFactory.Params,
 		backendParams?: PinejsClientCoreFactory.AnyObject,
 	): PinejsClient {
 		if (isString(params)) {
@@ -936,8 +920,9 @@ abstract class PinejsClientCoreTemplate<
 
 	public get(params: PinejsClientCoreFactory.Params): PromiseResult {
 		if (isString(params)) {
-			deprecated.getStringParams();
-			params = { url: params };
+			throw new Error(
+				'`get(url)` is no longer supported, please use `get({ url })` instead.',
+			);
 		}
 		params.method = 'GET';
 		return this.request(params).then(
@@ -979,8 +964,9 @@ abstract class PinejsClientCoreTemplate<
 
 	public subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
 		if (isString(params)) {
-			deprecated.getStringParams();
-			params = { url: params };
+			throw new Error(
+				'`subscribe(url)` is no longer supported, please use `subscribe({ url })` instead.',
+			);
 		}
 
 		const { pollInterval } = params;
@@ -992,8 +978,9 @@ abstract class PinejsClientCoreTemplate<
 
 	public put(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
-			deprecated.putStringParams();
-			params = { url: params };
+			throw new Error(
+				'`put(url)` is no longer supported, please use `put({ url })` instead.',
+			);
 		}
 		params.method = 'PUT';
 		return this.request(params);
@@ -1001,8 +988,9 @@ abstract class PinejsClientCoreTemplate<
 
 	public patch(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
-			deprecated.patchStringParams();
-			params = { url: params };
+			throw new Error(
+				'`patch(url)` is no longer supported, please use `patch({ url })` instead.',
+			);
 		}
 		params.method = 'PATCH';
 		return this.request(params);
@@ -1010,8 +998,9 @@ abstract class PinejsClientCoreTemplate<
 
 	public post(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
-			deprecated.postStringParams();
-			params = { url: params };
+			throw new Error(
+				'`post(url)` is no longer supported, please use `post({ url })` instead.',
+			);
 		}
 		params.method = 'POST';
 		return this.request(params);
@@ -1019,8 +1008,9 @@ abstract class PinejsClientCoreTemplate<
 
 	public delete(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
-			deprecated.deleteStringParams();
-			params = { url: params };
+			throw new Error(
+				'`delete(url)` is no longer supported, please use `delete({ url })` instead.',
+			);
 		}
 		params.method = 'DELETE';
 		return this.request(params);
@@ -1076,7 +1066,7 @@ abstract class PinejsClientCoreTemplate<
 	}
 
 	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
-		params: string | (PinejsClientCoreFactory.ParamsObj & { method?: 'GET' }),
+		params: PinejsClientCoreFactory.ParamsObj & { method?: 'GET' },
 	): PreparedFn<T, PromiseResult>;
 	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
 		params: PinejsClientCoreFactory.ParamsObj & {
@@ -1086,50 +1076,44 @@ abstract class PinejsClientCoreTemplate<
 	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
 		params: PinejsClientCoreFactory.Params,
 	): PreparedFn<T, PromiseObj | PromiseResult> {
-		let paramsObj: PinejsClientCoreFactory.ParamsObj;
 		if (isString(params)) {
-			deprecated.prepareStringParams();
-			paramsObj = {
-				url: params,
-			};
-		} else {
-			paramsObj = params;
+			throw new Error(
+				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
+			);
 		}
 		// precompile the URL string to improve performance
 		const compiledUrl = this.compile(params);
 		const urlQueryParamsStr = compiledUrl.indexOf('?') === -1 ? '?' : '&';
-		if (paramsObj.method == null) {
-			paramsObj.method = 'GET';
+		if (params.method == null) {
+			params.method = 'GET';
 		} else {
-			paramsObj.method = paramsObj.method.toUpperCase() as typeof paramsObj.method;
+			params.method = params.method.toUpperCase() as typeof params.method;
 		}
-		const { body: defaultBody } = paramsObj;
-		const { passthrough: defaultPassthrough } = paramsObj;
+		const { body: defaultBody } = params;
+		const { passthrough: defaultPassthrough } = params;
 
 		const transformFn =
-			paramsObj.method === 'GET'
-				? this.transformGetResult(paramsObj)
-				: undefined;
+			params.method === 'GET' ? this.transformGetResult(params) : undefined;
 
 		return (parameterAliases, body, passthrough) => {
 			if (body != null) {
-				paramsObj.body = {
+				params.body = {
 					...defaultBody,
 					...body,
 				};
 			} else if (defaultBody != null) {
-				paramsObj.body = { ...defaultBody };
+				params.body = { ...defaultBody };
 			}
 			if (passthrough != null) {
-				paramsObj.passthrough = {
+				params.passthrough = {
 					...defaultPassthrough,
 					...passthrough,
 				};
 			} else if (defaultPassthrough != null) {
-				paramsObj.passthrough = { ...defaultPassthrough };
+				params.passthrough = { ...defaultPassthrough };
 			}
 			if (parameterAliases != null) {
-				paramsObj.url =
+				params.url =
 					compiledUrl +
 					urlQueryParamsStr +
 					mapObj(parameterAliases, (value, option) => {
@@ -1141,9 +1125,9 @@ abstract class PinejsClientCoreTemplate<
 						return `@${option}=${escapeValue(value)}`;
 					}).join('&');
 			} else {
-				paramsObj.url = compiledUrl;
+				params.url = compiledUrl;
 			}
-			const result = this.request(paramsObj);
+			const result = this.request(params);
 			if (transformFn != null) {
 				return result.then(transformFn) as PromiseResult;
 			}
@@ -1153,9 +1137,9 @@ abstract class PinejsClientCoreTemplate<
 
 	public compile(params: PinejsClientCoreFactory.Params): string {
 		if (isString(params)) {
-			deprecated.compileStringParams();
-			return params;
-		} else if (params.url != null) {
+			throw new Error('Params must be an object not a string');
+		}
+		if (params.url != null) {
 			return params.url;
 		} else {
 			if (params.resource == null) {
@@ -1237,16 +1221,14 @@ export function PinejsClientCoreFactory(
 				} else {
 					overrides = {};
 				}
-				let method: PinejsClientCoreFactory.ParamsObj['method'];
-				let body: PinejsClientCoreFactory.ParamsObj['body'];
-				let passthrough: PinejsClientCoreFactory.ParamsObj['passthrough'] = {};
-				let apiPrefix: PinejsClientCoreFactory.ParamsObj['apiPrefix'];
 
 				if (isString(params)) {
-					deprecated.requestStringParams();
-					params = { method: 'GET', url: params };
+					throw new Error(
+						'`request(url)` is no longer supported, please use `request({ url })` instead.',
+					);
 				}
-				({ method, body, passthrough = {}, apiPrefix } = params);
+				let { method, apiPrefix } = params;
+				const { body, passthrough = {} } = params;
 
 				apiPrefix = apiPrefix ?? this.apiPrefix;
 				const url = apiPrefix + this.compile(params);
@@ -1482,13 +1464,13 @@ export declare namespace PinejsClientCoreFactory {
 		options?: ODataOptions;
 	}
 
-	export type Params = ParamsObj | string;
+	export type Params = ParamsObj;
 
 	interface SubscribeParamsObj extends ParamsObj {
 		method?: 'GET';
 		pollInterval?: number;
 	}
-	export type SubscribeParams = SubscribeParamsObj | string;
+	export type SubscribeParams = SubscribeParamsObj;
 
 	export interface UpsertParams extends Omit<ParamsObj, 'id' | 'method'> {
 		id: Dictionary<Primitive>;
