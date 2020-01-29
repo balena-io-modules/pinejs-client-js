@@ -14,6 +14,10 @@ addDeprecated(
 	'expandFilter',
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
 );
+addDeprecated(
+	'query',
+	'`query(params)` is deprecated, please use `get(params)` instead.',
+);
 
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
@@ -925,6 +929,7 @@ abstract class PinejsClientCoreTemplate<
 	}
 
 	query(params: PinejsClientCoreFactory.Params): PromiseResult {
+		deprecated.query();
 		return this.get(params);
 	}
 
