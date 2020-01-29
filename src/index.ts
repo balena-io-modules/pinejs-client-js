@@ -787,7 +787,7 @@ const handleExpandOptions = (
 			}
 		}
 	}
-	let expandStr = expandOptions.join('&');
+	let expandStr = expandOptions.join(';');
 	if (expandStr.length > 0) {
 		expandStr = `(${expandStr})`;
 	}
