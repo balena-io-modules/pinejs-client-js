@@ -33,6 +33,10 @@ for (let method of [
 		`\`${method}(url)\` is deprecated, please use \`${method}({ url })\` instead.`,
 	);
 }
+addDeprecated(
+	'requestOverrides',
+	'request(params, overrides)` is deprecated, please use `request({ ...params, ...overrides })` instead.',
+);
 
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
@@ -1205,9 +1209,14 @@ export function PinejsClientCoreFactory(
 	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
 		request(
 			params: PinejsClientCoreFactory.Params,
-			overrides: { method?: PinejsClientCoreFactory.ODataMethod } = {},
+			overrides?: { method?: PinejsClientCoreFactory.ODataMethod },
 		): PromiseObj {
 			try {
+				if (overrides !== undefined) {
+					deprecated.requestOverrides();
+				} else {
+					overrides = {};
+				}
 				let method: PinejsClientCoreFactory.ParamsObj['method'];
 				let body: PinejsClientCoreFactory.ParamsObj['body'];
 				let passthrough: PinejsClientCoreFactory.ParamsObj['passthrough'] = {};
