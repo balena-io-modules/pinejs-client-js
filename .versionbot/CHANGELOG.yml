@@ -1,4 +1,14 @@
 - commits:
+    - subject: Update dependencies
+      hash: e7314acbdd029ece267a4568bf15cb5dc333eec1
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.6.2
+  date: 2020-01-29T21:12:32.246Z
+- commits:
     - subject: Switch most CODEOWNERS entries to a team
       hash: 3ef7e0db285ae54f96aee3f52319ac8d8c4d61e8
       body: ''
