@@ -1351,10 +1351,9 @@ export declare namespace PinejsClientCoreFactory {
 
 	export interface FilterArray extends Array<Filter> {}
 	export type FilterBaseType = string | number | null | boolean | Date;
-	// Strictly speaking `[ string, ...Filter ]` but there isn't a way to type that yet
 	export type RawFilter =
 		| string
-		| (string | Filter)[]
+		| [string, ...Filter[]]
 		| {
 				$string: string;
 				[index: string]: Filter;
