@@ -2,9 +2,6 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
-// TODO: Drop once we bump the minimum supported TS version to v3.5
-export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-
 const noop = () => {};
 const deprecated: Dictionary<() => void> = {};
 const addDeprecated = (name: string, message: string) => {
