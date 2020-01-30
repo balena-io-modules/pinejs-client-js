@@ -43,7 +43,7 @@ const isObject = (v: any): v is object => typeof v === 'object';
 const isPromiseRejector = (
 	obj: any,
 ): obj is PinejsClientCoreFactory.PromiseRejector => {
-	return obj != null && obj.reject != null;
+	return obj?.reject != null;
 };
 
 const isValidOption = (
@@ -909,7 +909,7 @@ abstract class PinejsClientCoreTemplate<
 				>[typeof validParam]) = this[validParam];
 			}
 
-			const paramValue = params != null ? params[validParam] : undefined;
+			const paramValue = params?.[validParam];
 			if (paramValue != null) {
 				(cloneParams[validParam] as PinejsClientCoreTemplate<
 					T
@@ -1004,9 +1004,7 @@ abstract class PinejsClientCoreTemplate<
 
 			const { options } = restParams;
 			const $filter =
-				options == null || options.$filter == null
-					? id
-					: { $and: [options.$filter, id] };
+				options?.$filter == null ? id : { $and: [options.$filter, id] };
 
 			const patchParams = {
 				...restParams,
