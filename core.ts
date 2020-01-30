@@ -186,10 +186,8 @@ class Poll<
 	destroy() {
 		this.stop();
 		this.requestFn = null;
-		this.subscribers = {
-			error: [],
-			data: [],
-		};
+		this.subscribers.error.length = 0;
+		this.subscribers.data.length = 0;
 	}
 
 	private restartTimeout() {
