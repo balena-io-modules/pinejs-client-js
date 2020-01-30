@@ -17,10 +17,6 @@ addDeprecated(
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
 );
 addDeprecated(
-	'query',
-	'`query(params)` is deprecated, please use `get(params)` instead.',
-);
-addDeprecated(
 	'requestOverrides',
 	'request(params, overrides)` is deprecated, please use `request({ ...params, ...overrides })` instead.',
 );
@@ -952,14 +948,6 @@ abstract class PinejsClientCoreTemplate<
 			}
 			return data.d;
 		};
-	}
-
-	public query(params: PinejsClientCoreFactory.Params): PromiseResult {
-		deprecated.query();
-		if (isString(params)) {
-			params = { url: params };
-		}
-		return this.get(params);
 	}
 
 	public subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
