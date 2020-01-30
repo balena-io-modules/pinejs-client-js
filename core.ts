@@ -15,16 +15,6 @@ addDeprecated(
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
 );
 
-function defaults<T>(a: T | undefined, b: T | undefined, z: T): T;
-function defaults<T>(a: T | undefined, z: T): T;
-function defaults<T>(...args: (T | undefined)[]): T | undefined {
-	for (const arg of args) {
-		if (arg != null) {
-			return arg;
-		}
-	}
-}
-
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
 	fn: (value: T, key: string) => R,
@@ -661,11 +651,11 @@ const buildFilter = (
 		return addParentKey(filterStr, parentKey);
 	} else if (Array.isArray(filter)) {
 		const filterArr = handleFilterArray(filter);
-		const filterStr = bracketJoin(filterArr, defaults(joinStr, ' or '));
+		const filterStr = bracketJoin(filterArr, joinStr ?? ' or ');
 		return addParentKey(filterStr, parentKey);
 	} else if (isObject(filter)) {
 		const filterArr = handleFilterObject(filter, parentKey);
-		return bracketJoin(filterArr, defaults(joinStr, ' and '));
+		return bracketJoin(filterArr, joinStr ?? ' and ');
 	} else {
 		throw new Error(
 			`Expected null/string/number/obj/array, got: ${typeof filter}`,
@@ -1189,15 +1179,15 @@ export function PinejsClientCoreFactory(
 					({ method, body, passthrough = {}, apiPrefix } = params);
 				}
 
-				apiPrefix = defaults(apiPrefix, this.apiPrefix);
+				apiPrefix = apiPrefix ?? this.apiPrefix;
 				const url = apiPrefix + this.compile(params);
 
-				method = defaults(method, overrides.method, 'GET');
+				method = method ?? overrides.method ?? 'GET';
 				method = method.toUpperCase() as typeof method;
 				// Filter to prevent accidental parameter passthrough.
 				const opts = {
 					...this.passthrough,
-					...defaults(this.passthroughByMethod[method], {}),
+					...(this.passthroughByMethod[method] ?? {}),
 					...passthrough,
 					url,
 					body,
