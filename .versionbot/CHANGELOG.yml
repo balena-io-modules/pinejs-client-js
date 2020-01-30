@@ -1,4 +1,14 @@
 - commits:
+    - subject: Improve `RawFilter` typing
+      hash: 2006d4e7f0fecbb99357b82215da28978194db41
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.6.3
+  date: 2020-01-30T12:59:22.535Z
+- commits:
     - subject: Update dependencies
       hash: e7314acbdd029ece267a4568bf15cb5dc333eec1
       body: ''
