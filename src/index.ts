@@ -16,10 +16,6 @@ addDeprecated(
 	'expandFilter',
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
 );
-addDeprecated(
-	'requestOverrides',
-	'request(params, overrides)` is deprecated, please use `request({ ...params, ...overrides })` instead.',
-);
 
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
@@ -1199,15 +1195,12 @@ export function PinejsClientCoreFactory(
 			PinejsClientCoreFactory.PromiseResultTypes
 		> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
 	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
-		public request(
-			params: PinejsClientCoreFactory.Params,
-			overrides?: { method?: PinejsClientCoreFactory.ODataMethod },
-		): PromiseObj {
+		public request(params: PinejsClientCoreFactory.Params): PromiseObj {
 			try {
-				if (overrides !== undefined) {
-					deprecated.requestOverrides();
-				} else {
-					overrides = {};
+				if (arguments[1] !== undefined) {
+					throw new Error(
+						'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
+					);
 				}
 
 				if (isString(params)) {
@@ -1221,7 +1214,7 @@ export function PinejsClientCoreFactory(
 				apiPrefix = apiPrefix ?? this.apiPrefix;
 				const url = apiPrefix + this.compile(params);
 
-				method = method ?? overrides.method ?? 'GET';
+				method = method ?? 'GET';
 				method = method.toUpperCase() as typeof method;
 				// Filter to prevent accidental parameter passthrough.
 				const opts = {
@@ -1230,7 +1223,6 @@ export function PinejsClientCoreFactory(
 					...passthrough,
 					url,
 					body,
-					...overrides,
 					method,
 				};
 
