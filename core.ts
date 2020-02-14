@@ -227,31 +227,17 @@ const isPrimitive = (
 	);
 };
 
-const baseEscapeResource = (resource: string | string[]) => {
+// Escape a resource name (string), or resource path (array)
+const escapeResource = (resource: string | string[]) => {
 	if (isString(resource)) {
-		return encodeURIComponent(resource);
+		resource = encodeURIComponent(resource);
 	} else if (Array.isArray(resource)) {
-		return resource.map(encodeURIComponent).join('/');
+		resource = resource.map(encodeURIComponent).join('/');
 	} else {
 		throw new Error('Not a valid resource: ' + typeof resource);
 	}
-};
 
-// Escape a resource name (string), or resource path (array)
-const escapeResource = (resource: string | string[]) => {
-	const encodedResource = baseEscapeResource(resource);
-
-	if (trailingCountRegex.test(encodedResource)) {
-		throw new Error(
-			'/$count can only be used for top level or expanded resources',
-		);
-	}
-
-	return encodedResource;
-};
-
-const escapeCountableResource = (resource: string | string[]) => {
-	return baseEscapeResource(resource).replace(trailingCountRegex, '/$count');
+	return resource.replace(trailingCountRegex, '/$count');
 };
 
 // Escape a primitive value
@@ -785,7 +771,7 @@ const handleExpandOptions = (
 	if (expandStr.length > 0) {
 		expandStr = `(${expandStr})`;
 	}
-	expandStr = escapeCountableResource(parentKey) + expandStr;
+	expandStr = escapeResource(parentKey) + expandStr;
 	return expandStr;
 };
 const handleExpandObject = (expand: PinejsClientCoreFactory.ResourceExpand) => {
@@ -833,7 +819,7 @@ const handleExpandArray = (
 
 const buildExpand = (expand: PinejsClientCoreFactory.Expand): string => {
 	if (isPrimitive(expand)) {
-		return escapeCountableResource(expand);
+		return escapeResource(expand);
 	} else if (Array.isArray(expand)) {
 		const expandStr = handleExpandArray(expand);
 		return join(expandStr);
@@ -1095,7 +1081,7 @@ abstract class PinejsClientCoreTemplate<
 			if (params.resource == null) {
 				throw new Error('Either the url or resource must be specified.');
 			}
-			let url = escapeCountableResource(params.resource);
+			let url = escapeResource(params.resource);
 
 			if (params.hasOwnProperty('id')) {
 				const { id } = params;
