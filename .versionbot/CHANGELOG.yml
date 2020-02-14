@@ -1,4 +1,14 @@
 - commits:
+    - subject: Update to resin-lint 3.x
+      hash: f1b415154cc21b9880ad8ee1134ea9340220aba2
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.6.10
+  date: 2020-02-14T15:37:12.741Z
+- commits:
     - subject: 'CircleCI: Remove deploy job as it''s handled by balenaCI'
       hash: d6c9a485e0da5f6aa600597b6d076a8dce411df7
       body: ''
