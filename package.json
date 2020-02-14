@@ -33,7 +33,6 @@
   },
   "devDependencies": {
     "@balena/lint": "^4.1.1",
-    "bluebird": "^3.7.2",
     "chai": "^4.2.0",
     "coffee-script": "~1.12.7",
     "husky": "^4.2.5",

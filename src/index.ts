@@ -42,12 +42,6 @@ const isDate = (v: any): v is Date =>
 
 const isObject = (v: any): v is object => typeof v === 'object';
 
-const isPromiseRejector = (
-	obj: any,
-): obj is PinejsClientCoreFactory.PromiseRejector => {
-	return obj?.reject != null;
-};
-
 const isValidOption = (
 	key: string,
 ): key is keyof PinejsClientCoreFactory.ODataOptions & string => {
@@ -69,17 +63,7 @@ const trailingCountRegex = new RegExp(
 interface PollOnObj {
 	unsubscribe: () => void;
 }
-class Poll<
-	PromiseResult extends PromiseLike<
-		| number
-		| PinejsClientCoreFactory.AnyObject
-		| PinejsClientCoreFactory.AnyObject[]
-	> = Promise<
-		| number
-		| PinejsClientCoreFactory.AnyObject
-		| PinejsClientCoreFactory.AnyObject[]
-	>
-> {
+class Poll {
 	private subscribers: {
 		error: Array<(response: PromiseResult) => void>;
 		data: Array<(err: any) => void>;
@@ -842,13 +826,7 @@ export type PreparedFn<
 	passthrough?: PinejsClientCoreFactory.ParamsObj['passthrough'],
 ) => U;
 
-abstract class PinejsClientCoreTemplate<
-	PinejsClient,
-	PromiseObj extends PromiseLike<{}> = Promise<{}>,
-	PromiseResult extends PromiseLike<
-		PinejsClientCoreFactory.PromiseResultTypes
-	> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
-> {
+abstract class PinejsClientCoreTemplate<PinejsClient> {
 	public apiPrefix: string = '/';
 	public passthrough: PinejsClientCoreFactory.AnyObject = {};
 	public passthroughByMethod: PinejsClientCoreFactory.AnyObject = {};
@@ -1181,20 +1159,11 @@ abstract class PinejsClientCoreTemplate<
 	): PromiseObj;
 }
 
-export function PinejsClientCoreFactory(
-	Promise: PinejsClientCoreFactory.PromiseRejector,
-): typeof PinejsClientCoreFactory.PinejsClientCore {
-	if (!isPromiseRejector(Promise)) {
-		throw new Error('The Promise implementation must support .reject');
-	}
+export type PromiseObj = Promise<{}>;
+export type PromiseResult = Promise<PinejsClientCoreFactory.PromiseResultTypes>;
 
-	abstract class PinejsClientCore<
-		T,
-		PromiseObj extends PromiseLike<{}> = Promise<{}>,
-		PromiseResult extends PromiseLike<
-			PinejsClientCoreFactory.PromiseResultTypes
-		> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
-	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
+export function PinejsClientCoreFactory(): typeof PinejsClientCoreFactory.PinejsClientCore {
+	abstract class PinejsClientCore<T> extends PinejsClientCoreTemplate<T> {
 		public request(params: PinejsClientCoreFactory.Params): PromiseObj {
 			try {
 				if (arguments[1] !== undefined) {
@@ -1238,13 +1207,9 @@ export function PinejsClientCoreFactory(
 
 /* tslint:disable-next-line:no-namespace */
 export declare namespace PinejsClientCoreFactory {
-	export abstract class PinejsClientCore<
-		T,
-		PromiseObj extends PromiseLike<{}> = Promise<{}>,
-		PromiseResult extends PromiseLike<
-			number | AnyObject | AnyObject[]
-		> = Promise<number | AnyObject | AnyObject[]>
-	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
+	export abstract class PinejsClientCore<T> extends PinejsClientCoreTemplate<
+		T
+	> {
 		public request(
 			params: Params,
 			overrides?: { method?: ODataMethod },
@@ -1260,10 +1225,6 @@ export declare namespace PinejsClientCoreFactory {
 	}
 
 	export type PromiseResultTypes = number | AnyObject | AnyObject[];
-
-	interface PromiseRejector {
-		reject(err: any): PromiseLike<any>;
-	}
 
 	type FilterOperationKey =
 		| '$ne'
