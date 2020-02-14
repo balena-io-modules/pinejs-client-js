@@ -18,9 +18,10 @@
     "lint": "npm run lint:coffee && npm run lint:typescript",
     "pretest": "npm run lint && npm run-script prepublishOnly",
     "test": "mocha",
+    "test6": "npm run-script prepublishOnly && mocha",
     "prepublish": "require-npm4-to-publish",
     "prepublishOnly": "tsc",
-    "prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"*.ts\""
+    "prettify": "resin-lint --typescript --fix core.ts"
   },
   "license": "MIT",
   "dependencies": {},
@@ -32,9 +33,8 @@
     "lint-staged": "^10.0.7",
     "lodash": "^4.17.15",
     "mocha": "^6.2.2",
-    "prettier": "^1.19.1",
     "require-npm4-to-publish": "^1.0.0",
-    "resin-lint": "^2.0.1",
+    "resin-lint": "^3.3.0",
     "typescript": "^3.7.5"
   },
   "husky": {
