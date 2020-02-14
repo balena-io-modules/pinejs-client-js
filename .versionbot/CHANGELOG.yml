@@ -1,4 +1,17 @@
 - commits:
+    - subject: Add the missing `method` on the post method
+      hash: 2f649c3157a50277f6e168a64abb1593ac9d7a4f
+      body: |
+        Fixes a regression of v5.6.7.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+  version: 5.6.8
+  date: 2020-02-14T14:59:02.633Z
+- commits:
     - subject: Deprecate request overrides
       hash: 84fa00ab60a98bbe56885ee5fabcccfc876a86d6
       body: ''
