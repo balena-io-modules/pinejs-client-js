@@ -14,7 +14,15 @@ jobs:
     docker:
       - image: circleci/node:6
     working_directory: ~/node-6
-    steps: *buildSteps
+    steps:
+    - checkout
+    - run:
+        name: Install
+        command: npm install --loglevel warn
+    - run:
+        name: Test
+        # Skip linting for node 6 as it cannot handle it and that will be checked by other versions
+        command: npm run test6 --loglevel warn
 
   node-8:
     docker:

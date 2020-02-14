@@ -2,7 +2,9 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
-const noop = () => {};
+const noop = () => {
+	// noop
+};
 const deprecated: Dictionary<() => void> = {};
 const addDeprecated = (name: string, message: string) => {
 	deprecated[name] = () => {
@@ -18,7 +20,7 @@ addDeprecated(
 	'query',
 	'`query(params)` is deprecated, please use `get(params)` instead.',
 );
-for (let method of [
+for (const method of [
 	'prepare',
 	'subscribe',
 	'compile',
@@ -87,9 +89,9 @@ const trailingCountRegex = new RegExp(
 	`(?:(?:${encodedSlash})|/)${encodedCount}$`,
 );
 
-type PollOnObj = {
+interface PollOnObj {
 	unsubscribe: () => void;
-};
+}
 class Poll<
 	PromiseResult extends PromiseLike<
 		| number
@@ -119,12 +121,12 @@ class Poll<
 		this.start();
 	}
 
-	setPollInterval(intervalTime: number) {
+	public setPollInterval(intervalTime: number) {
 		this.intervalTime = intervalTime;
 		this.restartTimeout();
 	}
 
-	runRequest() {
+	public runRequest() {
 		if (this.stopped || this.requestFn == null) {
 			return;
 		}
@@ -173,9 +175,12 @@ class Poll<
 		);
 	}
 
-	on(name: 'error', fn: (response: PromiseResult) => void): PollOnObj;
-	on(name: 'data', fn: (err: any) => void): PollOnObj;
-	on(name: keyof Poll['subscribers'], fn: (value: any) => void): PollOnObj {
+	public on(name: 'error', fn: (response: PromiseResult) => void): PollOnObj;
+	public on(name: 'data', fn: (err: any) => void): PollOnObj;
+	public on(
+		name: keyof Poll['subscribers'],
+		fn: (value: any) => void,
+	): PollOnObj {
 		const subscribers = this.subscribers[name] as Array<(value: any) => void>;
 		const index = subscribers.push(fn) - 1;
 
@@ -184,19 +189,19 @@ class Poll<
 		};
 	}
 
-	start() {
+	public start() {
 		this.stopped = false;
 		this.runRequest();
 	}
 
-	stop() {
+	public stop() {
 		if (this.pollInterval) {
 			clearTimeout(this.pollInterval);
 		}
 		this.stopped = true;
 	}
 
-	destroy() {
+	public destroy() {
 		this.stop();
 		this.requestFn = null;
 		this.subscribers.error.length = 0;
@@ -277,9 +282,7 @@ const escapeValue = (value: PinejsClientCoreFactory.Primitive) => {
 	}
 };
 
-const escapeParameterAlias = (
-	value: PinejsClientCoreFactory.Filter,
-): string => {
+const escapeParameterAlias = (value: unknown): string => {
 	if (!isString(value)) {
 		throw new Error(
 			`Parameter alias reference must be a string, got: ${typeof value}`,
@@ -350,14 +353,16 @@ const applyBinds = (
 	parentKey?: string[],
 ) => {
 	for (const index in params) {
-		const param = params[index];
-		let paramStr = `(${buildFilter(param).join('')})`;
-		// Escape $ for filter.replace
-		paramStr = paramStr.replace(/\$/g, '$$$$');
-		filter = filter.replace(
-			new RegExp(`\\$${index}([^a-zA-Z0-9]|$)`, 'g'),
-			`${paramStr}$1`,
-		);
+		if (params.hasOwnProperty(index)) {
+			const param = params[index];
+			let paramStr = `(${buildFilter(param).join('')})`;
+			// Escape $ for filter.replace
+			paramStr = paramStr.replace(/\$/g, '$$$$');
+			filter = filter.replace(
+				new RegExp(`\\$${index}([^a-zA-Z0-9]|$)`, 'g'),
+				`${paramStr}$1`,
+			);
+		}
 	}
 	filter = `(${filter})`;
 	return addParentKey(filter, parentKey);
@@ -427,9 +432,12 @@ const filterFunction = (
 	}
 };
 
+type FilterType<
+	Operator extends keyof PinejsClientCoreFactory.FilterObj
+> = NonNullable<PinejsClientCoreFactory.FilterObj[Operator]>;
 // Handle special cases for all the different $ operators.
 const handleFilterOperator = (
-	filter: PinejsClientCoreFactory.Filter,
+	filter: PinejsClientCoreFactory.FilterObj[string],
 	operator: keyof PinejsClientCoreFactory.FilterObj,
 	parentKey?: string[],
 ): string[] => {
@@ -445,7 +453,11 @@ const handleFilterOperator = (
 		case '$mul':
 		case '$div':
 		case '$mod':
-			return filterOperation(filter, operator, parentKey);
+			return filterOperation(
+				filter as FilterType<typeof operator>,
+				operator,
+				parentKey,
+			);
 		// break
 		case '$contains':
 		case '$endswith':
@@ -476,9 +488,14 @@ const handleFilterOperator = (
 		case '$ceiling':
 		case '$isof':
 		case '$cast':
-			return filterFunction(filter, operator, parentKey);
+			return filterFunction(
+				filter as FilterType<typeof operator>,
+				operator,
+				parentKey,
+			);
 		// break
 		case '$raw': {
+			filter = filter as FilterType<typeof operator>;
 			if (isString(filter)) {
 				filter = `(${filter})`;
 				return addParentKey(filter, parentKey);
@@ -496,7 +513,6 @@ const handleFilterOperator = (
 					}
 					return applyBinds(rawFilter, mappedParams, parentKey);
 				} else if (isObject(filter)) {
-					const params = filter;
 					const filterStr = filter.$string;
 					if (!isString(filterStr)) {
 						throw new Error(
@@ -504,36 +520,35 @@ const handleFilterOperator = (
 						);
 					}
 					const mappedParams: Dictionary<PinejsClientCoreFactory.Filter> = {};
-					for (const index in params) {
+					for (const index in filter) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
 								throw new Error(
 									`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
 								);
 							}
-							mappedParams[index] = params[
+							mappedParams[index] = filter[
 								index
 							] as PinejsClientCoreFactory.Filter;
 						}
 					}
 					return applyBinds(filterStr, mappedParams, parentKey);
 				}
-			} else {
-				throw new Error(
-					`Expected string/array/object for ${operator}, got: ${typeof filter}`,
-				);
 			}
+			throw new Error(
+				`Expected string/array/object for ${operator}, got: ${typeof filter}`,
+			);
 		}
 		// break
 		case '$': {
-			const resource = escapeResource(filter as string | string[]);
+			const resource = escapeResource(filter as FilterType<typeof operator>);
 			return addParentKey(resource, parentKey);
 		}
 		// break
 		case '$and':
 		case '$or': {
 			const filterStr = buildFilter(
-				filter,
+				filter as FilterType<typeof operator>,
 				undefined,
 				` ${operator.slice(1)} `,
 			);
@@ -541,6 +556,7 @@ const handleFilterOperator = (
 		}
 		// break
 		case '$in': {
+			filter = filter as FilterType<typeof operator>;
 			if (isPrimitive(filter)) {
 				const filterStr = escapeValue(filter);
 				return addParentKey(filterStr, parentKey, ' eq ');
@@ -549,9 +565,10 @@ const handleFilterOperator = (
 					const filterStr = handleFilterArray(filter, undefined, 1);
 					const inStr = bracketJoin(filterStr, ', ').join('');
 					return addParentKey(`(${inStr})`, parentKey, ' in ');
+				} else {
+					const filterStr = handleFilterArray(filter, parentKey, 1);
+					return bracketJoin(filterStr, ' or ');
 				}
-				const filterStr = handleFilterArray(filter, parentKey, 1);
-				return bracketJoin(filterStr, ' or ');
 			} else if (isObject(filter)) {
 				const filterArr = handleFilterObject(filter, parentKey);
 				if (filterArr.length < 1) {
@@ -570,15 +587,17 @@ const handleFilterOperator = (
 		}
 		// break
 		case '$not': {
-			const filterStr = `not(${buildFilter(filter).join('')})`;
+			const filterStr = `not(${buildFilter(
+				filter as FilterType<typeof operator>,
+			).join('')})`;
 			return addParentKey(filterStr, parentKey);
 		}
 		// break
 		case '$any':
-		case '$all':
-			const lamda = filter as PinejsClientCoreFactory.Lambda;
-			const alias = lamda.$alias;
-			let expr = lamda.$expr;
+		case '$all': {
+			filter = filter as FilterType<typeof operator>;
+			const alias = filter.$alias;
+			const expr = filter.$expr;
 			if (alias == null) {
 				throw new Error(
 					`Lambda expression (${operator}) has no alias defined.`,
@@ -597,6 +616,7 @@ const handleFilterOperator = (
 			}
 			filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
 			return addParentKey(filterStr, parentKey, '/');
+		}
 		// break
 		default:
 			throw new Error(`Unrecognised operator: '${operator}'`);
@@ -626,7 +646,7 @@ const handleFilterObject = (
 				}
 				keys = parentKey.concat(keys);
 			}
-			return buildFilter(value, keys);
+			return buildFilter(value as PinejsClientCoreFactory.Filter, keys);
 		}
 	});
 };
@@ -860,28 +880,26 @@ const validParams: PinejsClientCoreFactory.SharedParam[] = [
 	'passthroughByMethod',
 ];
 
-export interface PreparedFn<
+export type PreparedFn<
 	T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>,
 	U
-> {
-	(
-		parameterAliases?: T,
-		body?: PinejsClientCoreFactory.ParamsObj['body'],
-		passthrough?: PinejsClientCoreFactory.ParamsObj['passthrough'],
-	): U;
-}
+> = (
+	parameterAliases?: T,
+	body?: PinejsClientCoreFactory.ParamsObj['body'],
+	passthrough?: PinejsClientCoreFactory.ParamsObj['passthrough'],
+) => U;
 
 abstract class PinejsClientCoreTemplate<
-	T,
+	PinejsClient,
 	PromiseObj extends PromiseLike<{}> = Promise<{}>,
 	PromiseResult extends PromiseLike<
 		PinejsClientCoreFactory.PromiseResultTypes
 	> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
 > {
-	apiPrefix: string = '/';
-	passthrough: PinejsClientCoreFactory.AnyObject = {};
-	passthroughByMethod: PinejsClientCoreFactory.AnyObject = {};
-	backendParams: PinejsClientCoreFactory.AnyObject;
+	public apiPrefix: string = '/';
+	public passthrough: PinejsClientCoreFactory.AnyObject = {};
+	public passthroughByMethod: PinejsClientCoreFactory.AnyObject = {};
+	public backendParams: PinejsClientCoreFactory.AnyObject;
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
 	constructor(params: PinejsClientCoreFactory.Params) {
@@ -894,7 +912,7 @@ abstract class PinejsClientCoreTemplate<
 				const value = params[validParam];
 				if (value != null) {
 					(this[validParam] as PinejsClientCoreTemplate<
-						T
+						PinejsClient
 					>[typeof validParam]) = value;
 				}
 			}
@@ -902,10 +920,10 @@ abstract class PinejsClientCoreTemplate<
 	}
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
-	clone(
+	public clone(
 		params: PinejsClientCoreFactory.Params,
 		backendParams?: PinejsClientCoreFactory.AnyObject,
-	): T {
+	): PinejsClient {
 		if (isString(params)) {
 			params = { apiPrefix: params };
 		}
@@ -914,14 +932,14 @@ abstract class PinejsClientCoreTemplate<
 		for (const validParam of validParams) {
 			if (this[validParam] != null) {
 				(cloneParams[validParam] as PinejsClientCoreTemplate<
-					T
+					PinejsClient
 				>[typeof validParam]) = this[validParam];
 			}
 
 			const paramValue = params?.[validParam];
 			if (paramValue != null) {
 				(cloneParams[validParam] as PinejsClientCoreTemplate<
-					T
+					PinejsClient
 				>[typeof validParam]) = paramValue;
 			}
 		}
@@ -933,15 +951,13 @@ abstract class PinejsClientCoreTemplate<
 		if (isObject(backendParams)) {
 			cloneBackendParams = { ...cloneBackendParams, ...backendParams };
 		}
-		return new (this.constructor as {
-			new (
-				params: PinejsClientCoreFactory.Params,
-				backendParams: PinejsClientCoreFactory.AnyObject,
-			): T;
-		})(cloneParams, cloneBackendParams);
+		return new (this.constructor as new (
+			params: PinejsClientCoreFactory.Params,
+			backendParams: PinejsClientCoreFactory.AnyObject,
+		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
 
-	get(params: PinejsClientCoreFactory.Params): PromiseResult {
+	public get(params: PinejsClientCoreFactory.Params): PromiseResult {
 		if (isString(params)) {
 			deprecated.getStringParams();
 			params = { url: params };
@@ -952,7 +968,7 @@ abstract class PinejsClientCoreTemplate<
 		) as PromiseResult;
 	}
 
-	query(params: PinejsClientCoreFactory.Params): PromiseResult {
+	public query(params: PinejsClientCoreFactory.Params): PromiseResult {
 		deprecated.query();
 		if (isString(params)) {
 			params = { url: params };
@@ -960,7 +976,7 @@ abstract class PinejsClientCoreTemplate<
 		return this.get(params);
 	}
 
-	subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
+	public subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
 		if (isString(params)) {
 			deprecated.getStringParams();
 			params = { url: params };
@@ -973,7 +989,7 @@ abstract class PinejsClientCoreTemplate<
 		return new Poll(requestFn, pollInterval);
 	}
 
-	put(params: PinejsClientCoreFactory.Params) {
+	public put(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
 			deprecated.putStringParams();
 			params = { url: params };
@@ -982,7 +998,7 @@ abstract class PinejsClientCoreTemplate<
 		return this.request(params);
 	}
 
-	patch(params: PinejsClientCoreFactory.Params) {
+	public patch(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
 			deprecated.patchStringParams();
 			params = { url: params };
@@ -991,7 +1007,7 @@ abstract class PinejsClientCoreTemplate<
 		return this.request(params);
 	}
 
-	post(params: PinejsClientCoreFactory.Params) {
+	public post(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
 			deprecated.postStringParams();
 			params = { url: params };
@@ -1000,7 +1016,7 @@ abstract class PinejsClientCoreTemplate<
 		return this.request(params);
 	}
 
-	delete(params: PinejsClientCoreFactory.Params) {
+	public delete(params: PinejsClientCoreFactory.Params) {
 		if (isString(params)) {
 			deprecated.deleteStringParams();
 			params = { url: params };
@@ -1009,7 +1025,7 @@ abstract class PinejsClientCoreTemplate<
 		return this.request(params);
 	}
 
-	upsert(params: PinejsClientCoreFactory.UpsertParams) {
+	public upsert(params: PinejsClientCoreFactory.UpsertParams) {
 		const { id, body, ...restParams } = params;
 
 		if (!isObject(id)) {
@@ -1058,15 +1074,15 @@ abstract class PinejsClientCoreTemplate<
 		});
 	}
 
-	prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
+	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
 		params: string | (PinejsClientCoreFactory.ParamsObj & { method?: 'GET' }),
 	): PreparedFn<T, PromiseResult>;
-	prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
+	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
 		params: PinejsClientCoreFactory.ParamsObj & {
 			method: Exclude<PinejsClientCoreFactory.ParamsObj['method'], 'GET'>;
 		},
 	): PreparedFn<T, PromiseObj>;
-	prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
+	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
 		params: PinejsClientCoreFactory.Params,
 	): PreparedFn<T, PromiseObj | PromiseResult> {
 		let paramsObj: PinejsClientCoreFactory.ParamsObj;
@@ -1132,7 +1148,7 @@ abstract class PinejsClientCoreTemplate<
 		};
 	}
 
-	compile(params: PinejsClientCoreFactory.Params): string {
+	public compile(params: PinejsClientCoreFactory.Params): string {
 		if (isString(params)) {
 			deprecated.compileStringParams();
 			return params;
@@ -1180,12 +1196,12 @@ abstract class PinejsClientCoreTemplate<
 		}
 	}
 
-	abstract request(
+	public abstract request(
 		params: PinejsClientCoreFactory.Params,
 		overrides?: { method?: PinejsClientCoreFactory.ODataMethod },
 	): PromiseObj;
 
-	abstract _request(
+	public abstract _request(
 		params: {
 			method: string;
 			url: string;
@@ -1208,7 +1224,7 @@ export function PinejsClientCoreFactory(
 			PinejsClientCoreFactory.PromiseResultTypes
 		> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
 	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
-		request(
+		public request(
 			params: PinejsClientCoreFactory.Params,
 			overrides?: { method?: PinejsClientCoreFactory.ODataMethod },
 		): PromiseObj {
@@ -1255,6 +1271,7 @@ export function PinejsClientCoreFactory(
 	return PinejsClientCore;
 }
 
+/* tslint:disable-next-line:no-namespace */
 export declare namespace PinejsClientCoreFactory {
 	export abstract class PinejsClientCore<
 		T,
@@ -1263,9 +1280,12 @@ export declare namespace PinejsClientCoreFactory {
 			number | AnyObject | AnyObject[]
 		> = Promise<number | AnyObject | AnyObject[]>
 	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
-		request(params: Params, overrides?: { method?: ODataMethod }): PromiseObj;
+		public request(
+			params: Params,
+			overrides?: { method?: ODataMethod },
+		): PromiseObj;
 
-		abstract _request(
+		public abstract _request(
 			params: {
 				method: string;
 				url: string;
@@ -1325,7 +1345,7 @@ export declare namespace PinejsClientCoreFactory {
 		| '$cast';
 	type FilterFunctionValue = Filter;
 
-	export interface FilterObj extends Dictionary<Filter | undefined> {
+	export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
 		'@'?: string;
 
 		$raw?: RawFilter;
@@ -1396,10 +1416,10 @@ export declare namespace PinejsClientCoreFactory {
 				$string: string;
 				[index: string]: Filter;
 		  };
-	export type Lambda = {
+	export interface Lambda {
 		$alias: string;
 		$expr: Filter;
-	};
+	}
 	export type Filter = FilterObj | FilterArray | FilterBaseType;
 
 	export interface ResourceExpand extends Dictionary<ODataOptions> {}
