@@ -1,4 +1,14 @@
 - commits:
+    - subject: 'CircleCI: Remove deploy job as it''s handled by balenaCI'
+      hash: d6c9a485e0da5f6aa600597b6d076a8dce411df7
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.6.9
+  date: 2020-02-14T15:27:02.200Z
+- commits:
     - subject: Add the missing `method` on the post method
       hash: 2f649c3157a50277f6e168a64abb1593ac9d7a4f
       body: |
