@@ -1,4 +1,28 @@
 - commits:
+    - subject: Deprecate request overrides
+      hash: 84fa00ab60a98bbe56885ee5fabcccfc876a86d6
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+    - subject: Deprecate queries using a string url
+      hash: 8cd9be6b0642ff5b1cba0596f827a74fd76bbff5
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+    - subject: Deprecate `query` in favor of `get`
+      hash: ab77d10cad0a57914018b76c9755deddb3e078ef
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.6.7
+  date: 2020-02-14T12:52:12.207Z
+- commits:
     - subject: Allow resource/$count in $filter
       hash: 7eac38f1ed6a3bcdf1e6c4be5dde50aca953359e
       body: ''
