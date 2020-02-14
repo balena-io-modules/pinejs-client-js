@@ -996,6 +996,7 @@ abstract class PinejsClientCoreTemplate<
 			deprecated.postStringParams();
 			params = { url: params };
 		}
+		params.method = 'POST';
 		return this.request(params);
 	}
 
