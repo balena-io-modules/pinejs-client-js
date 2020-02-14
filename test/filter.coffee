@@ -635,17 +635,17 @@ testFilter(
 testFilter(
 	$eq: [
 		$: 'a/$count'
-		true
+		1
 	]
-	new Error('/$count can only be used for top level or expanded resources')
+	'a/$count eq 1'
 )
 
 testFilter(
 	$eq: [
 		$: [ 'a', '$count' ]
-		true
+		1
 	]
-	new Error('/$count can only be used for top level or expanded resources')
+	'a/$count eq 1'
 )
 
 # Test functions
