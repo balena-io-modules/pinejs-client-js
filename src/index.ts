@@ -804,7 +804,10 @@ export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	passthrough?: ParamsObj['passthrough'],
 ) => U;
 
-abstract class PinejsClientCoreTemplate<PinejsClient> {
+export type PromiseObj = Promise<{}>;
+export type PromiseResult = Promise<PromiseResultTypes>;
+
+export abstract class PinejsClientCore<PinejsClient> {
 	public apiPrefix: string = '/';
 	public passthrough: AnyObject = {};
 	public passthroughByMethod: AnyObject = {};
@@ -820,7 +823,7 @@ abstract class PinejsClientCoreTemplate<PinejsClient> {
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					(this[validParam] as PinejsClientCoreTemplate<
+					(this[validParam] as PinejsClientCore<
 						PinejsClient
 					>[typeof validParam]) = value;
 				}
@@ -840,14 +843,14 @@ abstract class PinejsClientCoreTemplate<PinejsClient> {
 		const cloneParams: typeof params = {};
 		for (const validParam of validParams) {
 			if (this[validParam] != null) {
-				(cloneParams[validParam] as PinejsClientCoreTemplate<
+				(cloneParams[validParam] as PinejsClientCore<
 					PinejsClient
 				>[typeof validParam]) = this[validParam];
 			}
 
 			const paramValue = params?.[validParam];
 			if (paramValue != null) {
-				(cloneParams[validParam] as PinejsClientCoreTemplate<
+				(cloneParams[validParam] as PinejsClientCore<
 					PinejsClient
 				>[typeof validParam]) = paramValue;
 			}
@@ -1123,24 +1126,6 @@ abstract class PinejsClientCoreTemplate<PinejsClient> {
 		}
 	}
 
-	public abstract request(
-		params: Params,
-		overrides?: { method?: ODataMethod },
-	): PromiseObj;
-
-	public abstract _request(
-		params: {
-			method: string;
-			url: string;
-			body?: AnyObject;
-		} & AnyObject,
-	): PromiseObj;
-}
-
-export type PromiseObj = Promise<{}>;
-export type PromiseResult = Promise<PromiseResultTypes>;
-
-export abstract class PinejsClientCore<T> extends PinejsClientCoreTemplate<T> {
 	public request(params: Params): PromiseObj {
 		try {
 			if (arguments[1] !== undefined) {
