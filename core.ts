@@ -14,6 +14,29 @@ addDeprecated(
 	'expandFilter',
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
 );
+addDeprecated(
+	'query',
+	'`query(params)` is deprecated, please use `get(params)` instead.',
+);
+for (let method of [
+	'prepare',
+	'subscribe',
+	'compile',
+	'request',
+	'put',
+	'post',
+	'patch',
+	'delete',
+]) {
+	addDeprecated(
+		`${method}StringParams`,
+		`\`${method}(url)\` is deprecated, please use \`${method}({ url })\` instead.`,
+	);
+}
+addDeprecated(
+	'requestOverrides',
+	'request(params, overrides)` is deprecated, please use `request({ ...params, ...overrides })` instead.',
+);
 
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
@@ -191,8 +214,8 @@ class Poll<
 	}
 }
 
-const transformGetResult = (params: PinejsClientCoreFactory.Params) => {
-	const singular = isObject(params) && params.id != null;
+const transformGetResult = (params: PinejsClientCoreFactory.ParamsObj) => {
+	const singular = params.id != null;
 
 	return (data: { d: any[] }): PinejsClientCoreFactory.PromiseResultTypes => {
 		if (!isObject(data)) {
@@ -919,40 +942,70 @@ abstract class PinejsClientCoreTemplate<
 	}
 
 	get(params: PinejsClientCoreFactory.Params): PromiseResult {
-		return this.request(params, { method: 'GET' }).then(
+		if (isString(params)) {
+			deprecated.getStringParams();
+			params = { url: params };
+		}
+		params.method = 'GET';
+		return this.request(params).then(
 			transformGetResult(params),
 		) as PromiseResult;
 	}
 
 	query(params: PinejsClientCoreFactory.Params): PromiseResult {
+		deprecated.query();
+		if (isString(params)) {
+			params = { url: params };
+		}
 		return this.get(params);
 	}
 
 	subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
-		let pollInterval: PinejsClientCoreFactory.SubscribeParamsObj['pollInterval'];
+		if (isString(params)) {
+			deprecated.getStringParams();
+			params = { url: params };
+		}
+
+		const { pollInterval } = params;
 
 		const requestFn = this.prepare(params);
-		if (!isString(params)) {
-			pollInterval = params.pollInterval;
-		}
 
 		return new Poll(requestFn, pollInterval);
 	}
 
 	put(params: PinejsClientCoreFactory.Params) {
-		return this.request(params, { method: 'PUT' });
+		if (isString(params)) {
+			deprecated.putStringParams();
+			params = { url: params };
+		}
+		params.method = 'PUT';
+		return this.request(params);
 	}
 
 	patch(params: PinejsClientCoreFactory.Params) {
-		return this.request(params, { method: 'PATCH' });
+		if (isString(params)) {
+			deprecated.patchStringParams();
+			params = { url: params };
+		}
+		params.method = 'PATCH';
+		return this.request(params);
 	}
 
 	post(params: PinejsClientCoreFactory.Params) {
-		return this.request(params, { method: 'POST' });
+		if (isString(params)) {
+			deprecated.postStringParams();
+			params = { url: params };
+		}
+		return this.request(params);
 	}
 
 	delete(params: PinejsClientCoreFactory.Params) {
-		return this.request(params, { method: 'DELETE' });
+		if (isString(params)) {
+			deprecated.deleteStringParams();
+			params = { url: params };
+		}
+		params.method = 'DELETE';
+		return this.request(params);
 	}
 
 	upsert(params: PinejsClientCoreFactory.UpsertParams) {
@@ -1015,11 +1068,17 @@ abstract class PinejsClientCoreTemplate<
 	prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
 		params: PinejsClientCoreFactory.Params,
 	): PreparedFn<T, PromiseObj | PromiseResult> {
+		let paramsObj: PinejsClientCoreFactory.ParamsObj;
+		if (isString(params)) {
+			deprecated.prepareStringParams();
+			paramsObj = {
+				url: params,
+			};
+		} else {
+			paramsObj = params;
+		}
 		// precompile the URL string to improve performance
 		const compiledUrl = this.compile(params);
-		const paramsObj: PinejsClientCoreFactory.ParamsObj = isString(params)
-			? { method: 'GET' }
-			: params;
 		const urlQueryParamsStr = compiledUrl.indexOf('?') === -1 ? '?' : '&';
 		if (paramsObj.method == null) {
 			paramsObj.method = 'GET';
@@ -1030,7 +1089,7 @@ abstract class PinejsClientCoreTemplate<
 		const { passthrough: defaultPassthrough } = paramsObj;
 
 		const transformFn =
-			paramsObj.method === 'GET' ? transformGetResult(params) : undefined;
+			paramsObj.method === 'GET' ? transformGetResult(paramsObj) : undefined;
 
 		return (parameterAliases, body, passthrough) => {
 			if (body != null) {
@@ -1074,6 +1133,7 @@ abstract class PinejsClientCoreTemplate<
 
 	compile(params: PinejsClientCoreFactory.Params): string {
 		if (isString(params)) {
+			deprecated.compileStringParams();
 			return params;
 		} else if (params.url != null) {
 			return params.url;
@@ -1149,19 +1209,24 @@ export function PinejsClientCoreFactory(
 	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
 		request(
 			params: PinejsClientCoreFactory.Params,
-			overrides: { method?: PinejsClientCoreFactory.ODataMethod } = {},
+			overrides?: { method?: PinejsClientCoreFactory.ODataMethod },
 		): PromiseObj {
 			try {
+				if (overrides !== undefined) {
+					deprecated.requestOverrides();
+				} else {
+					overrides = {};
+				}
 				let method: PinejsClientCoreFactory.ParamsObj['method'];
 				let body: PinejsClientCoreFactory.ParamsObj['body'];
 				let passthrough: PinejsClientCoreFactory.ParamsObj['passthrough'] = {};
 				let apiPrefix: PinejsClientCoreFactory.ParamsObj['apiPrefix'];
 
 				if (isString(params)) {
-					method = 'GET';
-				} else {
-					({ method, body, passthrough = {}, apiPrefix } = params);
+					deprecated.requestStringParams();
+					params = { method: 'GET', url: params };
 				}
+				({ method, body, passthrough = {}, apiPrefix } = params);
 
 				apiPrefix = apiPrefix ?? this.apiPrefix;
 				const url = apiPrefix + this.compile(params);
