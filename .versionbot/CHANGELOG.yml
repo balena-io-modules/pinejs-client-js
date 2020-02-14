@@ -1,4 +1,14 @@
 - commits:
+    - subject: Allow resource/$count in $filter
+      hash: 7eac38f1ed6a3bcdf1e6c4be5dde50aca953359e
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 5.6.6
+  date: 2020-02-14T12:35:22.507Z
+- commits:
     - subject: Remove `defaults` helper in favour of `??`
       hash: 806852bceb07a858572511609dc88ea0b748038e
       body: ''
