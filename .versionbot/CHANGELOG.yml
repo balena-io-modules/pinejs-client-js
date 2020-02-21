@@ -1,4 +1,18 @@
 - commits:
+    - subject: "\U0001F41B: Fix missing `deprecated.getStringParams` function"
+      hash: 53edb7e7485acd4310e9b04291894f6ab746285a
+      body: |
+        The function `deprecated.getStringParams` was used, but
+        not defined.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Andreas Fitzek <andreas@balena.io>
+        signed-off-by: Andreas Fitzek <andreas@balena.io>
+      author: Andreas Fitzek
+  version: 5.6.11
+  date: 2020-02-21T13:35:51.993Z
+- commits:
     - subject: Update to resin-lint 3.x
       hash: f1b415154cc21b9880ad8ee1134ea9340220aba2
       body: ''
