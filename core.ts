@@ -25,6 +25,7 @@ for (const method of [
 	'subscribe',
 	'compile',
 	'request',
+	'get',
 	'put',
 	'post',
 	'patch',
