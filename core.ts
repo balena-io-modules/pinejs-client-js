@@ -220,30 +220,6 @@ class Poll<
 	}
 }
 
-const transformGetResult = (params: PinejsClientCoreFactory.ParamsObj) => {
-	const singular = params.id != null;
-
-	return (data: { d: any[] }): PinejsClientCoreFactory.PromiseResultTypes => {
-		if (!isObject(data)) {
-			throw new Error(`Response was not a JSON object: '${typeof data}'`);
-		}
-		if (data.d == null) {
-			throw new Error(
-				"Invalid response received, the 'd' property is missing.",
-			);
-		}
-		if (singular) {
-			if (data.d.length > 1) {
-				throw new Error(
-					'Returned multiple results when only one was expected.',
-				);
-			}
-			return data.d[0];
-		}
-		return data.d;
-	};
-};
-
 const isPrimitive = (
 	value?: unknown,
 ): value is PinejsClientCoreFactory.Primitive => {
@@ -965,8 +941,32 @@ abstract class PinejsClientCoreTemplate<
 		}
 		params.method = 'GET';
 		return this.request(params).then(
-			transformGetResult(params),
+			this.transformGetResult(params),
 		) as PromiseResult;
+	}
+
+	protected transformGetResult(params: PinejsClientCoreFactory.ParamsObj) {
+		const singular = params.id != null;
+
+		return (data: { d: any[] }): PinejsClientCoreFactory.PromiseResultTypes => {
+			if (!isObject(data)) {
+				throw new Error(`Response was not a JSON object: '${typeof data}'`);
+			}
+			if (data.d == null) {
+				throw new Error(
+					"Invalid response received, the 'd' property is missing.",
+				);
+			}
+			if (singular) {
+				if (data.d.length > 1) {
+					throw new Error(
+						'Returned multiple results when only one was expected.',
+					);
+				}
+				return data.d[0];
+			}
+			return data.d;
+		};
 	}
 
 	public query(params: PinejsClientCoreFactory.Params): PromiseResult {
@@ -1107,7 +1107,9 @@ abstract class PinejsClientCoreTemplate<
 		const { passthrough: defaultPassthrough } = paramsObj;
 
 		const transformFn =
-			paramsObj.method === 'GET' ? transformGetResult(paramsObj) : undefined;
+			paramsObj.method === 'GET'
+				? this.transformGetResult(paramsObj)
+				: undefined;
 
 		return (parameterAliases, body, passthrough) => {
 			if (body != null) {
