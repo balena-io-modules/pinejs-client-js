@@ -954,6 +954,82 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.request(params);
 	}
 
+	public async getOrCreate(params: GetOrCreateParams) {
+		const { id, body, ...restParams } = params;
+
+		if (/\/\$count$/.test(params.resource)) {
+			throw new Error('getOrCreate is does not support $count on resources');
+		}
+
+		if (body == null) {
+			throw new Error('The body property is missing');
+		}
+
+		let uniqueFields: Dictionary<any>;
+		if (isPrimitive(id)) {
+			uniqueFields = {
+				id,
+			};
+		} else if (isObject(id)) {
+			if (Object.keys(id).length === 0) {
+				throw new Error(
+					'When the id property is an object, it must be the natural key of the model',
+				);
+			}
+			uniqueFields = id;
+		} else {
+			throw new Error(
+				'The id property must be of a primitive type or an object with the natural key of the model',
+			);
+		}
+
+		const { options } = restParams;
+		const $filter =
+			options?.$filter == null
+				? uniqueFields
+				: { $and: [options.$filter, uniqueFields] };
+
+		const getParams = {
+			...restParams,
+			options: {
+				// we are filtering on an natural or primary key,
+				// so we only need 2 in order to detect whether there
+				// was an error with the natural key provided
+				$top: 2,
+				...options,
+				$filter,
+			},
+		};
+
+		const results = await this.get(getParams);
+		if (!Array.isArray(results) || typeof results === 'number') {
+			// This should never happen, since we checked for $count earlier
+			// and we are not passing an id in the options
+			throw new Error(
+				`Unexpected ${typeof results} result when an array was expected.`,
+			);
+		}
+
+		if (results.length > 1) {
+			throw new Error(
+				'Returned multiple results when at most one was expected.',
+			);
+		}
+
+		const [result] = results;
+		if (result != null) {
+			return result;
+		}
+
+		return this.post({
+			...restParams,
+			body: {
+				...uniqueFields,
+				...body,
+			},
+		});
+	}
+
 	public async upsert(params: UpsertParams) {
 		const { id, body, ...restParams } = params;
 
@@ -1368,6 +1444,12 @@ interface SubscribeParamsObj extends ParamsObj {
 	pollInterval?: number;
 }
 export type SubscribeParams = SubscribeParamsObj;
+
+export interface GetOrCreateParams extends Omit<ParamsObj, 'id' | 'method'> {
+	id: Exclude<ParamsObj['id'], object | undefined> | Dictionary<Primitive>;
+	resource: string;
+	body: AnyObject;
+}
 
 export interface UpsertParams extends Omit<ParamsObj, 'id' | 'method'> {
 	id: Dictionary<Primitive>;
