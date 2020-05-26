@@ -6,36 +6,33 @@
   "types": "core.d.ts",
   "repository": {
     "type": "git",
-    "url": "git@github.com:resin-io/pinejs-client-js.git"
+    "url": "git@github.com:balena-io-modules/pinejs-client-js.git"
   },
-  "author": "Pagan Gazzard <page@resin.io>",
-  "contributors": [
-    "Lorenzo Stoakes <lorenzo@resin.io>"
-  ],
+  "author": "Pagan Gazzard <page@balena.io>",
   "scripts": {
-    "lint:coffee": "resin-lint test/",
-    "lint:typescript": "resin-lint --typescript core.ts",
+    "lint:coffee": "balena-lint test/",
+    "lint:typescript": "balena-lint --typescript core.ts",
     "lint": "npm run lint:coffee && npm run lint:typescript",
     "pretest": "npm run lint && npm run-script prepublishOnly",
     "test": "mocha",
     "test6": "npm run-script prepublishOnly && mocha",
     "prepublish": "require-npm4-to-publish",
     "prepublishOnly": "tsc",
-    "prettify": "resin-lint --typescript --fix core.ts"
+    "prettify": "balena-lint --typescript --fix core.ts"
   },
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
+    "@balena/lint": "^4.1.1",
     "bluebird": "^3.7.2",
     "chai": "^4.2.0",
     "coffee-script": "~1.12.7",
-    "husky": "^4.2.3",
-    "lint-staged": "^10.0.7",
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.6",
     "lodash": "^4.17.15",
-    "mocha": "^6.2.2",
+    "mocha": "^6.2.3",
     "require-npm4-to-publish": "^1.0.0",
-    "resin-lint": "^3.3.0",
-    "typescript": "^3.7.5"
+    "typescript": "^3.9.3"
   },
   "husky": {
     "hooks": {
