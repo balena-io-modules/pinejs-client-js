@@ -40,7 +40,8 @@ const isBoolean = (v: any): v is boolean => v === true || v === false;
 const isDate = (v: any): v is Date =>
 	Object.prototype.toString.call(v) === '[object Date]';
 
-const isObject = (v: any): v is object => typeof v === 'object';
+const isObject = (v: any): v is AnyObject =>
+	typeof v != null && typeof v === 'object';
 
 const isValidOption = (key: string): key is keyof ODataOptions & string => {
 	return (
@@ -63,7 +64,7 @@ interface PollOnObj {
 }
 class Poll {
 	private subscribers: {
-		error: Array<(response: PromiseResult) => void>;
+		error: Array<(response: PromiseResultTypes) => void>;
 		data: Array<(err: any) => void>;
 	} = {
 		error: [],
@@ -85,53 +86,47 @@ class Poll {
 		this.restartTimeout();
 	}
 
-	public runRequest() {
+	public async runRequest() {
 		if (this.stopped || this.requestFn == null) {
 			return;
 		}
-		this.requestFn().then(
-			response => {
-				if (this.stopped) {
-					return;
+		try {
+			const response = await this.requestFn();
+			if (this.stopped) {
+				return;
+			}
+			this.restartTimeout();
+
+			// Catch errors in event subscribers so that they don't trigger
+			// the 'catch' below, and that subsequent subscribers will still
+			// be called
+			this.subscribers.data.forEach(fn => {
+				try {
+					fn(response);
+				} catch (error) {
+					console.error(
+						'pinejs-client error: Caught error in data event subscription:',
+						error,
+					);
 				}
-				this.restartTimeout();
+			});
+		} catch (err) {
+			if (this.stopped) {
+				return;
+			}
+			this.restartTimeout();
 
-				// Catch errors in event subscribers so that they don't trigger
-				// the 'catch' below, and that subsequent subscribers will still
-				// be called
-				this.subscribers.data.forEach(fn => {
-					try {
-						fn(response);
-					} catch (error) {
-						console.error(
-							'pinejs-client error: Caught error in data event subscription:',
-							error,
-						);
-					}
-				});
-
-				return null;
-			},
-			(err: any) => {
-				if (this.stopped) {
-					return;
+			this.subscribers.error.forEach(fn => {
+				try {
+					fn(err);
+				} catch (error) {
+					console.error(
+						'pinejs-client error: Caught error in error event subscription:',
+						error,
+					);
 				}
-				this.restartTimeout();
-
-				this.subscribers.error.forEach(fn => {
-					try {
-						fn(err);
-					} catch (error) {
-						console.error(
-							'pinejs-client error: Caught error in error event subscription:',
-							error,
-						);
-					}
-				});
-
-				return null;
-			},
-		);
+			});
+		}
 	}
 
 	public on(name: 'error', fn: (response: PromiseResult) => void): PollOnObj;
@@ -869,22 +864,22 @@ export abstract class PinejsClientCore<PinejsClient> {
 		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
 
-	public get(params: Params): PromiseResult {
+	public async get(params: Params): Promise<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
 				'`get(url)` is no longer supported, please use `get({ url })` instead.',
 			);
 		}
 		params.method = 'GET';
-		return this.request(params).then(
-			this.transformGetResult(params),
-		) as PromiseResult;
+
+		const result = await this.request(params);
+		return this.transformGetResult(params)(result);
 	}
 
 	protected transformGetResult(params: ParamsObj) {
 		const singular = params.id != null;
 
-		return (data: { d: any[] }): PromiseResultTypes => {
+		return (data: AnyObject): PromiseResultTypes => {
 			if (!isObject(data)) {
 				throw new Error(`Response was not a JSON object: '${typeof data}'`);
 			}
@@ -959,7 +954,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.request(params);
 	}
 
-	public upsert(params: UpsertParams) {
+	public async upsert(params: UpsertParams) {
 		const { id, body, ...restParams } = params;
 
 		if (!isObject(id)) {
@@ -984,7 +979,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 				...id,
 			},
 		};
-		return this.post(postParams).then(undefined, err => {
+		try {
+			await this.post(postParams);
+		} catch (err) {
 			const isUniqueKeyViolationResponse =
 				err.statusCode === 409 && /unique/i.test(err.body);
 
@@ -1005,7 +1002,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 				body,
 			};
 			return this.patch(patchParams);
-		});
+		}
 	}
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
@@ -1038,7 +1035,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		const transformFn =
 			params.method === 'GET' ? this.transformGetResult(params) : undefined;
 
-		return (parameterAliases, body, passthrough) => {
+		return async (parameterAliases, body, passthrough) => {
 			if (body != null) {
 				params.body = {
 					...defaultBody,
@@ -1070,9 +1067,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 			} else {
 				params.url = compiledUrl;
 			}
-			const result = this.request(params);
+			const result = await this.request(params);
 			if (transformFn != null) {
-				return result.then(transformFn) as PromiseResult;
+				return transformFn(result);
 			}
 			return result;
 		};
@@ -1126,41 +1123,37 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 	}
 
-	public request(params: Params): PromiseObj {
-		try {
-			if (arguments[1] !== undefined) {
-				throw new Error(
-					'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
-				);
-			}
-
-			if (isString(params)) {
-				throw new Error(
-					'`request(url)` is no longer supported, please use `request({ url })` instead.',
-				);
-			}
-			let { method, apiPrefix } = params;
-			const { body, passthrough = {} } = params;
-
-			apiPrefix = apiPrefix ?? this.apiPrefix;
-			const url = apiPrefix + this.compile(params);
-
-			method = method ?? 'GET';
-			method = method.toUpperCase() as typeof method;
-			// Filter to prevent accidental parameter passthrough.
-			const opts = {
-				...this.passthrough,
-				...(this.passthroughByMethod[method] ?? {}),
-				...passthrough,
-				url,
-				body,
-				method,
-			};
-
-			return this._request(opts);
-		} catch (e) {
-			return Promise.reject(e) as PromiseObj;
+	public async request(params: Params, overrides?: undefined): Promise<{}> {
+		if (overrides !== undefined) {
+			throw new Error(
+				'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
+			);
 		}
+
+		if (isString(params)) {
+			throw new Error(
+				'`request(url)` is no longer supported, please use `request({ url })` instead.',
+			);
+		}
+		let { method, apiPrefix } = params;
+		const { body, passthrough = {} } = params;
+
+		apiPrefix = apiPrefix ?? this.apiPrefix;
+		const url = apiPrefix + this.compile(params);
+
+		method = method ?? 'GET';
+		method = method.toUpperCase() as typeof method;
+		// Filter to prevent accidental parameter passthrough.
+		const opts = {
+			...this.passthrough,
+			...(this.passthroughByMethod[method] ?? {}),
+			...passthrough,
+			url,
+			body,
+			method,
+		};
+
+		return this._request(opts);
 	}
 
 	public abstract _request(
