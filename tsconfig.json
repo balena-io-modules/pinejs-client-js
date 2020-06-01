@@ -11,10 +11,11 @@
 		"sourceMap": true,
 		"target": "es5",
 		"declaration": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"rootDir": "src"
 	},
 	"include": [
-		"*.ts"
+		"src/*"
 	],
 	"exclude": [
 		"node_modules"

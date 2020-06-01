@@ -2,8 +2,9 @@
   "name": "pinejs-client-core",
   "version": "5.7.1",
   "description": "This module provides the core tools to enable easier interaction with the pinejs API.",
-  "main": "core.js",
-  "types": "core.d.ts",
+  "browser": "es5",
+  "main": "index.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "git@github.com:balena-io-modules/pinejs-client-js.git"
@@ -11,24 +12,32 @@
   "author": "Pagan Gazzard <page@balena.io>",
   "scripts": {
     "lint:coffee": "balena-lint test/",
-    "lint:typescript": "balena-lint --typescript core.ts",
+    "lint:typescript": "balena-lint --typescript src",
     "lint": "npm run lint:coffee && npm run lint:typescript",
-    "pretest": "npm run lint && npm run-script prepublishOnly",
+    "pretest": "npm run build",
     "test": "mocha",
-    "test6": "npm run-script prepublishOnly && mocha",
+    "posttest": "npm run lint",
+    "test6": "npm run build && mocha",
+    "build-es5": "tsc --target es5 --outDir es5",
+    "build-es2015": "tsc --target es2015 --outDir es2015",
+    "build-es2018": "tsc --target es2018 --outDir es2018",
+    "build-types": "tsc --emitDeclarationOnly --outDir .",
+    "build": "npm run build-es5 && npm run build-es2015 && npm run build-es2018 && npm run build-types",
     "prepublish": "require-npm4-to-publish",
-    "prepublishOnly": "tsc",
-    "prettify": "balena-lint --typescript --fix core.ts"
+    "prepack": "npm run build",
+    "prettify": "balena-lint --typescript --fix src"
   },
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@balena/es-version": "^1.0.0"
+  },
   "devDependencies": {
     "@balena/lint": "^4.1.1",
     "bluebird": "^3.7.2",
     "chai": "^4.2.0",
     "coffee-script": "~1.12.7",
     "husky": "^4.2.5",
-    "lint-staged": "^10.2.6",
+    "lint-staged": "^10.2.7",
     "lodash": "^4.17.15",
     "mocha": "^6.2.3",
     "require-npm4-to-publish": "^1.0.0",

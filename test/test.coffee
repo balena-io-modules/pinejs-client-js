@@ -2,7 +2,7 @@ expect = require('chai').expect
 
 _ = require 'lodash'
 Promise = require 'bluebird'
-{ PinejsClientCoreFactory } = require '../core'
+{ PinejsClientCoreFactory } = require '..'
 
 PinejsClientCore = PinejsClientCoreFactory(Promise)
 core = new PinejsClientCore()
