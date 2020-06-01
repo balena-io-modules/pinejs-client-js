@@ -1,4 +1,14 @@
 - commits:
+    - subject: Generate optional builds for es2015/es2018 as well as the default es5
+      hash: 510682b0e2a9d2a338aa977bd4782ec60fc5b196
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 5.8.0
+  date: 2020-05-29T13:12:21.476Z
+- commits:
     - subject: Update dependencies
       hash: 8141a6dfe6edd4c7e432d85c3533e6e02a43e2ff
       body: ''
