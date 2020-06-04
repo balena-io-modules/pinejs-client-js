@@ -2,7 +2,7 @@
   "name": "pinejs-client-core",
   "version": "5.8.0",
   "description": "This module provides the core tools to enable easier interaction with the pinejs API.",
-  "browser": "es5",
+  "browser": "es2015",
   "main": "index.js",
   "types": "index.d.ts",
   "repository": {
@@ -18,11 +18,10 @@
     "test": "mocha",
     "posttest": "npm run lint",
     "test6": "npm run build && mocha",
-    "build-es5": "tsc --target es5 --outDir es5",
     "build-es2015": "tsc --target es2015 --outDir es2015",
     "build-es2018": "tsc --target es2018 --outDir es2018",
     "build-types": "tsc --emitDeclarationOnly --outDir .",
-    "build": "npm run build-es5 && npm run build-es2015 && npm run build-es2018 && npm run build-types",
+    "build": "npm run build-es2015 && npm run build-es2018 && npm run build-types",
     "prepublish": "require-npm4-to-publish",
     "prepack": "npm run build",
     "prettify": "balena-lint --typescript --fix src"
