@@ -105,7 +105,7 @@ testExpand(
 	a:
 		$filter: b: 'c'
 		$select: ['d', 'e']
-	"a($filter=b eq 'c'&$select=d,e)"
+	"a($filter=b eq 'c';$select=d,e)"
 )
 
 testExpand(
@@ -144,7 +144,7 @@ testExpand
 			b:
 				$expand: 'c'
 				$select: [ 'd', 'e' ]
-	'a($expand=b($expand=c&$select=d,e))'
+	'a($expand=b($expand=c;$select=d,e))'
 
 
 
@@ -172,4 +172,4 @@ testExpand
 			b:
 				$expand: 'c/$count'
 				$filter: d: 'e'
-	"a($expand=b($expand=c/$count&$filter=d eq 'e'))"
+	"a($expand=b($expand=c/$count;$filter=d eq 'e'))"

@@ -1,10 +1,8 @@
 expect = require('chai').expect
 
 _ = require 'lodash'
-Promise = require 'bluebird'
-{ PinejsClientCoreFactory } = require '..'
+{ PinejsClientCore } = require '..'
 
-PinejsClientCore = PinejsClientCoreFactory(Promise)
 core = new PinejsClientCore()
 exports.test = (expected, params) ->
 	if _.isError(expected)

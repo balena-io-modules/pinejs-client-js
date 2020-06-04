@@ -16,30 +16,6 @@ addDeprecated(
 	'expandFilter',
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
 );
-addDeprecated(
-	'query',
-	'`query(params)` is deprecated, please use `get(params)` instead.',
-);
-for (const method of [
-	'prepare',
-	'subscribe',
-	'compile',
-	'request',
-	'get',
-	'put',
-	'post',
-	'patch',
-	'delete',
-]) {
-	addDeprecated(
-		`${method}StringParams`,
-		`\`${method}(url)\` is deprecated, please use \`${method}({ url })\` instead.`,
-	);
-}
-addDeprecated(
-	'requestOverrides',
-	'request(params, overrides)` is deprecated, please use `request({ ...params, ...overrides })` instead.',
-);
 
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
@@ -64,17 +40,10 @@ const isBoolean = (v: any): v is boolean => v === true || v === false;
 const isDate = (v: any): v is Date =>
 	Object.prototype.toString.call(v) === '[object Date]';
 
-const isObject = (v: any): v is object => typeof v === 'object';
+const isObject = (v: any): v is AnyObject =>
+	typeof v != null && typeof v === 'object';
 
-const isPromiseRejector = (
-	obj: any,
-): obj is PinejsClientCoreFactory.PromiseRejector => {
-	return obj?.reject != null;
-};
-
-const isValidOption = (
-	key: string,
-): key is keyof PinejsClientCoreFactory.ODataOptions & string => {
+const isValidOption = (key: string): key is keyof ODataOptions & string => {
 	return (
 		key === '$filter' ||
 		key === '$expand' ||
@@ -93,19 +62,9 @@ const trailingCountRegex = new RegExp(
 interface PollOnObj {
 	unsubscribe: () => void;
 }
-class Poll<
-	PromiseResult extends PromiseLike<
-		| number
-		| PinejsClientCoreFactory.AnyObject
-		| PinejsClientCoreFactory.AnyObject[]
-	> = Promise<
-		| number
-		| PinejsClientCoreFactory.AnyObject
-		| PinejsClientCoreFactory.AnyObject[]
-	>
-> {
+class Poll {
 	private subscribers: {
-		error: Array<(response: PromiseResult) => void>;
+		error: Array<(response: PromiseResultTypes) => void>;
 		data: Array<(err: any) => void>;
 	} = {
 		error: [],
@@ -127,53 +86,47 @@ class Poll<
 		this.restartTimeout();
 	}
 
-	public runRequest() {
+	public async runRequest() {
 		if (this.stopped || this.requestFn == null) {
 			return;
 		}
-		this.requestFn().then(
-			response => {
-				if (this.stopped) {
-					return;
+		try {
+			const response = await this.requestFn();
+			if (this.stopped) {
+				return;
+			}
+			this.restartTimeout();
+
+			// Catch errors in event subscribers so that they don't trigger
+			// the 'catch' below, and that subsequent subscribers will still
+			// be called
+			this.subscribers.data.forEach(fn => {
+				try {
+					fn(response);
+				} catch (error) {
+					console.error(
+						'pinejs-client error: Caught error in data event subscription:',
+						error,
+					);
 				}
-				this.restartTimeout();
+			});
+		} catch (err) {
+			if (this.stopped) {
+				return;
+			}
+			this.restartTimeout();
 
-				// Catch errors in event subscribers so that they don't trigger
-				// the 'catch' below, and that subsequent subscribers will still
-				// be called
-				this.subscribers.data.forEach(fn => {
-					try {
-						fn(response);
-					} catch (error) {
-						console.error(
-							'pinejs-client error: Caught error in data event subscription:',
-							error,
-						);
-					}
-				});
-
-				return null;
-			},
-			(err: any) => {
-				if (this.stopped) {
-					return;
+			this.subscribers.error.forEach(fn => {
+				try {
+					fn(err);
+				} catch (error) {
+					console.error(
+						'pinejs-client error: Caught error in error event subscription:',
+						error,
+					);
 				}
-				this.restartTimeout();
-
-				this.subscribers.error.forEach(fn => {
-					try {
-						fn(err);
-					} catch (error) {
-						console.error(
-							'pinejs-client error: Caught error in error event subscription:',
-							error,
-						);
-					}
-				});
-
-				return null;
-			},
-		);
+			});
+		}
 	}
 
 	public on(name: 'error', fn: (response: PromiseResult) => void): PollOnObj;
@@ -220,9 +173,7 @@ class Poll<
 	}
 }
 
-const isPrimitive = (
-	value?: unknown,
-): value is PinejsClientCoreFactory.Primitive => {
+const isPrimitive = (value?: unknown): value is Primitive => {
 	return (
 		value === null ||
 		isString(value) ||
@@ -246,7 +197,7 @@ const escapeResource = (resource: string | string[]) => {
 };
 
 // Escape a primitive value
-const escapeValue = (value: PinejsClientCoreFactory.Primitive) => {
+const escapeValue = (value: Primitive) => {
 	if (isString(value)) {
 		value = value.replace(/'/g, "''");
 		return `'${encodeURIComponent(value)}'`;
@@ -326,7 +277,7 @@ const addParentKey = (
 
 const applyBinds = (
 	filter: string,
-	params: Dictionary<PinejsClientCoreFactory.Filter>,
+	params: Dictionary<Filter>,
 	parentKey?: string[],
 ) => {
 	for (const index in params) {
@@ -346,8 +297,8 @@ const applyBinds = (
 };
 
 const filterOperation = (
-	filter: PinejsClientCoreFactory.FilterOperationValue,
-	operator: PinejsClientCoreFactory.FilterOperationKey,
+	filter: FilterOperationValue,
+	operator: FilterOperationKey,
 	parentKey?: string[],
 ) => {
 	const op = ' ' + operator.slice(1) + ' ';
@@ -380,8 +331,8 @@ const filterOperation = (
 	}
 };
 const filterFunction = (
-	filter: PinejsClientCoreFactory.FilterFunctionValue,
-	fnIdentifier: PinejsClientCoreFactory.FilterFunctionKey,
+	filter: FilterFunctionValue,
+	fnIdentifier: FilterFunctionKey,
 	parentKey?: string[],
 ): string[] => {
 	const fnName = fnIdentifier.slice(1);
@@ -409,13 +360,13 @@ const filterFunction = (
 	}
 };
 
-type FilterType<
-	Operator extends keyof PinejsClientCoreFactory.FilterObj
-> = NonNullable<PinejsClientCoreFactory.FilterObj[Operator]>;
+type FilterType<Operator extends keyof FilterObj> = NonNullable<
+	FilterObj[Operator]
+>;
 // Handle special cases for all the different $ operators.
 const handleFilterOperator = (
-	filter: PinejsClientCoreFactory.FilterObj[string],
-	operator: keyof PinejsClientCoreFactory.FilterObj,
+	filter: FilterObj[string],
+	operator: keyof FilterObj,
 	parentKey?: string[],
 ): string[] => {
 	switch (operator) {
@@ -484,7 +435,7 @@ const handleFilterOperator = (
 							`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
 						);
 					}
-					const mappedParams: Dictionary<PinejsClientCoreFactory.Filter> = {};
+					const mappedParams: Dictionary<Filter> = {};
 					for (let index = 0; index < params.length; index++) {
 						mappedParams[index + 1] = params[index];
 					}
@@ -496,7 +447,7 @@ const handleFilterOperator = (
 							`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
 						);
 					}
-					const mappedParams: Dictionary<PinejsClientCoreFactory.Filter> = {};
+					const mappedParams: Dictionary<Filter> = {};
 					for (const index in filter) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
@@ -504,9 +455,7 @@ const handleFilterOperator = (
 									`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
 								);
 							}
-							mappedParams[index] = filter[
-								index
-							] as PinejsClientCoreFactory.Filter;
+							mappedParams[index] = filter[index] as Filter;
 						}
 					}
 					return applyBinds(filterStr, mappedParams, parentKey);
@@ -600,10 +549,7 @@ const handleFilterOperator = (
 	}
 };
 
-const handleFilterObject = (
-	filter: PinejsClientCoreFactory.FilterObj,
-	parentKey?: string[],
-) => {
+const handleFilterObject = (filter: FilterObj, parentKey?: string[]) => {
 	return mapObj(filter, (value, key) => {
 		if (value === undefined) {
 			throw new Error(
@@ -623,13 +569,13 @@ const handleFilterObject = (
 				}
 				keys = parentKey.concat(keys);
 			}
-			return buildFilter(value as PinejsClientCoreFactory.Filter, keys);
+			return buildFilter(value as Filter, keys);
 		}
 	});
 };
 
 const handleFilterArray = (
-	filter: PinejsClientCoreFactory.FilterArray,
+	filter: FilterArray,
 	parentKey?: string[],
 	minElements = 2,
 ) => {
@@ -648,7 +594,7 @@ const handleFilterArray = (
 
 // Turn a filter query object into an OData $filter string
 const buildFilter = (
-	filter: PinejsClientCoreFactory.Filter,
+	filter: Filter,
 	parentKey?: string[],
 	joinStr?: string,
 ): string[] => {
@@ -669,7 +615,7 @@ const buildFilter = (
 	}
 };
 
-const buildOrderBy = (orderby: PinejsClientCoreFactory.OrderBy): string => {
+const buildOrderBy = (orderby: OrderBy): string => {
 	if (isString(orderby)) {
 		return orderby;
 	} else if (Array.isArray(orderby)) {
@@ -703,22 +649,17 @@ const buildOrderBy = (orderby: PinejsClientCoreFactory.OrderBy): string => {
 	}
 };
 
-const buildOption = (
-	option: string,
-	value: PinejsClientCoreFactory.ODataOptions[''],
-) => {
+const buildOption = (option: string, value: ODataOptions['']) => {
 	let compiledValue: string = '';
 	switch (option) {
 		case '$filter':
-			compiledValue = buildFilter(value as PinejsClientCoreFactory.Filter).join(
-				'',
-			);
+			compiledValue = buildFilter(value as Filter).join('');
 			break;
 		case '$expand':
-			compiledValue = buildExpand(value as PinejsClientCoreFactory.Expand);
+			compiledValue = buildExpand(value as Expand);
 			break;
 		case '$orderby':
-			compiledValue = buildOrderBy(value as PinejsClientCoreFactory.OrderBy);
+			compiledValue = buildOrderBy(value as OrderBy);
 			break;
 		case '$top':
 		case '$skip':
@@ -767,10 +708,7 @@ const buildOption = (
 	return `${option}=${compiledValue}`;
 };
 
-const handleExpandOptions = (
-	expand: PinejsClientCoreFactory.ODataOptions,
-	parentKey: string,
-) => {
+const handleExpandOptions = (expand: ODataOptions, parentKey: string) => {
 	const expandOptions = [];
 	for (const key in expand) {
 		if (expand.hasOwnProperty(key)) {
@@ -787,14 +725,14 @@ const handleExpandOptions = (
 			}
 		}
 	}
-	let expandStr = expandOptions.join('&');
+	let expandStr = expandOptions.join(';');
 	if (expandStr.length > 0) {
 		expandStr = `(${expandStr})`;
 	}
 	expandStr = escapeResource(parentKey) + expandStr;
 	return expandStr;
 };
-const handleExpandObject = (expand: PinejsClientCoreFactory.ResourceExpand) => {
+const handleExpandObject = (expand: ResourceExpand) => {
 	const expands = [];
 	for (const key in expand) {
 		if (expand.hasOwnProperty(key)) {
@@ -821,9 +759,7 @@ const handleExpandObject = (expand: PinejsClientCoreFactory.ResourceExpand) => {
 	return expands;
 };
 
-const handleExpandArray = (
-	expands: Array<string | PinejsClientCoreFactory.ResourceExpand>,
-) => {
+const handleExpandArray = (expands: Array<string | ResourceExpand>) => {
 	if (expands.length < 1) {
 		throw new Error(
 			`Expand arrays must have at least 1 elements, got: ${JSON.stringify(
@@ -837,7 +773,7 @@ const handleExpandArray = (
 	});
 };
 
-const buildExpand = (expand: PinejsClientCoreFactory.Expand): string => {
+const buildExpand = (expand: Expand): string => {
 	if (isPrimitive(expand)) {
 		return escapeResource(expand);
 	} else if (Array.isArray(expand)) {
@@ -851,35 +787,29 @@ const buildExpand = (expand: PinejsClientCoreFactory.Expand): string => {
 	}
 };
 
-const validParams: PinejsClientCoreFactory.SharedParam[] = [
+const validParams: SharedParam[] = [
 	'apiPrefix',
 	'passthrough',
 	'passthroughByMethod',
 ];
 
-export type PreparedFn<
-	T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>,
-	U
-> = (
+export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	parameterAliases?: T,
-	body?: PinejsClientCoreFactory.ParamsObj['body'],
-	passthrough?: PinejsClientCoreFactory.ParamsObj['passthrough'],
+	body?: ParamsObj['body'],
+	passthrough?: ParamsObj['passthrough'],
 ) => U;
 
-abstract class PinejsClientCoreTemplate<
-	PinejsClient,
-	PromiseObj extends PromiseLike<{}> = Promise<{}>,
-	PromiseResult extends PromiseLike<
-		PinejsClientCoreFactory.PromiseResultTypes
-	> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
-> {
+export type PromiseObj = Promise<{}>;
+export type PromiseResult = Promise<PromiseResultTypes>;
+
+export abstract class PinejsClientCore<PinejsClient> {
 	public apiPrefix: string = '/';
-	public passthrough: PinejsClientCoreFactory.AnyObject = {};
-	public passthroughByMethod: PinejsClientCoreFactory.AnyObject = {};
-	public backendParams: PinejsClientCoreFactory.AnyObject;
+	public passthrough: AnyObject = {};
+	public passthroughByMethod: AnyObject = {};
+	public backendParams: AnyObject;
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
-	constructor(params: PinejsClientCoreFactory.Params) {
+	constructor(params: string | Params) {
 		if (isString(params)) {
 			params = { apiPrefix: params };
 		}
@@ -888,7 +818,7 @@ abstract class PinejsClientCoreTemplate<
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					(this[validParam] as PinejsClientCoreTemplate<
+					(this[validParam] as PinejsClientCore<
 						PinejsClient
 					>[typeof validParam]) = value;
 				}
@@ -898,8 +828,8 @@ abstract class PinejsClientCoreTemplate<
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
 	public clone(
-		params: PinejsClientCoreFactory.Params,
-		backendParams?: PinejsClientCoreFactory.AnyObject,
+		params: string | Params,
+		backendParams?: AnyObject,
 	): PinejsClient {
 		if (isString(params)) {
 			params = { apiPrefix: params };
@@ -908,14 +838,14 @@ abstract class PinejsClientCoreTemplate<
 		const cloneParams: typeof params = {};
 		for (const validParam of validParams) {
 			if (this[validParam] != null) {
-				(cloneParams[validParam] as PinejsClientCoreTemplate<
+				(cloneParams[validParam] as PinejsClientCore<
 					PinejsClient
 				>[typeof validParam]) = this[validParam];
 			}
 
 			const paramValue = params?.[validParam];
 			if (paramValue != null) {
-				(cloneParams[validParam] as PinejsClientCoreTemplate<
+				(cloneParams[validParam] as PinejsClientCore<
 					PinejsClient
 				>[typeof validParam]) = paramValue;
 			}
@@ -929,26 +859,27 @@ abstract class PinejsClientCoreTemplate<
 			cloneBackendParams = { ...cloneBackendParams, ...backendParams };
 		}
 		return new (this.constructor as new (
-			params: PinejsClientCoreFactory.Params,
-			backendParams: PinejsClientCoreFactory.AnyObject,
+			params: Params,
+			backendParams: AnyObject,
 		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
 
-	public get(params: PinejsClientCoreFactory.Params): PromiseResult {
+	public async get(params: Params): Promise<PromiseResultTypes> {
 		if (isString(params)) {
-			deprecated.getStringParams();
-			params = { url: params };
+			throw new Error(
+				'`get(url)` is no longer supported, please use `get({ url })` instead.',
+			);
 		}
 		params.method = 'GET';
-		return this.request(params).then(
-			this.transformGetResult(params),
-		) as PromiseResult;
+
+		const result = await this.request(params);
+		return this.transformGetResult(params)(result);
 	}
 
-	protected transformGetResult(params: PinejsClientCoreFactory.ParamsObj) {
+	protected transformGetResult(params: ParamsObj) {
 		const singular = params.id != null;
 
-		return (data: { d: any[] }): PinejsClientCoreFactory.PromiseResultTypes => {
+		return (data: AnyObject): PromiseResultTypes => {
 			if (!isObject(data)) {
 				throw new Error(`Response was not a JSON object: '${typeof data}'`);
 			}
@@ -969,18 +900,11 @@ abstract class PinejsClientCoreTemplate<
 		};
 	}
 
-	public query(params: PinejsClientCoreFactory.Params): PromiseResult {
-		deprecated.query();
+	public subscribe(params: SubscribeParams) {
 		if (isString(params)) {
-			params = { url: params };
-		}
-		return this.get(params);
-	}
-
-	public subscribe(params: PinejsClientCoreFactory.SubscribeParams) {
-		if (isString(params)) {
-			deprecated.getStringParams();
-			params = { url: params };
+			throw new Error(
+				'`subscribe(url)` is no longer supported, please use `subscribe({ url })` instead.',
+			);
 		}
 
 		const { pollInterval } = params;
@@ -990,43 +914,47 @@ abstract class PinejsClientCoreTemplate<
 		return new Poll(requestFn, pollInterval);
 	}
 
-	public put(params: PinejsClientCoreFactory.Params) {
+	public put(params: Params) {
 		if (isString(params)) {
-			deprecated.putStringParams();
-			params = { url: params };
+			throw new Error(
+				'`put(url)` is no longer supported, please use `put({ url })` instead.',
+			);
 		}
 		params.method = 'PUT';
 		return this.request(params);
 	}
 
-	public patch(params: PinejsClientCoreFactory.Params) {
+	public patch(params: Params) {
 		if (isString(params)) {
-			deprecated.patchStringParams();
-			params = { url: params };
+			throw new Error(
+				'`patch(url)` is no longer supported, please use `patch({ url })` instead.',
+			);
 		}
 		params.method = 'PATCH';
 		return this.request(params);
 	}
 
-	public post(params: PinejsClientCoreFactory.Params) {
+	public post(params: Params) {
 		if (isString(params)) {
-			deprecated.postStringParams();
-			params = { url: params };
+			throw new Error(
+				'`post(url)` is no longer supported, please use `post({ url })` instead.',
+			);
 		}
 		params.method = 'POST';
 		return this.request(params);
 	}
 
-	public delete(params: PinejsClientCoreFactory.Params) {
+	public delete(params: Params) {
 		if (isString(params)) {
-			deprecated.deleteStringParams();
-			params = { url: params };
+			throw new Error(
+				'`delete(url)` is no longer supported, please use `delete({ url })` instead.',
+			);
 		}
 		params.method = 'DELETE';
 		return this.request(params);
 	}
 
-	public upsert(params: PinejsClientCoreFactory.UpsertParams) {
+	public async upsert(params: UpsertParams) {
 		const { id, body, ...restParams } = params;
 
 		if (!isObject(id)) {
@@ -1051,7 +979,9 @@ abstract class PinejsClientCoreTemplate<
 				...id,
 			},
 		};
-		return this.post(postParams).then(undefined, err => {
+		try {
+			await this.post(postParams);
+		} catch (err) {
 			const isUniqueKeyViolationResponse =
 				err.statusCode === 409 && /unique/i.test(err.body);
 
@@ -1072,64 +1002,58 @@ abstract class PinejsClientCoreTemplate<
 				body,
 			};
 			return this.patch(patchParams);
-		});
+		}
 	}
 
-	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
-		params: string | (PinejsClientCoreFactory.ParamsObj & { method?: 'GET' }),
+	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: ParamsObj & { method?: 'GET' },
 	): PreparedFn<T, PromiseResult>;
-	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
-		params: PinejsClientCoreFactory.ParamsObj & {
-			method: Exclude<PinejsClientCoreFactory.ParamsObj['method'], 'GET'>;
+	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: ParamsObj & {
+			method: Exclude<ParamsObj['method'], 'GET'>;
 		},
 	): PreparedFn<T, PromiseObj>;
-	public prepare<T extends Dictionary<PinejsClientCoreFactory.ParameterAlias>>(
-		params: PinejsClientCoreFactory.Params,
+	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: Params,
 	): PreparedFn<T, PromiseObj | PromiseResult> {
-		let paramsObj: PinejsClientCoreFactory.ParamsObj;
 		if (isString(params)) {
-			deprecated.prepareStringParams();
-			paramsObj = {
-				url: params,
-			};
-		} else {
-			paramsObj = params;
+			throw new Error(
+				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
+			);
 		}
 		// precompile the URL string to improve performance
 		const compiledUrl = this.compile(params);
 		const urlQueryParamsStr = compiledUrl.indexOf('?') === -1 ? '?' : '&';
-		if (paramsObj.method == null) {
-			paramsObj.method = 'GET';
+		if (params.method == null) {
+			params.method = 'GET';
 		} else {
-			paramsObj.method = paramsObj.method.toUpperCase() as typeof paramsObj.method;
+			params.method = params.method.toUpperCase() as typeof params.method;
 		}
-		const { body: defaultBody } = paramsObj;
-		const { passthrough: defaultPassthrough } = paramsObj;
+		const { body: defaultBody } = params;
+		const { passthrough: defaultPassthrough } = params;
 
 		const transformFn =
-			paramsObj.method === 'GET'
-				? this.transformGetResult(paramsObj)
-				: undefined;
+			params.method === 'GET' ? this.transformGetResult(params) : undefined;
 
-		return (parameterAliases, body, passthrough) => {
+		return async (parameterAliases, body, passthrough) => {
 			if (body != null) {
-				paramsObj.body = {
+				params.body = {
 					...defaultBody,
 					...body,
 				};
 			} else if (defaultBody != null) {
-				paramsObj.body = { ...defaultBody };
+				params.body = { ...defaultBody };
 			}
 			if (passthrough != null) {
-				paramsObj.passthrough = {
+				params.passthrough = {
 					...defaultPassthrough,
 					...passthrough,
 				};
 			} else if (defaultPassthrough != null) {
-				paramsObj.passthrough = { ...defaultPassthrough };
+				params.passthrough = { ...defaultPassthrough };
 			}
 			if (parameterAliases != null) {
-				paramsObj.url =
+				params.url =
 					compiledUrl +
 					urlQueryParamsStr +
 					mapObj(parameterAliases, (value, option) => {
@@ -1141,21 +1065,21 @@ abstract class PinejsClientCoreTemplate<
 						return `@${option}=${escapeValue(value)}`;
 					}).join('&');
 			} else {
-				paramsObj.url = compiledUrl;
+				params.url = compiledUrl;
 			}
-			const result = this.request(paramsObj);
+			const result = await this.request(params);
 			if (transformFn != null) {
-				return result.then(transformFn) as PromiseResult;
+				return transformFn(result);
 			}
 			return result;
 		};
 	}
 
-	public compile(params: PinejsClientCoreFactory.Params): string {
+	public compile(params: Params): string {
 		if (isString(params)) {
-			deprecated.compileStringParams();
-			return params;
-		} else if (params.url != null) {
+			throw new Error('Params must be an object not a string');
+		}
+		if (params.url != null) {
 			return params.url;
 		} else {
 			if (params.resource == null) {
@@ -1199,300 +1123,239 @@ abstract class PinejsClientCoreTemplate<
 		}
 	}
 
-	public abstract request(
-		params: PinejsClientCoreFactory.Params,
-		overrides?: { method?: PinejsClientCoreFactory.ODataMethod },
-	): PromiseObj;
+	public async request(params: Params, overrides?: undefined): Promise<{}> {
+		if (overrides !== undefined) {
+			throw new Error(
+				'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
+			);
+		}
+
+		if (isString(params)) {
+			throw new Error(
+				'`request(url)` is no longer supported, please use `request({ url })` instead.',
+			);
+		}
+		let { method, apiPrefix } = params;
+		const { body, passthrough = {} } = params;
+
+		apiPrefix = apiPrefix ?? this.apiPrefix;
+		const url = apiPrefix + this.compile(params);
+
+		method = method ?? 'GET';
+		method = method.toUpperCase() as typeof method;
+		// Filter to prevent accidental parameter passthrough.
+		const opts = {
+			...this.passthrough,
+			...(this.passthroughByMethod[method] ?? {}),
+			...passthrough,
+			url,
+			body,
+			method,
+		};
+
+		return this._request(opts);
+	}
 
 	public abstract _request(
 		params: {
 			method: string;
 			url: string;
-			body?: PinejsClientCoreFactory.AnyObject;
-		} & PinejsClientCoreFactory.AnyObject,
+			body?: AnyObject;
+		} & AnyObject,
 	): PromiseObj;
 }
 
-export function PinejsClientCoreFactory(
-	Promise: PinejsClientCoreFactory.PromiseRejector,
-): typeof PinejsClientCoreFactory.PinejsClientCore {
-	if (!isPromiseRejector(Promise)) {
-		throw new Error('The Promise implementation must support .reject');
-	}
+export type PromiseResultTypes = number | AnyObject | AnyObject[];
 
-	abstract class PinejsClientCore<
-		T,
-		PromiseObj extends PromiseLike<{}> = Promise<{}>,
-		PromiseResult extends PromiseLike<
-			PinejsClientCoreFactory.PromiseResultTypes
-		> = Promise<PinejsClientCoreFactory.PromiseResultTypes>
-	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
-		public request(
-			params: PinejsClientCoreFactory.Params,
-			overrides?: { method?: PinejsClientCoreFactory.ODataMethod },
-		): PromiseObj {
-			try {
-				if (overrides !== undefined) {
-					deprecated.requestOverrides();
-				} else {
-					overrides = {};
-				}
-				let method: PinejsClientCoreFactory.ParamsObj['method'];
-				let body: PinejsClientCoreFactory.ParamsObj['body'];
-				let passthrough: PinejsClientCoreFactory.ParamsObj['passthrough'] = {};
-				let apiPrefix: PinejsClientCoreFactory.ParamsObj['apiPrefix'];
+type FilterOperationKey =
+	| '$ne'
+	| '$eq'
+	| '$gt'
+	| '$ge'
+	| '$lt'
+	| '$le'
+	| '$add'
+	| '$sub'
+	| '$mul'
+	| '$div'
+	| '$mod';
+type FilterOperationValue = Filter;
+type FilterFunctionKey =
+	| '$contains'
+	| '$endswith'
+	| '$startswith'
+	| '$length'
+	| '$indexof'
+	| '$substring'
+	| '$tolower'
+	| '$toupper'
+	| '$trim'
+	| '$concat'
+	| '$year'
+	| '$month'
+	| '$day'
+	| '$hour'
+	| '$minute'
+	| '$second'
+	| '$fractionalseconds'
+	| '$date'
+	| '$time'
+	| '$totaloffsetminutes'
+	| '$now'
+	| '$maxdatetime'
+	| '$mindatetime'
+	| '$totalseconds'
+	| '$round'
+	| '$floor'
+	| '$ceiling'
+	| '$isof'
+	| '$cast';
+type FilterFunctionValue = Filter;
 
-				if (isString(params)) {
-					deprecated.requestStringParams();
-					params = { method: 'GET', url: params };
-				}
-				({ method, body, passthrough = {}, apiPrefix } = params);
+export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
+	'@'?: string;
 
-				apiPrefix = apiPrefix ?? this.apiPrefix;
-				const url = apiPrefix + this.compile(params);
+	$raw?: RawFilter;
 
-				method = method ?? overrides.method ?? 'GET';
-				method = method.toUpperCase() as typeof method;
-				// Filter to prevent accidental parameter passthrough.
-				const opts = {
-					...this.passthrough,
-					...(this.passthroughByMethod[method] ?? {}),
-					...passthrough,
-					url,
-					body,
-					...overrides,
-					method,
-				};
+	$?: string | string[];
 
-				return this._request(opts);
-			} catch (e) {
-				return Promise.reject(e) as PromiseObj;
-			}
-		}
-	}
+	$and?: Filter;
+	$or?: Filter;
 
-	return PinejsClientCore;
+	$in?: Filter;
+
+	$not?: Filter;
+
+	$any?: Lambda;
+	$all?: Lambda;
+
+	// Filter operations
+	$ne?: FilterOperationValue;
+	$eq?: FilterOperationValue;
+	$gt?: FilterOperationValue;
+	$ge?: FilterOperationValue;
+	$lt?: FilterOperationValue;
+	$le?: FilterOperationValue;
+	$add?: FilterOperationValue;
+	$sub?: FilterOperationValue;
+	$mul?: FilterOperationValue;
+	$div?: FilterOperationValue;
+	$mod?: FilterOperationValue;
+
+	// Filter functions
+	$contains?: FilterFunctionValue;
+	$endswith?: FilterFunctionValue;
+	$startswith?: FilterFunctionValue;
+	$length?: FilterFunctionValue;
+	$indexof?: FilterFunctionValue;
+	$substring?: FilterFunctionValue;
+	$tolower?: FilterFunctionValue;
+	$toupper?: FilterFunctionValue;
+	$trim?: FilterFunctionValue;
+	$concat?: FilterFunctionValue;
+	$year?: FilterFunctionValue;
+	$month?: FilterFunctionValue;
+	$day?: FilterFunctionValue;
+	$hour?: FilterFunctionValue;
+	$minute?: FilterFunctionValue;
+	$second?: FilterFunctionValue;
+	$fractionalseconds?: FilterFunctionValue;
+	$date?: FilterFunctionValue;
+	$time?: FilterFunctionValue;
+	$totaloffsetminutes?: FilterFunctionValue;
+	$now?: FilterFunctionValue;
+	$maxdatetime?: FilterFunctionValue;
+	$mindatetime?: FilterFunctionValue;
+	$totalseconds?: FilterFunctionValue;
+	$round?: FilterFunctionValue;
+	$floor?: FilterFunctionValue;
+	$ceiling?: FilterFunctionValue;
+	$isof?: FilterFunctionValue;
+	$cast?: FilterFunctionValue;
 }
 
-/* tslint:disable-next-line:no-namespace */
-export declare namespace PinejsClientCoreFactory {
-	export abstract class PinejsClientCore<
-		T,
-		PromiseObj extends PromiseLike<{}> = Promise<{}>,
-		PromiseResult extends PromiseLike<
-			number | AnyObject | AnyObject[]
-		> = Promise<number | AnyObject | AnyObject[]>
-	> extends PinejsClientCoreTemplate<T, PromiseObj, PromiseResult> {
-		public request(
-			params: Params,
-			overrides?: { method?: ODataMethod },
-		): PromiseObj;
+export interface FilterArray extends Array<Filter> {}
+export type FilterBaseType = string | number | null | boolean | Date;
+export type RawFilter =
+	| string
+	| [string, ...Filter[]]
+	| {
+			$string: string;
+			[index: string]: Filter;
+	  };
+export interface Lambda {
+	$alias: string;
+	$expr: Filter;
+}
+export type Filter = FilterObj | FilterArray | FilterBaseType;
 
-		public abstract _request(
-			params: {
-				method: string;
-				url: string;
-				body?: AnyObject;
-			} & AnyObject,
-		): PromiseObj;
-	}
+export interface ResourceExpand extends Dictionary<ODataOptions> {}
 
-	export type PromiseResultTypes = number | AnyObject | AnyObject[];
+export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
 
-	interface PromiseRejector {
-		reject(err: any): PromiseLike<any>;
-	}
+export type OrderBy =
+	| string
+	| string[]
+	| {
+			[index: string]: 'asc' | 'desc';
+	  };
 
-	type FilterOperationKey =
-		| '$ne'
-		| '$eq'
-		| '$gt'
-		| '$ge'
-		| '$lt'
-		| '$le'
-		| '$add'
-		| '$sub'
-		| '$mul'
-		| '$div'
-		| '$mod';
-	type FilterOperationValue = Filter;
-	type FilterFunctionKey =
-		| '$contains'
-		| '$endswith'
-		| '$startswith'
-		| '$length'
-		| '$indexof'
-		| '$substring'
-		| '$tolower'
-		| '$toupper'
-		| '$trim'
-		| '$concat'
-		| '$year'
-		| '$month'
-		| '$day'
-		| '$hour'
-		| '$minute'
-		| '$second'
-		| '$fractionalseconds'
-		| '$date'
-		| '$time'
-		| '$totaloffsetminutes'
-		| '$now'
-		| '$maxdatetime'
-		| '$mindatetime'
-		| '$totalseconds'
-		| '$round'
-		| '$floor'
-		| '$ceiling'
-		| '$isof'
-		| '$cast';
-	type FilterFunctionValue = Filter;
+export type Primitive = null | string | number | boolean | Date;
+export type ParameterAlias = Primitive;
 
-	export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
-		'@'?: string;
-
-		$raw?: RawFilter;
-
-		$?: string | string[];
-
-		$and?: Filter;
-		$or?: Filter;
-
-		$in?: Filter;
-
-		$not?: Filter;
-
-		$any?: Lambda;
-		$all?: Lambda;
-
-		// Filter operations
-		$ne?: FilterOperationValue;
-		$eq?: FilterOperationValue;
-		$gt?: FilterOperationValue;
-		$ge?: FilterOperationValue;
-		$lt?: FilterOperationValue;
-		$le?: FilterOperationValue;
-		$add?: FilterOperationValue;
-		$sub?: FilterOperationValue;
-		$mul?: FilterOperationValue;
-		$div?: FilterOperationValue;
-		$mod?: FilterOperationValue;
-
-		// Filter functions
-		$contains?: FilterFunctionValue;
-		$endswith?: FilterFunctionValue;
-		$startswith?: FilterFunctionValue;
-		$length?: FilterFunctionValue;
-		$indexof?: FilterFunctionValue;
-		$substring?: FilterFunctionValue;
-		$tolower?: FilterFunctionValue;
-		$toupper?: FilterFunctionValue;
-		$trim?: FilterFunctionValue;
-		$concat?: FilterFunctionValue;
-		$year?: FilterFunctionValue;
-		$month?: FilterFunctionValue;
-		$day?: FilterFunctionValue;
-		$hour?: FilterFunctionValue;
-		$minute?: FilterFunctionValue;
-		$second?: FilterFunctionValue;
-		$fractionalseconds?: FilterFunctionValue;
-		$date?: FilterFunctionValue;
-		$time?: FilterFunctionValue;
-		$totaloffsetminutes?: FilterFunctionValue;
-		$now?: FilterFunctionValue;
-		$maxdatetime?: FilterFunctionValue;
-		$mindatetime?: FilterFunctionValue;
-		$totalseconds?: FilterFunctionValue;
-		$round?: FilterFunctionValue;
-		$floor?: FilterFunctionValue;
-		$ceiling?: FilterFunctionValue;
-		$isof?: FilterFunctionValue;
-		$cast?: FilterFunctionValue;
-	}
-
-	export interface FilterArray extends Array<Filter> {}
-	export type FilterBaseType = string | number | null | boolean | Date;
-	export type RawFilter =
-		| string
-		| [string, ...Filter[]]
-		| {
-				$string: string;
-				[index: string]: Filter;
-		  };
-	export interface Lambda {
-		$alias: string;
-		$expr: Filter;
-	}
-	export type Filter = FilterObj | FilterArray | FilterBaseType;
-
-	export interface ResourceExpand extends Dictionary<ODataOptions> {}
-
-	export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
-
-	export type OrderBy =
-		| string
+export interface ODataOptions {
+	$filter?: Filter;
+	$expand?: Expand;
+	$orderby?: OrderBy;
+	$top?: number;
+	$skip?: number;
+	$select?: string | string[];
+	[index: string]:
+		| undefined
+		| ParameterAlias
 		| string[]
-		| {
-				[index: string]: 'asc' | 'desc';
-		  };
+		| Filter
+		| Expand
+		| OrderBy;
+}
+export type OptionsObject = ODataOptions;
 
-	export type Primitive = null | string | number | boolean | Date;
-	export type ParameterAlias = Primitive;
+export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-	export interface ODataOptions {
-		$filter?: Filter;
-		$expand?: Expand;
-		$orderby?: OrderBy;
-		$top?: number;
-		$skip?: number;
-		$select?: string | string[];
-		[index: string]:
-			| undefined
-			| ParameterAlias
-			| string[]
-			| Filter
-			| Expand
-			| OrderBy;
-	}
-	export type OptionsObject = ODataOptions;
+type ResourceId =
+	| string
+	| number
+	| Date
+	| {
+			'@': string;
+	  };
 
-	export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';
 
-	type ResourceId =
-		| string
-		| number
-		| Date
-		| {
-				'@': string;
-		  };
+export type AnyObject = Dictionary<any>;
 
-	type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';
+interface ParamsObj {
+	apiPrefix?: string;
+	method?: ODataMethod;
+	resource?: string;
+	id?: ResourceId;
+	url?: string;
+	body?: AnyObject;
+	passthrough?: AnyObject;
+	passthroughByMethod?: { [method in ODataMethod]: AnyObject };
+	options?: ODataOptions;
+}
 
-	export type AnyObject = Dictionary<any>;
+export type Params = ParamsObj;
 
-	interface ParamsObj {
-		apiPrefix?: string;
-		method?: ODataMethod;
-		resource?: string;
-		id?: ResourceId;
-		url?: string;
-		body?: AnyObject;
-		passthrough?: AnyObject;
-		passthroughByMethod?: { [method in ODataMethod]: AnyObject };
-		options?: ODataOptions;
-	}
+interface SubscribeParamsObj extends ParamsObj {
+	method?: 'GET';
+	pollInterval?: number;
+}
+export type SubscribeParams = SubscribeParamsObj;
 
-	export type Params = ParamsObj | string;
-
-	interface SubscribeParamsObj extends ParamsObj {
-		method?: 'GET';
-		pollInterval?: number;
-	}
-	export type SubscribeParams = SubscribeParamsObj | string;
-
-	export interface UpsertParams extends Omit<ParamsObj, 'id' | 'method'> {
-		id: Dictionary<Primitive>;
-		resource: string;
-		body: AnyObject;
-	}
+export interface UpsertParams extends Omit<ParamsObj, 'id' | 'method'> {
+	id: Dictionary<Primitive>;
+	resource: string;
+	body: AnyObject;
 }
