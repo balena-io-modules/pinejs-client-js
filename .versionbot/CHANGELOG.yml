@@ -1,4 +1,63 @@
 - commits:
+    - subject: Increase minimum es version to es2015
+      hash: 52f3a97dc2b5aba07090a688fcd7afa2d2d789d8
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+      author: Pagan Gazzard
+    - subject: Convert to async/await
+      hash: b6c6d1f1dc9e9b05e60964a87e1677b0b4cc74eb
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+      author: Pagan Gazzard
+    - subject: Remove now unnecessary PinejsClientCoreFactory
+      hash: 35adea3c7c33a74920652ea547e8d649592e86fc
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+      author: Pagan Gazzard
+    - subject: Switch to using native promises
+      hash: d87e4570be580dccb1e511068beaf79878e66d06
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+      author: Pagan Gazzard
+    - subject: Drop support for deprecated request overrides
+      hash: 5aa89779bb06b9437382439b324f91d5fa9061b7
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+      author: Pagan Gazzard
+    - subject: Drop support for deprecated `query` method
+      hash: 2a0d315b111832c0a15a4cc581cd3f3cb5c32cd7
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+      author: Pagan Gazzard
+    - subject: Drop support for deprecated string based requests
+      hash: 493a2bc970923eb8d79e684e10d4ec433803a20c
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+      author: Pagan Gazzard
+    - subject: Use `;` for expand options instead of `&`
+      hash: 62f0f4c406ce87b2ba6d4a7f74c88107ac3144cb
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+      author: Pagan Gazzard
+  version: 6.0.0
+  date: 2020-06-04T12:58:07.304Z
+- commits:
     - subject: Generate optional builds for es2015/es2018 as well as the default es5
       hash: 510682b0e2a9d2a338aa977bd4782ec60fc5b196
       body: ''
