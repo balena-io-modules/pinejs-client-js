@@ -1123,7 +1123,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 	}
 
-	public async request(params: Params, overrides?: undefined): Promise<{}> {
+	public request(params: Params, overrides?: undefined): Promise<{}> {
 		if (overrides !== undefined) {
 			throw new Error(
 				'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
