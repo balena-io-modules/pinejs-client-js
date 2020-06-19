@@ -1,4 +1,20 @@
 - commits:
+    - subject: Drop unnecessary async from request()
+      hash: dfd4c8c39327fe2e1706a8180e3c3f56d4229b77
+      body: |
+        This allows consumers like pinejs-client-supertest
+        to have all the methods returning different Promise
+        types based solely on the implementation of the
+        request() method.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+  version: 6.0.1
+  date: 2020-06-19T16:55:46.305Z
+- commits:
     - subject: Increase minimum es version to es2015
       hash: 52f3a97dc2b5aba07090a688fcd7afa2d2d789d8
       body: ''
