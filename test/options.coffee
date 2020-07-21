@@ -32,6 +32,18 @@ testParam = _.partial(testOption, '@param')
 testId(1, '1')
 testId('Bob', "'Bob'")
 testId({ '@': 'param' }, '@param')
+testId({
+	a: 1,
+	b: 2
+}, 'a=1,b=2')
+testId({
+	a: 'Bob',
+	b: 'Smith'
+}, "a='Bob',b='Smith'")
+testId({
+	a: { '@': 'param1' },
+	b: { '@': 'param2' }
+}, 'a=@param1,b=@param2')
 
 testOrderBy(
 	'a'
