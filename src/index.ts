@@ -1094,8 +1094,18 @@ export abstract class PinejsClientCore<PinejsClient> {
 				}
 				let value: string;
 
-				if (isObject(id) && '@' in id) {
-					value = escapeParameterAlias(id['@']);
+				if (isObject(id) && !isDate(id)) {
+					if ('@' in id) {
+						value = escapeParameterAlias(id['@']);
+					} else {
+						value = mapObj(id, (v, k) => {
+							const escapedValue =
+								isObject(v) && '@' in v
+									? escapeParameterAlias(v['@'])
+									: escapeValue(v);
+							return `${k}=${escapedValue}`;
+						}).join(',');
+					}
 				} else {
 					value = '' + escapeValue(id);
 				}
@@ -1322,12 +1332,17 @@ export type OptionsObject = ODataOptions;
 
 export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-type ResourceId =
+type BaseResourceId =
 	| string
 	| number
 	| Date
 	| {
 			'@': string;
+	  };
+type ResourceId =
+	| BaseResourceId
+	| {
+			[key: string]: BaseResourceId;
 	  };
 
 type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';

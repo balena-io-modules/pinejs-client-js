@@ -35,11 +35,11 @@
     "chai": "^4.2.0",
     "coffee-script": "~1.12.7",
     "husky": "^4.2.5",
-    "lint-staged": "^10.2.7",
-    "lodash": "^4.17.15",
+    "lint-staged": "^10.2.11",
+    "lodash": "^4.17.19",
     "mocha": "^6.2.3",
     "require-npm4-to-publish": "^1.0.0",
-    "typescript": "^3.9.3"
+    "typescript": "^3.9.7"
   },
   "husky": {
     "hooks": {
