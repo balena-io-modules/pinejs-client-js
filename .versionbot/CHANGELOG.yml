@@ -1,4 +1,14 @@
 - commits:
+    - subject: Add support for using named ids
+      hash: f6035bf5240e8aea1b92997d976cebd9a1857a61
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 6.1.0
+  date: 2020-07-21T10:31:09.457Z
+- commits:
     - subject: Drop unnecessary async from request()
       hash: dfd4c8c39327fe2e1706a8180e3c3f56d4229b77
       body: |
