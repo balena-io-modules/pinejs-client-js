@@ -966,7 +966,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 
 		let uniqueFields: Dictionary<any>;
-		if (isPrimitive(id)) {
+		if (isPrimitive(id) || (isObject(id) && '@' in id)) {
 			uniqueFields = {
 				id,
 			};
@@ -983,40 +983,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 			);
 		}
 
-		const { options } = restParams;
-		const $filter =
-			options?.$filter == null
-				? uniqueFields
-				: { $and: [options.$filter, uniqueFields] };
-
-		const getParams = {
+		const result = await this.get({
 			...restParams,
-			options: {
-				// we are filtering on an natural or primary key,
-				// so we only need 2 in order to detect whether there
-				// was an error with the natural key provided
-				$top: 2,
-				...options,
-				$filter,
-			},
-		};
+			id,
+		});
 
-		const results = await this.get(getParams);
-		if (!Array.isArray(results) || typeof results === 'number') {
-			// This should never happen, since we checked for $count earlier
-			// and we are not passing an id in the options
-			throw new Error(
-				`Unexpected ${typeof results} result when an array was expected.`,
-			);
-		}
-
-		if (results.length > 1) {
-			throw new Error(
-				'Returned multiple results when at most one was expected.',
-			);
-		}
-
-		const [result] = results;
 		if (result != null) {
 			return result;
 		}
@@ -1445,8 +1416,8 @@ interface SubscribeParamsObj extends ParamsObj {
 }
 export type SubscribeParams = SubscribeParamsObj;
 
-export interface GetOrCreateParams extends Omit<ParamsObj, 'id' | 'method'> {
-	id: Exclude<ParamsObj['id'], object | undefined> | Dictionary<Primitive>;
+export interface GetOrCreateParams extends Omit<ParamsObj, 'method'> {
+	id: ResourceId;
 	resource: string;
 	body: AnyObject;
 }
