@@ -777,8 +777,8 @@ const validParams: SharedParam[] = [
 
 export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	parameterAliases?: T,
-	body?: ParamsObj['body'],
-	passthrough?: ParamsObj['passthrough'],
+	body?: Params['body'],
+	passthrough?: Params['passthrough'],
 ) => U;
 
 export type PromiseObj = Promise<{}>;
@@ -858,7 +858,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.transformGetResult(params)(result);
 	}
 
-	protected transformGetResult(params: ParamsObj) {
+	protected transformGetResult(params: Params) {
 		const singular = params.id != null;
 
 		return (data: AnyObject): PromiseResultTypes => {
@@ -988,11 +988,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: ParamsObj & { method?: 'GET' },
+		params: Params & { method?: 'GET' },
 	): PreparedFn<T, PromiseResult>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: ParamsObj & {
-			method: Exclude<ParamsObj['method'], 'GET'>;
+		params: Params & {
+			method: Exclude<Params['method'], 'GET'>;
 		},
 	): PreparedFn<T, PromiseObj>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
@@ -1331,7 +1331,7 @@ type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';
 
 export type AnyObject = Dictionary<any>;
 
-interface ParamsObj {
+export interface Params {
 	apiPrefix?: string;
 	method?: ODataMethod;
 	resource?: string;
@@ -1343,15 +1343,12 @@ interface ParamsObj {
 	options?: ODataOptions;
 }
 
-export type Params = ParamsObj;
-
-interface SubscribeParamsObj extends ParamsObj {
+export interface SubscribeParams extends Params {
 	method?: 'GET';
 	pollInterval?: number;
 }
-export type SubscribeParams = SubscribeParamsObj;
 
-export interface UpsertParams extends Omit<ParamsObj, 'id' | 'method'> {
+export interface UpsertParams extends Omit<Params, 'id' | 'method'> {
 	id: Dictionary<Primitive>;
 	resource: string;
 	body: AnyObject;
