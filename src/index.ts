@@ -699,20 +699,18 @@ const buildOption = (option: string, value: ODataOptions['']) => {
 };
 
 const handleExpandOptions = (expand: ODataOptions, parentKey: string) => {
-	const expandOptions = [];
-	for (const key of Object.keys(expand)) {
-		const value = expand[key];
+	const expandOptions = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			if (!isValidOption(key)) {
 				throw new Error(`Unknown key option '${key}'`);
 			}
-			expandOptions.push(buildOption(key, value));
+			return buildOption(key, value);
 		} else {
 			throw new Error(
 				`'$expand: ${parentKey}: ${key}: ...' is invalid, use '$expand: ${parentKey}: $expand: ${key}: ...' instead.`,
 			);
 		}
-	}
+	});
 	let expandStr = expandOptions.join(';');
 	if (expandStr.length > 0) {
 		expandStr = `(${expandStr})`;
@@ -721,14 +719,12 @@ const handleExpandOptions = (expand: ODataOptions, parentKey: string) => {
 	return expandStr;
 };
 const handleExpandObject = (expand: ResourceExpand) => {
-	const expands = [];
-	for (const key of Object.keys(expand)) {
+	const expands = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			throw new Error(
 				'Cannot have expand options without first expanding something!',
 			);
 		}
-		const value = expand[key];
 		if (isPrimitive(value)) {
 			const jsonValue = JSON.stringify(value);
 			throw new Error(
@@ -740,8 +736,8 @@ const handleExpandObject = (expand: ResourceExpand) => {
 				`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`,
 			);
 		}
-		expands.push(handleExpandOptions(value, key));
-	}
+		return handleExpandOptions(value, key);
+	});
 	return expands;
 };
 
