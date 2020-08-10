@@ -870,6 +870,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public async get(
+		params: Params & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): Promise<number>;
+	public async get(
 		params: Params & { id: NonNullable<Params['id']> },
 	): Promise<number | AnyObject>;
 	public async get(params: Omit<Params, 'id'>): Promise<number | AnyObject[]>;
@@ -885,6 +890,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.transformGetResult(params)(result);
 	}
 
+	protected transformGetResult(
+		params: Params & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): (data: AnyObject) => number;
 	protected transformGetResult(
 		params: Params & { id: NonNullable<Params['id']> },
 	): (data: AnyObject) => number | AnyObject;
@@ -917,6 +927,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 		};
 	}
 
+	public subscribe(
+		params: SubscribeParams & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): Poll<number>;
 	public subscribe(
 		params: SubscribeParams & { id: NonNullable<SubscribeParams['id']> },
 	): Poll<number | AnyObject>;
@@ -1029,6 +1044,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: Params & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): PreparedFn<T, Promise<number>>;
+	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
 	): PreparedFn<T, Promise<number | AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
@@ -1115,6 +1135,20 @@ export abstract class PinejsClientCore<PinejsClient> {
 				throw new Error('Either the url or resource must be specified.');
 			}
 			let url = escapeResource(params.resource);
+			let { options } = params;
+
+			if (options?.hasOwnProperty('$count')) {
+				const keys = Object.keys(options);
+				if (keys.length > 1) {
+					throw new Error(
+						`When using '$expand: a: $count: ...' you can only specify $count, got: '${JSON.stringify(
+							keys,
+						)}'`,
+					);
+				}
+				url += '/$count';
+				options = options.$count as ODataOptionsWithoutCount;
+			}
 
 			if (params.hasOwnProperty('id')) {
 				const { id } = params;
@@ -1142,8 +1176,8 @@ export abstract class PinejsClientCore<PinejsClient> {
 			}
 
 			let queryOptions: string[] = [];
-			if (params.options != null) {
-				queryOptions = mapObj(params.options, (value, option) => {
+			if (options != null) {
+				queryOptions = mapObj(options, (value, option) => {
 					if (option[0] === '$' && !isValidOption(option)) {
 						throw new Error(`Unknown odata option '${option}'`);
 					}
@@ -1392,7 +1426,7 @@ export interface Params {
 	body?: AnyObject;
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]: AnyObject };
-	options?: ODataOptionsWithoutCount;
+	options?: ODataOptions;
 }
 
 export interface SubscribeParams extends Params {
