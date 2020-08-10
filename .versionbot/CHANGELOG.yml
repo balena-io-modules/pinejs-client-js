@@ -1,4 +1,14 @@
 - commits:
+    - subject: 'Add `$filter: { a: { $count: 1 } }` sugar for $count in filters'
+      hash: f2fef3833f321bf81543c62a9a3db09d7fbc0a4a
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 6.2.0
+  date: 2020-08-10T16:44:49.238Z
+- commits:
     - subject: Remove redundant ParamsObj/SubscribeParamsObj types
       hash: f5fc6762aa8f1918424fb5e1c1a05435f07af285
       body: ''
