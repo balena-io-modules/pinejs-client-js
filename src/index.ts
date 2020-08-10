@@ -35,7 +35,9 @@ const isDate = (v: any): v is Date =>
 const isObject = (v: any): v is AnyObject =>
 	typeof v != null && typeof v === 'object';
 
-const isValidOption = (key: string): key is keyof ODataOptions & string => {
+const isValidOption = (
+	key: string,
+): key is keyof ODataOptionsWithoutCount & string => {
 	return (
 		key === '$filter' ||
 		key === '$expand' ||
@@ -646,7 +648,10 @@ const buildOrderBy = (orderby: OrderBy): string => {
 	}
 };
 
-const buildOption = (option: string, value: ODataOptions['']) => {
+const buildOption = (
+	option: string,
+	value: ODataOptionsWithoutCount[string],
+) => {
 	let compiledValue: string = '';
 	switch (option) {
 		case '$filter':
@@ -705,7 +710,21 @@ const buildOption = (option: string, value: ODataOptions['']) => {
 	return `${option}=${compiledValue}`;
 };
 
-const handleExpandOptions = (expand: ODataOptions, parentKey: string) => {
+const handleExpandOptions = (
+	expand: ODataOptions,
+	parentKey: string,
+): string => {
+	if (expand.hasOwnProperty('$count')) {
+		const keys = Object.keys(expand);
+		if (keys.length > 1) {
+			throw new Error(
+				`When using '$expand: a: $count: ...' you can only specify $count, got: '${JSON.stringify(
+					keys,
+				)}'`,
+			);
+		}
+		return handleExpandOptions(expand.$count!, parentKey + '/$count');
+	}
 	const expandOptions = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			if (!isValidOption(key)) {
@@ -1325,7 +1344,7 @@ export type OrderBy =
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
 
-export interface ODataOptions {
+export interface ODataOptionsWithoutCount {
 	$filter?: Filter;
 	$expand?: Expand;
 	$orderby?: OrderBy;
@@ -1339,6 +1358,9 @@ export interface ODataOptions {
 		| Filter
 		| Expand
 		| OrderBy;
+}
+export interface ODataOptions extends ODataOptionsWithoutCount {
+	$count?: ODataOptionsWithoutCount;
 }
 export type OptionsObject = ODataOptions;
 
@@ -1370,7 +1392,7 @@ export interface Params {
 	body?: AnyObject;
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]: AnyObject };
-	options?: ODataOptions;
+	options?: ODataOptionsWithoutCount;
 }
 
 export interface SubscribeParams extends Params {
