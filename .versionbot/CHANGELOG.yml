@@ -1,4 +1,14 @@
 - commits:
+    - subject: Remove redundant ParamsObj/SubscribeParamsObj types
+      hash: f5fc6762aa8f1918424fb5e1c1a05435f07af285
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.1.2
+  date: 2020-08-10T16:32:09.666Z
+- commits:
     - subject: Make use of `mapObj` helper in more places
       hash: 2189f9918cb515071d2f6ecb941b0d838ee6c5ea
       body: ''
