@@ -460,6 +460,13 @@ const handleFilterOperator = (
 			const resource = escapeResource(filter as FilterType<typeof operator>);
 			return addParentKey(resource, parentKey);
 		}
+		case '$count': {
+			let keys = ['$count'];
+			if (parentKey != null) {
+				keys = parentKey.concat(keys);
+			}
+			return buildFilter(filter as Filter, keys);
+		}
 		// break
 		case '$and':
 		case '$or': {
@@ -1210,6 +1217,8 @@ export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
 	$raw?: RawFilter;
 
 	$?: string | string[];
+
+	$count?: Filter;
 
 	$and?: Filter;
 	$or?: Filter;

@@ -641,6 +641,11 @@ testFilter(
 )
 
 testFilter(
+	a: $count: 1
+	'a/$count eq 1'
+)
+
+testFilter(
 	$eq: [
 		$: [ 'a', '$count' ]
 		1
