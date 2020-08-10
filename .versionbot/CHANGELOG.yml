@@ -1,4 +1,21 @@
 - commits:
+    - subject: Make use of `mapObj` helper in more places
+      hash: 2189f9918cb515071d2f6ecb941b0d838ee6c5ea
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+    - subject: Use `Object.keys` in preference to `hasOwnProperty` where applicable
+      hash: 2ea0e9549974150ef9e7f82206f25000407e37ba
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.1.1
+  date: 2020-08-10T15:42:09.364Z
+- commits:
     - subject: Add support for using named ids
       hash: f6035bf5240e8aea1b92997d976cebd9a1857a61
       body: ''
