@@ -20,15 +20,7 @@ addDeprecated(
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
 	fn: (value: T, key: string) => R,
-): R[] => {
-	const results = [];
-	for (const key in obj) {
-		if (obj.hasOwnProperty(key)) {
-			results.push(fn(obj[key], key));
-		}
-	}
-	return results;
-};
+): R[] => Object.keys(obj).map(key => fn(obj[key], key));
 
 const NumberIsFinite: (v: any) => v is number =
 	(Number as any).isFinite || (v => typeof v === 'number' && isFinite(v));
@@ -280,17 +272,15 @@ const applyBinds = (
 	params: Dictionary<Filter>,
 	parentKey?: string[],
 ) => {
-	for (const index in params) {
-		if (params.hasOwnProperty(index)) {
-			const param = params[index];
-			let paramStr = `(${buildFilter(param).join('')})`;
-			// Escape $ for filter.replace
-			paramStr = paramStr.replace(/\$/g, '$$$$');
-			filter = filter.replace(
-				new RegExp(`\\$${index}([^a-zA-Z0-9]|$)`, 'g'),
-				`${paramStr}$1`,
-			);
-		}
+	for (const index of Object.keys(params)) {
+		const param = params[index];
+		let paramStr = `(${buildFilter(param).join('')})`;
+		// Escape $ for filter.replace
+		paramStr = paramStr.replace(/\$/g, '$$$$');
+		filter = filter.replace(
+			new RegExp(`\\$${index}([^a-zA-Z0-9]|$)`, 'g'),
+			`${paramStr}$1`,
+		);
 	}
 	filter = `(${filter})`;
 	return addParentKey(filter, parentKey);
@@ -710,19 +700,17 @@ const buildOption = (option: string, value: ODataOptions['']) => {
 
 const handleExpandOptions = (expand: ODataOptions, parentKey: string) => {
 	const expandOptions = [];
-	for (const key in expand) {
-		if (expand.hasOwnProperty(key)) {
-			const value = expand[key];
-			if (key[0] === '$') {
-				if (!isValidOption(key)) {
-					throw new Error(`Unknown key option '${key}'`);
-				}
-				expandOptions.push(buildOption(key, value));
-			} else {
-				throw new Error(
-					`'$expand: ${parentKey}: ${key}: ...' is invalid, use '$expand: ${parentKey}: $expand: ${key}: ...' instead.`,
-				);
+	for (const key of Object.keys(expand)) {
+		const value = expand[key];
+		if (key[0] === '$') {
+			if (!isValidOption(key)) {
+				throw new Error(`Unknown key option '${key}'`);
 			}
+			expandOptions.push(buildOption(key, value));
+		} else {
+			throw new Error(
+				`'$expand: ${parentKey}: ${key}: ...' is invalid, use '$expand: ${parentKey}: $expand: ${key}: ...' instead.`,
+			);
 		}
 	}
 	let expandStr = expandOptions.join(';');
@@ -734,27 +722,25 @@ const handleExpandOptions = (expand: ODataOptions, parentKey: string) => {
 };
 const handleExpandObject = (expand: ResourceExpand) => {
 	const expands = [];
-	for (const key in expand) {
-		if (expand.hasOwnProperty(key)) {
-			if (key[0] === '$') {
-				throw new Error(
-					'Cannot have expand options without first expanding something!',
-				);
-			}
-			const value = expand[key];
-			if (isPrimitive(value)) {
-				const jsonValue = JSON.stringify(value);
-				throw new Error(
-					`'$expand: ${key}: ${jsonValue}' is invalid, use '$expand: ${key}: $expand: ${jsonValue}' instead.`,
-				);
-			}
-			if (Array.isArray(value)) {
-				throw new Error(
-					`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`,
-				);
-			}
-			expands.push(handleExpandOptions(value, key));
+	for (const key of Object.keys(expand)) {
+		if (key[0] === '$') {
+			throw new Error(
+				'Cannot have expand options without first expanding something!',
+			);
 		}
+		const value = expand[key];
+		if (isPrimitive(value)) {
+			const jsonValue = JSON.stringify(value);
+			throw new Error(
+				`'$expand: ${key}: ${jsonValue}' is invalid, use '$expand: ${key}: $expand: ${jsonValue}' instead.`,
+			);
+		}
+		if (Array.isArray(value)) {
+			throw new Error(
+				`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`,
+			);
+		}
+		expands.push(handleExpandOptions(value, key));
 	}
 	return expands;
 };
