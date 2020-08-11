@@ -1,4 +1,21 @@
 - commits:
+    - subject: 'Deprecate `$expand: { ''a/$count'': {...} }`'
+      hash: 8be33ad064905476e3f21978b7e1d760f5e27f4e
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+    - subject: 'Deprecate `resource: ''a/$count''` and update typings to reflect it'
+      hash: 779cc424cb6d2562aa9a98a3ff083b68308d9797
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 6.6.0
+  date: 2020-08-11T16:18:59.088Z
+- commits:
     - subject: 'Add `options: { $count: { ... } }` sugar for top level $count'
       hash: 13072f715da6c0ca3eab08584eaa48f39ea985b2
       body: ''
