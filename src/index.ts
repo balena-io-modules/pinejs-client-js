@@ -66,9 +66,12 @@ class Poll {
 	private stopped = false;
 	private pollInterval?: ReturnType<typeof setTimeout>;
 
-	private requestFn: null | (() => PromiseResult);
+	private requestFn: null | (() => Promise<PromiseResultTypes>);
 
-	constructor(requestFn: () => PromiseResult, private intervalTime = 10000) {
+	constructor(
+		requestFn: () => Promise<PromiseResultTypes>,
+		private intervalTime = 10000,
+	) {
 		this.requestFn = requestFn;
 		this.start();
 	}
@@ -121,8 +124,11 @@ class Poll {
 		}
 	}
 
-	public on(name: 'error', fn: (response: PromiseResult) => void): PollOnObj;
-	public on(name: 'data', fn: (err: any) => void): PollOnObj;
+	public on(
+		name: 'data',
+		fn: (response: Promise<PromiseResultTypes>) => void,
+	): PollOnObj;
+	public on(name: 'error', fn: (err: any) => void): PollOnObj;
 	public on(
 		name: keyof Poll['subscribers'],
 		fn: (value: any) => void,
@@ -788,9 +794,6 @@ export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	passthrough?: Params['passthrough'],
 ) => U;
 
-export type PromiseObj = Promise<{}>;
-export type PromiseResult = Promise<PromiseResultTypes>;
-
 export abstract class PinejsClientCore<PinejsClient> {
 	public apiPrefix: string = '/';
 	public passthrough: AnyObject = {};
@@ -853,6 +856,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
 
+	public async get(
+		params: Params & { id: NonNullable<Params['id']> },
+	): Promise<number | AnyObject>;
+	public async get(params: Omit<Params, 'id'>): Promise<number | AnyObject[]>;
 	public async get(params: Params): Promise<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
@@ -865,10 +872,18 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.transformGetResult(params)(result);
 	}
 
-	protected transformGetResult(params: Params) {
+	protected transformGetResult(
+		params: Params & { id: NonNullable<Params['id']> },
+	): (data: AnyObject) => number | AnyObject;
+	protected transformGetResult(
+		params: Omit<Params, 'id'>,
+	): (data: AnyObject) => number | AnyObject[];
+	protected transformGetResult(
+		params: Params,
+	): (data: AnyObject) => PromiseResultTypes {
 		const singular = params.id != null;
 
-		return (data: AnyObject): PromiseResultTypes => {
+		return data => {
 			if (!isObject(data)) {
 				throw new Error(`Response was not a JSON object: '${typeof data}'`);
 			}
@@ -995,16 +1010,22 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
+	): PreparedFn<T, Promise<number | AnyObject>>;
+	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: Omit<Params, 'id'> & { method?: 'GET' },
+	): PreparedFn<T, Promise<number | AnyObject[]>>;
+	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & { method?: 'GET' },
-	): PreparedFn<T, PromiseResult>;
+	): PreparedFn<T, Promise<PromiseResultTypes>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
 			method: Exclude<Params['method'], 'GET'>;
 		},
-	): PreparedFn<T, PromiseObj>;
+	): PreparedFn<T, Promise<{}>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params,
-	): PreparedFn<T, PromiseObj | PromiseResult> {
+	): PreparedFn<T, Promise<{}> | Promise<PromiseResultTypes>> {
 		if (isString(params)) {
 			throw new Error(
 				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
@@ -1161,7 +1182,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 			url: string;
 			body?: AnyObject;
 		} & AnyObject,
-	): PromiseObj;
+	): Promise<{}>;
 }
 
 export type PromiseResultTypes = number | AnyObject | AnyObject[];
