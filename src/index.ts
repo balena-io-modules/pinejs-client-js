@@ -6,7 +6,7 @@ const noop = () => {
 	// noop
 };
 const deprecated = {} as {
-	[key in 'expandFilter' | 'countInResource']: () => void;
+	[key in 'expandFilter' | 'countInResource' | 'countInExpand']: () => void;
 };
 const addDeprecated = (name: keyof typeof deprecated, message: string) => {
 	deprecated[name] = () => {
@@ -21,6 +21,10 @@ addDeprecated(
 addDeprecated(
 	'countInResource',
 	"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
+);
+addDeprecated(
+	'countInExpand',
+	"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
 );
 
 const mapObj = <T, R>(
@@ -720,6 +724,9 @@ const handleExpandOptions = (
 	expand: ODataOptions,
 	parentKey: string,
 ): string => {
+	if (parentKey.endsWith('/$count')) {
+		deprecated.countInExpand();
+	}
 	if (expand.hasOwnProperty('$count')) {
 		const keys = Object.keys(expand);
 		if (keys.length > 1) {
@@ -729,7 +736,8 @@ const handleExpandOptions = (
 				)}'`,
 			);
 		}
-		return handleExpandOptions(expand.$count!, parentKey + '/$count');
+		expand = expand.$count!;
+		parentKey += '/$count';
 	}
 	const expandOptions = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
