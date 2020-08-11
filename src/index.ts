@@ -890,7 +890,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): Promise<number>;
 	public async get(
 		params: Params & { id: NonNullable<Params['id']> },
-	): Promise<AnyObject>;
+	): Promise<AnyObject | undefined>;
 	public async get(params: Omit<Params, 'id'>): Promise<AnyObject[]>;
 	public async get(params: Params): Promise<PromiseResultTypes> {
 		if (isString(params)) {
@@ -911,7 +911,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): (data: AnyObject) => number;
 	protected transformGetResult(
 		params: Params & { id: NonNullable<Params['id']> },
-	): (data: AnyObject) => AnyObject;
+	): (data: AnyObject) => AnyObject | undefined;
 	protected transformGetResult(
 		params: Omit<Params, 'id'>,
 	): (data: AnyObject) => AnyObject[];
@@ -948,7 +948,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): Poll<number>;
 	public subscribe(
 		params: SubscribeParams & { id: NonNullable<SubscribeParams['id']> },
-	): Poll<AnyObject>;
+	): Poll<AnyObject | undefined>;
 	public subscribe(
 		SubscribeParams: Omit<SubscribeParams, 'id'>,
 	): Poll<AnyObject[]>;
@@ -1064,7 +1064,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): PreparedFn<T, Promise<number>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
-	): PreparedFn<T, Promise<AnyObject>>;
+	): PreparedFn<T, Promise<AnyObject | undefined>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Omit<Params, 'id'> & { method?: 'GET' },
 	): PreparedFn<T, Promise<AnyObject[]>>;
@@ -1255,7 +1255,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): Promise<{}>;
 }
 
-export type PromiseResultTypes = number | AnyObject | AnyObject[];
+export type PromiseResultTypes = number | AnyObject | AnyObject[] | undefined;
 
 type FilterOperationKey =
 	| '$ne'
