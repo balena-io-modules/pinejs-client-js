@@ -1,4 +1,21 @@
 - commits:
+    - subject: 'Add `options: { $count: { ... } }` sugar for top level $count'
+      hash: 13072f715da6c0ca3eab08584eaa48f39ea985b2
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+    - subject: 'Add `$expand: { a: { $count: { ... } } }` sugar for $count in expands'
+      hash: b2afb397c09a31c9ab3c1c370846c1b8762db32d
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 6.5.0
+  date: 2020-08-11T10:25:19.860Z
+- commits:
     - subject: Improve return typing of `subscribe` method
       hash: 2311fe03b04f4e6149693a9e5c392f9f0bb2a549
       body: ''
