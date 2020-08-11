@@ -1,4 +1,14 @@
 - commits:
+    - subject: Fix typing when id is specified to be `AnyObject | undefined`
+      hash: c4802cb748b1552345f036120c3aa6254e6cc946
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.6.1
+  date: 2020-08-11T17:10:09.498Z
+- commits:
     - subject: 'Deprecate `$expand: { ''a/$count'': {...} }`'
       hash: 8be33ad064905476e3f21978b7e1d760f5e27f4e
       body: ''
