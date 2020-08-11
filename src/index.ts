@@ -125,10 +125,10 @@ class Poll {
 	}
 
 	public on(
-		name: 'error',
+		name: 'data',
 		fn: (response: Promise<PromiseResultTypes>) => void,
 	): PollOnObj;
-	public on(name: 'data', fn: (err: any) => void): PollOnObj;
+	public on(name: 'error', fn: (err: any) => void): PollOnObj;
 	public on(
 		name: keyof Poll['subscribers'],
 		fn: (value: any) => void,
