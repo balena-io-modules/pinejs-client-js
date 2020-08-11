@@ -66,9 +66,12 @@ class Poll {
 	private stopped = false;
 	private pollInterval?: ReturnType<typeof setTimeout>;
 
-	private requestFn: null | (() => PromiseResult);
+	private requestFn: null | (() => Promise<PromiseResultTypes>);
 
-	constructor(requestFn: () => PromiseResult, private intervalTime = 10000) {
+	constructor(
+		requestFn: () => Promise<PromiseResultTypes>,
+		private intervalTime = 10000,
+	) {
 		this.requestFn = requestFn;
 		this.start();
 	}
@@ -121,7 +124,10 @@ class Poll {
 		}
 	}
 
-	public on(name: 'error', fn: (response: PromiseResult) => void): PollOnObj;
+	public on(
+		name: 'error',
+		fn: (response: Promise<PromiseResultTypes>) => void,
+	): PollOnObj;
 	public on(name: 'data', fn: (err: any) => void): PollOnObj;
 	public on(
 		name: keyof Poll['subscribers'],
@@ -788,8 +794,6 @@ export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	passthrough?: Params['passthrough'],
 ) => U;
 
-export type PromiseResult = Promise<PromiseResultTypes>;
-
 export abstract class PinejsClientCore<PinejsClient> {
 	public apiPrefix: string = '/';
 	public passthrough: AnyObject = {};
@@ -995,7 +999,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & { method?: 'GET' },
-	): PreparedFn<T, PromiseResult>;
+	): PreparedFn<T, Promise<PromiseResultTypes>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
 			method: Exclude<Params['method'], 'GET'>;
@@ -1003,7 +1007,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): PreparedFn<T, Promise<{}>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params,
-	): PreparedFn<T, Promise<{}> | PromiseResult> {
+	): PreparedFn<T, Promise<{}> | Promise<PromiseResultTypes>> {
 		if (isString(params)) {
 			throw new Error(
 				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
