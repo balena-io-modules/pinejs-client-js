@@ -1,4 +1,35 @@
 - commits:
+    - subject: Fix Poll.on typings
+      hash: 315697d9c2c0e59652bcceddb7f36cb498269f64
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+    - subject: Improve return typing when id is passed to GET methods
+      hash: 2d174f758314a20c01a171ac5826b71e4f623dcc
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+    - subject: 'Remove `PromiseResult` type, use `Promise<PromiseResultTypes>` instead'
+      hash: 905f275731af6ce2560c37f41343052f05365cd1
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+    - subject: 'Remove `PromiseObj` type, use `Promise<{}>` instead'
+      hash: 78aa2410aa86bf73cc4831f2149fc85e28a6ea23
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 6.3.0
+  date: 2020-08-11T08:57:09.655Z
+- commits:
     - subject: 'Add `$filter: { a: { $count: 1 } }` sugar for $count in filters'
       hash: f2fef3833f321bf81543c62a9a3db09d7fbc0a4a
       body: ''
