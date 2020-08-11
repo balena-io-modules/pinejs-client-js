@@ -5,8 +5,10 @@ export interface Dictionary<T> {
 const noop = () => {
 	// noop
 };
-const deprecated: Dictionary<() => void> = {};
-const addDeprecated = (name: string, message: string) => {
+const deprecated = {} as {
+	[key in 'expandFilter' | 'countInResource' | 'countInExpand']: () => void;
+};
+const addDeprecated = (name: keyof typeof deprecated, message: string) => {
 	deprecated[name] = () => {
 		console.warn('pinejs-client deprecated:', message);
 		deprecated[name] = noop;
@@ -15,6 +17,14 @@ const addDeprecated = (name: string, message: string) => {
 addDeprecated(
 	'expandFilter',
 	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+);
+addDeprecated(
+	'countInResource',
+	"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
+);
+addDeprecated(
+	'countInExpand',
+	"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
 );
 
 const mapObj = <T, R>(
@@ -714,6 +724,9 @@ const handleExpandOptions = (
 	expand: ODataOptions,
 	parentKey: string,
 ): string => {
+	if (parentKey.endsWith('/$count')) {
+		deprecated.countInExpand();
+	}
 	if (expand.hasOwnProperty('$count')) {
 		const keys = Object.keys(expand);
 		if (keys.length > 1) {
@@ -723,7 +736,8 @@ const handleExpandOptions = (
 				)}'`,
 			);
 		}
-		return handleExpandOptions(expand.$count!, parentKey + '/$count');
+		expand = expand.$count!;
+		parentKey += '/$count';
 	}
 	const expandOptions = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
@@ -876,8 +890,8 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): Promise<number>;
 	public async get(
 		params: Params & { id: NonNullable<Params['id']> },
-	): Promise<number | AnyObject>;
-	public async get(params: Omit<Params, 'id'>): Promise<number | AnyObject[]>;
+	): Promise<AnyObject>;
+	public async get(params: Omit<Params, 'id'>): Promise<AnyObject[]>;
 	public async get(params: Params): Promise<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
@@ -897,10 +911,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): (data: AnyObject) => number;
 	protected transformGetResult(
 		params: Params & { id: NonNullable<Params['id']> },
-	): (data: AnyObject) => number | AnyObject;
+	): (data: AnyObject) => AnyObject;
 	protected transformGetResult(
 		params: Omit<Params, 'id'>,
-	): (data: AnyObject) => number | AnyObject[];
+	): (data: AnyObject) => AnyObject[];
 	protected transformGetResult(
 		params: Params,
 	): (data: AnyObject) => PromiseResultTypes {
@@ -934,10 +948,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): Poll<number>;
 	public subscribe(
 		params: SubscribeParams & { id: NonNullable<SubscribeParams['id']> },
-	): Poll<number | AnyObject>;
+	): Poll<AnyObject>;
 	public subscribe(
 		SubscribeParams: Omit<SubscribeParams, 'id'>,
-	): Poll<number | AnyObject[]>;
+	): Poll<AnyObject[]>;
 	public subscribe(params: SubscribeParams): Poll<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
@@ -1050,10 +1064,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): PreparedFn<T, Promise<number>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
-	): PreparedFn<T, Promise<number | AnyObject>>;
+	): PreparedFn<T, Promise<AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Omit<Params, 'id'> & { method?: 'GET' },
-	): PreparedFn<T, Promise<number | AnyObject[]>>;
+	): PreparedFn<T, Promise<AnyObject[]>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & { method?: 'GET' },
 	): PreparedFn<T, Promise<PromiseResultTypes>>;
@@ -1133,6 +1147,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 		} else {
 			if (params.resource == null) {
 				throw new Error('Either the url or resource must be specified.');
+			}
+			if (params.resource.endsWith('/$count')) {
+				deprecated.countInResource();
 			}
 			let url = escapeResource(params.resource);
 			let { options } = params;
