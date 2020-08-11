@@ -54,9 +54,9 @@ const trailingCountRegex = new RegExp(
 interface PollOnObj {
 	unsubscribe: () => void;
 }
-class Poll {
+class Poll<T extends PromiseResultTypes> {
 	private subscribers: {
-		error: Array<(response: PromiseResultTypes) => void>;
+		error: Array<(response: T) => void>;
 		data: Array<(err: any) => void>;
 	} = {
 		error: [],
@@ -66,12 +66,9 @@ class Poll {
 	private stopped = false;
 	private pollInterval?: ReturnType<typeof setTimeout>;
 
-	private requestFn: null | (() => Promise<PromiseResultTypes>);
+	private requestFn: null | (() => Promise<T>);
 
-	constructor(
-		requestFn: () => Promise<PromiseResultTypes>,
-		private intervalTime = 10000,
-	) {
+	constructor(requestFn: () => Promise<T>, private intervalTime = 10000) {
 		this.requestFn = requestFn;
 		this.start();
 	}
@@ -124,13 +121,10 @@ class Poll {
 		}
 	}
 
-	public on(
-		name: 'data',
-		fn: (response: Promise<PromiseResultTypes>) => void,
-	): PollOnObj;
+	public on(name: 'data', fn: (response: Promise<T>) => void): PollOnObj;
 	public on(name: 'error', fn: (err: any) => void): PollOnObj;
 	public on(
-		name: keyof Poll['subscribers'],
+		name: keyof Poll<T>['subscribers'],
 		fn: (value: any) => void,
 	): PollOnObj {
 		const subscribers = this.subscribers[name] as Array<(value: any) => void>;
@@ -904,7 +898,13 @@ export abstract class PinejsClientCore<PinejsClient> {
 		};
 	}
 
-	public subscribe(params: SubscribeParams) {
+	public subscribe(
+		params: SubscribeParams & { id: NonNullable<SubscribeParams['id']> },
+	): Poll<number | AnyObject>;
+	public subscribe(
+		SubscribeParams: Omit<SubscribeParams, 'id'>,
+	): Poll<number | AnyObject[]>;
+	public subscribe(params: SubscribeParams): Poll<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
 				'`subscribe(url)` is no longer supported, please use `subscribe({ url })` instead.',
