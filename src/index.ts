@@ -35,7 +35,9 @@ const isDate = (v: any): v is Date =>
 const isObject = (v: any): v is AnyObject =>
 	typeof v != null && typeof v === 'object';
 
-const isValidOption = (key: string): key is keyof ODataOptions & string => {
+const isValidOption = (
+	key: string,
+): key is keyof ODataOptionsWithoutCount & string => {
 	return (
 		key === '$filter' ||
 		key === '$expand' ||
@@ -646,7 +648,10 @@ const buildOrderBy = (orderby: OrderBy): string => {
 	}
 };
 
-const buildOption = (option: string, value: ODataOptions['']) => {
+const buildOption = (
+	option: string,
+	value: ODataOptionsWithoutCount[string],
+) => {
 	let compiledValue: string = '';
 	switch (option) {
 		case '$filter':
@@ -705,7 +710,21 @@ const buildOption = (option: string, value: ODataOptions['']) => {
 	return `${option}=${compiledValue}`;
 };
 
-const handleExpandOptions = (expand: ODataOptions, parentKey: string) => {
+const handleExpandOptions = (
+	expand: ODataOptions,
+	parentKey: string,
+): string => {
+	if (expand.hasOwnProperty('$count')) {
+		const keys = Object.keys(expand);
+		if (keys.length > 1) {
+			throw new Error(
+				`When using '$expand: a: $count: ...' you can only specify $count, got: '${JSON.stringify(
+					keys,
+				)}'`,
+			);
+		}
+		return handleExpandOptions(expand.$count!, parentKey + '/$count');
+	}
 	const expandOptions = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			if (!isValidOption(key)) {
@@ -851,6 +870,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public async get(
+		params: Params & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): Promise<number>;
+	public async get(
 		params: Params & { id: NonNullable<Params['id']> },
 	): Promise<number | AnyObject>;
 	public async get(params: Omit<Params, 'id'>): Promise<number | AnyObject[]>;
@@ -866,6 +890,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.transformGetResult(params)(result);
 	}
 
+	protected transformGetResult(
+		params: Params & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): (data: AnyObject) => number;
 	protected transformGetResult(
 		params: Params & { id: NonNullable<Params['id']> },
 	): (data: AnyObject) => number | AnyObject;
@@ -898,6 +927,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 		};
 	}
 
+	public subscribe(
+		params: SubscribeParams & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): Poll<number>;
 	public subscribe(
 		params: SubscribeParams & { id: NonNullable<SubscribeParams['id']> },
 	): Poll<number | AnyObject>;
@@ -1010,6 +1044,11 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: Params & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): PreparedFn<T, Promise<number>>;
+	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
 	): PreparedFn<T, Promise<number | AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
@@ -1096,6 +1135,20 @@ export abstract class PinejsClientCore<PinejsClient> {
 				throw new Error('Either the url or resource must be specified.');
 			}
 			let url = escapeResource(params.resource);
+			let { options } = params;
+
+			if (options?.hasOwnProperty('$count')) {
+				const keys = Object.keys(options);
+				if (keys.length > 1) {
+					throw new Error(
+						`When using '$expand: a: $count: ...' you can only specify $count, got: '${JSON.stringify(
+							keys,
+						)}'`,
+					);
+				}
+				url += '/$count';
+				options = options.$count as ODataOptionsWithoutCount;
+			}
 
 			if (params.hasOwnProperty('id')) {
 				const { id } = params;
@@ -1123,8 +1176,8 @@ export abstract class PinejsClientCore<PinejsClient> {
 			}
 
 			let queryOptions: string[] = [];
-			if (params.options != null) {
-				queryOptions = mapObj(params.options, (value, option) => {
+			if (options != null) {
+				queryOptions = mapObj(options, (value, option) => {
 					if (option[0] === '$' && !isValidOption(option)) {
 						throw new Error(`Unknown odata option '${option}'`);
 					}
@@ -1325,7 +1378,7 @@ export type OrderBy =
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
 
-export interface ODataOptions {
+export interface ODataOptionsWithoutCount {
 	$filter?: Filter;
 	$expand?: Expand;
 	$orderby?: OrderBy;
@@ -1339,6 +1392,9 @@ export interface ODataOptions {
 		| Filter
 		| Expand
 		| OrderBy;
+}
+export interface ODataOptions extends ODataOptionsWithoutCount {
+	$count?: ODataOptionsWithoutCount;
 }
 export type OptionsObject = ODataOptions;
 

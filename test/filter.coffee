@@ -20,6 +20,13 @@ testFilter = (input, output) ->
 			options:
 				$filter: input
 		}
+	it "should compile #{JSON.stringify(input)} to #{countOutput}", ->
+		test countOutput, {
+			resource: resource
+			options:
+				$count:
+					$filter: input
+		}
 
 testFilter(
 	a: 'b'
