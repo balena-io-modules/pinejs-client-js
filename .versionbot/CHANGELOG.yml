@@ -1,4 +1,14 @@
 - commits:
+    - subject: Improve return typing of `subscribe` method
+      hash: 2311fe03b04f4e6149693a9e5c392f9f0bb2a549
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 6.4.0
+  date: 2020-08-11T10:16:40.301Z
+- commits:
     - subject: Fix Poll.on typings
       hash: 315697d9c2c0e59652bcceddb7f36cb498269f64
       body: ''
