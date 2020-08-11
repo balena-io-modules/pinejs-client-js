@@ -788,7 +788,6 @@ export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	passthrough?: Params['passthrough'],
 ) => U;
 
-export type PromiseObj = Promise<{}>;
 export type PromiseResult = Promise<PromiseResultTypes>;
 
 export abstract class PinejsClientCore<PinejsClient> {
@@ -1001,10 +1000,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 		params: Params & {
 			method: Exclude<Params['method'], 'GET'>;
 		},
-	): PreparedFn<T, PromiseObj>;
+	): PreparedFn<T, Promise<{}>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params,
-	): PreparedFn<T, PromiseObj | PromiseResult> {
+	): PreparedFn<T, Promise<{}> | PromiseResult> {
 		if (isString(params)) {
 			throw new Error(
 				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
@@ -1161,7 +1160,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 			url: string;
 			body?: AnyObject;
 		} & AnyObject,
-	): PromiseObj;
+	): Promise<{}>;
 }
 
 export type PromiseResultTypes = number | AnyObject | AnyObject[];
