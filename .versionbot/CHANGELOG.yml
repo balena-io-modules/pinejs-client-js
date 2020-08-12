@@ -1,4 +1,14 @@
 - commits:
+    - subject: Fix prepare $count typings
+      hash: fe63b2ba648b0ef545afe9fd18d433faca4af6a2
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.7.1
+  date: 2020-08-12T14:30:20.061Z
+- commits:
     - subject: Improve typings for request/post/put/patch/delete
       hash: 32c0d5b40c14e44155391099a9051255c38b1c05
       body: ''
