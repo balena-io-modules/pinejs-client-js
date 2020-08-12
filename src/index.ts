@@ -1055,7 +1055,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
-			method: 'GET';
+			method?: 'GET';
 			options: { $count: NonNullable<ODataOptions['$count']> };
 		},
 	): PreparedFn<T, Promise<number>>;
