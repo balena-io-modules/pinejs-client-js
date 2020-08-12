@@ -1,4 +1,14 @@
 - commits:
+    - subject: Improve typings for request/post/put/patch/delete
+      hash: 32c0d5b40c14e44155391099a9051255c38b1c05
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 6.7.0
+  date: 2020-08-12T13:42:49.438Z
+- commits:
     - subject: Fix typing when id is specified to be `AnyObject | undefined`
       hash: c4802cb748b1552345f036120c3aa6254e6cc946
       body: ''
