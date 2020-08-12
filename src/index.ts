@@ -898,9 +898,8 @@ export abstract class PinejsClientCore<PinejsClient> {
 				'`get(url)` is no longer supported, please use `get({ url })` instead.',
 			);
 		}
-		params.method = 'GET';
 
-		const result = await this.request(params);
+		const result = await this.request({ ...params, method: 'GET' });
 		return this.transformGetResult(params)(result);
 	}
 
@@ -966,47 +965,44 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return new Poll(requestFn, pollInterval);
 	}
 
-	public put(params: Params) {
+	public put(params: Params): Promise<void> {
 		if (isString(params)) {
 			throw new Error(
 				'`put(url)` is no longer supported, please use `put({ url })` instead.',
 			);
 		}
-		params.method = 'PUT';
-		return this.request(params);
+		return this.request({ ...params, method: 'PUT' });
 	}
 
-	public patch(params: Params) {
+	public patch(params: Params): Promise<void> {
 		if (isString(params)) {
 			throw new Error(
 				'`patch(url)` is no longer supported, please use `patch({ url })` instead.',
 			);
 		}
-		params.method = 'PATCH';
-		return this.request(params);
+		return this.request({ ...params, method: 'PATCH' });
 	}
 
-	public post(params: Params) {
+	public post(params: Params): Promise<AnyObject> {
 		if (isString(params)) {
 			throw new Error(
 				'`post(url)` is no longer supported, please use `post({ url })` instead.',
 			);
 		}
-		params.method = 'POST';
-		return this.request(params);
+		return this.request({ ...params, method: 'POST' });
 	}
 
-	public delete(params: Params) {
+	public delete(params: Params): Promise<void> {
 		if (isString(params)) {
 			throw new Error(
 				'`delete(url)` is no longer supported, please use `delete({ url })` instead.',
 			);
 		}
 		params.method = 'DELETE';
-		return this.request(params);
+		return this.request({ ...params, method: 'DELETE' });
 	}
 
-	public async upsert(params: UpsertParams) {
+	public async upsert(params: UpsertParams): Promise<undefined | AnyObject> {
 		const { id, body, ...restParams } = params;
 
 		if (!isObject(id)) {
@@ -1032,7 +1028,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 			},
 		};
 		try {
-			await this.post(postParams);
+			return await this.post(postParams);
 		} catch (err) {
 			const isUniqueKeyViolationResponse =
 				err.statusCode === 409 && /unique/i.test(err.body);
@@ -1053,12 +1049,13 @@ export abstract class PinejsClientCore<PinejsClient> {
 				},
 				body,
 			};
-			return this.patch(patchParams);
+			await this.patch(patchParams);
 		}
 	}
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
+			method: 'GET';
 			options: { $count: NonNullable<ODataOptions['$count']> };
 		},
 	): PreparedFn<T, Promise<number>>;
@@ -1073,12 +1070,17 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): PreparedFn<T, Promise<PromiseResultTypes>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
-			method: Exclude<Params['method'], 'GET'>;
+			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
-	): PreparedFn<T, Promise<{}>>;
+	): PreparedFn<T, Promise<void>>;
+	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: Params & {
+			method: 'POST';
+		},
+	): PreparedFn<T, Promise<AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params,
-	): PreparedFn<T, Promise<{}> | Promise<PromiseResultTypes>> {
+	): PreparedFn<T, Promise<PromiseResultTypes | void>> {
 		if (isString(params)) {
 			throw new Error(
 				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
@@ -1132,7 +1134,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 			}
 			const result = await this.request(params);
 			if (transformFn != null) {
-				return transformFn(result);
+				return transformFn(result as AnyObject);
 			}
 			return result;
 		};
@@ -1213,7 +1215,39 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 	}
 
-	public request(params: Params, overrides?: undefined): Promise<{}> {
+	public request(
+		params: Params & {
+			method?: 'GET';
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+	): Promise<number>;
+	public request(
+		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
+	): Promise<AnyObject | undefined>;
+	public request(
+		params: Omit<Params, 'id'> & { method?: 'GET' },
+	): Promise<AnyObject[]>;
+	public request(
+		params: Params & { method?: 'GET' },
+	): Promise<PromiseResultTypes>;
+	public request(
+		params: Params & {
+			method: 'PUT' | 'PATCH' | 'DELETE';
+		},
+	): Promise<void>;
+	public request(
+		params: Params & {
+			method: 'POST';
+		},
+	): Promise<AnyObject>;
+	public request(
+		params: Params,
+		overrides?: undefined,
+	): Promise<PromiseResultTypes | void>;
+	public request(
+		params: Params,
+		overrides?: undefined,
+	): Promise<PromiseResultTypes | void> {
 		if (overrides !== undefined) {
 			throw new Error(
 				'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
