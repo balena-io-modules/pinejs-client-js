@@ -47,7 +47,7 @@ const isObject = (v: any): v is AnyObject =>
 
 const isValidOption = (
 	key: string,
-): key is keyof ODataOptionsWithoutCount & string => {
+): key is keyof ODataOptionsWithoutCount<string, string> & string => {
 	return (
 		key === '$filter' ||
 		key === '$expand' ||
@@ -660,7 +660,7 @@ const buildOrderBy = (orderby: OrderBy): string => {
 
 const buildOption = (
 	option: string,
-	value: ODataOptionsWithoutCount[string],
+	value: ODataOptionsWithoutCount<string, string>[string],
 ) => {
 	let compiledValue: string = '';
 	switch (option) {
@@ -668,7 +668,7 @@ const buildOption = (
 			compiledValue = buildFilter(value as Filter).join('');
 			break;
 		case '$expand':
-			compiledValue = buildExpand(value as Expand);
+			compiledValue = buildExpand(value as Expand<string>);
 			break;
 		case '$orderby':
 			compiledValue = buildOrderBy(value as OrderBy);
@@ -721,7 +721,7 @@ const buildOption = (
 };
 
 const handleExpandOptions = (
-	expand: ODataOptions,
+	expand: ODataOptions<string, string>,
 	parentKey: string,
 ): string => {
 	if (parentKey.endsWith('/$count')) {
@@ -758,7 +758,7 @@ const handleExpandOptions = (
 	expandStr = escapeResource(parentKey) + expandStr;
 	return expandStr;
 };
-const handleExpandObject = (expand: ResourceExpand) => {
+const handleExpandObject = (expand: ResourceExpand<string, string>) => {
 	const expands = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			throw new Error(
@@ -781,7 +781,9 @@ const handleExpandObject = (expand: ResourceExpand) => {
 	return expands;
 };
 
-const handleExpandArray = (expands: Array<string | ResourceExpand>) => {
+const handleExpandArray = (
+	expands: Array<string | ResourceExpand<string, string>>,
+) => {
 	if (expands.length < 1) {
 		throw new Error(
 			`Expand arrays must have at least 1 elements, got: ${JSON.stringify(
@@ -795,7 +797,7 @@ const handleExpandArray = (expands: Array<string | ResourceExpand>) => {
 	});
 };
 
-const buildExpand = (expand: Expand): string => {
+const buildExpand = (expand: Expand<string>): string => {
 	if (isPrimitive(expand)) {
 		return escapeResource(expand);
 	} else if (Array.isArray(expand)) {
@@ -817,8 +819,8 @@ const validParams: SharedParam[] = [
 
 export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	parameterAliases?: T,
-	body?: Params['body'],
-	passthrough?: Params['passthrough'],
+	body?: Params<string, string>['body'],
+	passthrough?: Params<string, string>['passthrough'],
 ) => U;
 
 export abstract class PinejsClientCore<PinejsClient> {
@@ -828,7 +830,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	public backendParams: AnyObject;
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
-	constructor(params: string | Params) {
+	constructor(params: string | Params<string, string>) {
 		if (isString(params)) {
 			params = { apiPrefix: params };
 		}
@@ -847,7 +849,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
 	public clone(
-		params: string | Params,
+		params: string | Params<string, string>,
 		backendParams?: AnyObject,
 	): PinejsClient {
 		if (isString(params)) {
@@ -878,21 +880,27 @@ export abstract class PinejsClientCore<PinejsClient> {
 			cloneBackendParams = { ...cloneBackendParams, ...backendParams };
 		}
 		return new (this.constructor as new (
-			params: Params,
+			params: Params<string, string>,
 			backendParams: AnyObject,
 		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
 
 	public async get(
-		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+		params: Params<string, string> & {
+			options: { $count: NonNullable<ODataOptions<string, string>['$count']> };
 		},
 	): Promise<number>;
+	public async get<T extends string, N extends string>(
+		params: Params<T, N> & { id: NonNullable<Params<T, N>['id']> },
+	): Promise<
+		({ [key in T]: any } & { [key in N]: Array<AnyObject> }) | undefined
+	>;
+	public async get<T extends string, N extends string>(
+		params: Omit<Params<T, N>, 'id'>,
+	): Promise<Array<{ [key in T]: any } & { [key in N]: Array<AnyObject> }>>;
 	public async get(
-		params: Params & { id: NonNullable<Params['id']> },
-	): Promise<AnyObject | undefined>;
-	public async get(params: Omit<Params, 'id'>): Promise<AnyObject[]>;
-	public async get(params: Params): Promise<PromiseResultTypes> {
+		params: Params<string, string>,
+	): Promise<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
 				'`get(url)` is no longer supported, please use `get({ url })` instead.',
@@ -904,18 +912,20 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	protected transformGetResult(
-		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+		params: Params<string, string> & {
+			options: { $count: NonNullable<ODataOptions<string, string>['$count']> };
 		},
 	): (data: AnyObject) => number;
 	protected transformGetResult(
-		params: Params & { id: NonNullable<Params['id']> },
+		params: Params<string, string> & {
+			id: NonNullable<Params<string, string>['id']>;
+		},
 	): (data: AnyObject) => AnyObject | undefined;
 	protected transformGetResult(
-		params: Omit<Params, 'id'>,
+		params: Omit<Params<string, string>, 'id'>,
 	): (data: AnyObject) => AnyObject[];
 	protected transformGetResult(
-		params: Params,
+		params: Params<string, string>,
 	): (data: AnyObject) => PromiseResultTypes {
 		const singular = params.id != null;
 
@@ -941,17 +951,21 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public subscribe(
-		params: SubscribeParams & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+		params: SubscribeParams<string, string> & {
+			options: { $count: NonNullable<ODataOptions<string, string>['$count']> };
 		},
 	): Poll<number>;
 	public subscribe(
-		params: SubscribeParams & { id: NonNullable<SubscribeParams['id']> },
+		params: SubscribeParams<string, string> & {
+			id: NonNullable<SubscribeParams<string, string>['id']>;
+		},
 	): Poll<AnyObject | undefined>;
 	public subscribe(
-		SubscribeParams: Omit<SubscribeParams, 'id'>,
+		SubscribeParams: Omit<SubscribeParams<string, string>, 'id'>,
 	): Poll<AnyObject[]>;
-	public subscribe(params: SubscribeParams): Poll<PromiseResultTypes> {
+	public subscribe(
+		params: SubscribeParams<string, string>,
+	): Poll<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
 				'`subscribe(url)` is no longer supported, please use `subscribe({ url })` instead.',
@@ -965,7 +979,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return new Poll(requestFn, pollInterval);
 	}
 
-	public put(params: Params): Promise<void> {
+	public put(params: Params<string, string>): Promise<void> {
 		if (isString(params)) {
 			throw new Error(
 				'`put(url)` is no longer supported, please use `put({ url })` instead.',
@@ -974,7 +988,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.request({ ...params, method: 'PUT' });
 	}
 
-	public patch(params: Params): Promise<void> {
+	public patch(params: Params<string, string>): Promise<void> {
 		if (isString(params)) {
 			throw new Error(
 				'`patch(url)` is no longer supported, please use `patch({ url })` instead.',
@@ -983,7 +997,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.request({ ...params, method: 'PATCH' });
 	}
 
-	public post(params: Params): Promise<AnyObject> {
+	public post(params: Params<string, string>): Promise<AnyObject> {
 		if (isString(params)) {
 			throw new Error(
 				'`post(url)` is no longer supported, please use `post({ url })` instead.',
@@ -992,7 +1006,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.request({ ...params, method: 'POST' });
 	}
 
-	public delete(params: Params): Promise<void> {
+	public delete(params: Params<string, string>): Promise<void> {
 		if (isString(params)) {
 			throw new Error(
 				'`delete(url)` is no longer supported, please use `delete({ url })` instead.',
@@ -1002,7 +1016,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.request({ ...params, method: 'DELETE' });
 	}
 
-	public async upsert(params: UpsertParams): Promise<undefined | AnyObject> {
+	public async upsert(
+		params: UpsertParams<string, string>,
+	): Promise<undefined | AnyObject> {
 		const { id, body, ...restParams } = params;
 
 		if (!isObject(id)) {
@@ -1054,32 +1070,35 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
+		params: Params<string, string> & {
 			method?: 'GET';
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<string, string>['$count']> };
 		},
 	): PreparedFn<T, Promise<number>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
+		params: Params<string, string> & {
+			method?: 'GET';
+			id: NonNullable<Params<string, string>['id']>;
+		},
 	): PreparedFn<T, Promise<AnyObject | undefined>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Omit<Params, 'id'> & { method?: 'GET' },
+		params: Omit<Params<string, string>, 'id'> & { method?: 'GET' },
 	): PreparedFn<T, Promise<AnyObject[]>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & { method?: 'GET' },
+		params: Params<string, string> & { method?: 'GET' },
 	): PreparedFn<T, Promise<PromiseResultTypes>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
+		params: Params<string, string> & {
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
 	): PreparedFn<T, Promise<void>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
+		params: Params<string, string> & {
 			method: 'POST';
 		},
 	): PreparedFn<T, Promise<AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params,
+		params: Params<string, string>,
 	): PreparedFn<T, Promise<PromiseResultTypes | void>> {
 		if (isString(params)) {
 			throw new Error(
@@ -1140,7 +1159,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 		};
 	}
 
-	public compile(params: Params): string {
+	public compile<T extends string = string, N extends string = string>(
+		params: Params<T, N>,
+	): string {
 		if (isString(params)) {
 			throw new Error('Params must be an object not a string');
 		}
@@ -1166,7 +1187,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 					);
 				}
 				url += '/$count';
-				options = options.$count as ODataOptionsWithoutCount;
+				options = options.$count as ODataOptionsWithoutCount<T, N>;
 			}
 
 			if (params.hasOwnProperty('id')) {
@@ -1216,36 +1237,39 @@ export abstract class PinejsClientCore<PinejsClient> {
 	}
 
 	public request(
-		params: Params & {
+		params: Params<string, string> & {
 			method?: 'GET';
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<string, string>['$count']> };
 		},
 	): Promise<number>;
 	public request(
-		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
+		params: Params<string, string> & {
+			method?: 'GET';
+			id: NonNullable<Params<string, string>['id']>;
+		},
 	): Promise<AnyObject | undefined>;
 	public request(
-		params: Omit<Params, 'id'> & { method?: 'GET' },
+		params: Omit<Params<string, string>, 'id'> & { method?: 'GET' },
 	): Promise<AnyObject[]>;
 	public request(
-		params: Params & { method?: 'GET' },
+		params: Params<string, string> & { method?: 'GET' },
 	): Promise<PromiseResultTypes>;
 	public request(
-		params: Params & {
+		params: Params<string, string> & {
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
 	): Promise<void>;
 	public request(
-		params: Params & {
+		params: Params<string, string> & {
 			method: 'POST';
 		},
 	): Promise<AnyObject>;
 	public request(
-		params: Params,
+		params: Params<string, string>,
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | void>;
 	public request(
-		params: Params,
+		params: Params<string, string>,
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | void> {
 		if (overrides !== undefined) {
@@ -1415,9 +1439,16 @@ export interface Lambda {
 }
 export type Filter = FilterObj | FilterArray | FilterBaseType;
 
-export interface ResourceExpand extends Dictionary<ODataOptions> {}
+export type ResourceExpand<
+	T extends string,
+	NestedT extends string = string,
+	NestedN extends string = string
+> = { [key in T]: ODataOptions<NestedT, NestedN> };
 
-export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
+export type Expand<T extends string> =
+	| T
+	| ResourceExpand<T>
+	| Array<T | ResourceExpand<T>>;
 
 export type OrderBy =
 	| string
@@ -1429,25 +1460,26 @@ export type OrderBy =
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
 
-export interface ODataOptionsWithoutCount {
+export interface ODataOptionsWithoutCount<T extends string, N extends string> {
 	$filter?: Filter;
-	$expand?: Expand;
+	$expand?: Expand<N>;
 	$orderby?: OrderBy;
 	$top?: number;
 	$skip?: number;
-	$select?: string | string[];
+	$select?: T | Array<T> | '*';
 	[index: string]:
 		| undefined
 		| ParameterAlias
 		| string[]
+		| string[]
 		| Filter
-		| Expand
+		| Expand<T>
 		| OrderBy;
 }
-export interface ODataOptions extends ODataOptionsWithoutCount {
-	$count?: ODataOptionsWithoutCount;
+export interface ODataOptions<T extends string, N extends string>
+	extends ODataOptionsWithoutCount<T, N> {
+	$count?: ODataOptionsWithoutCount<T, N>;
 }
-export type OptionsObject = ODataOptions;
 
 export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -1468,7 +1500,7 @@ type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';
 
 export type AnyObject = Dictionary<any>;
 
-export interface Params {
+export interface Params<T extends string, N extends string> {
 	apiPrefix?: string;
 	method?: ODataMethod;
 	resource?: string;
@@ -1477,15 +1509,17 @@ export interface Params {
 	body?: AnyObject;
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]: AnyObject };
-	options?: ODataOptions;
+	options?: ODataOptions<T, N>;
 }
 
-export interface SubscribeParams extends Params {
+export interface SubscribeParams<T extends string, N extends string>
+	extends Params<T, N> {
 	method?: 'GET';
 	pollInterval?: number;
 }
 
-export interface UpsertParams extends Omit<Params, 'id' | 'method'> {
+export interface UpsertParams<T extends string, N extends string>
+	extends Omit<Params<T, N>, 'id' | 'method'> {
 	id: Dictionary<Primitive>;
 	resource: string;
 	body: AnyObject;
