@@ -10,43 +10,25 @@ buildSteps: &buildSteps
       command: npm test --loglevel warn
 
 jobs:
-  node-6:
-    docker:
-      - image: circleci/node:6
-    working_directory: ~/node-6
-    steps:
-    - checkout
-    - run:
-        name: Install
-        command: npm install --loglevel warn
-    - run:
-        name: Test
-        # Skip linting for node 6 as it cannot handle it and that will be checked by other versions
-        command: npm run test6 --loglevel warn
-
-  node-8:
-    docker:
-      - image: circleci/node:8
-    working_directory: ~/node-8
-    steps: *buildSteps
-
   node-10:
     docker:
       - image: circleci/node:10
-    working_directory: ~/node-10
     steps: *buildSteps
 
   node-12:
     docker:
       - image: circleci/node:12
-    working_directory: ~/node-12
+    steps: *buildSteps
+
+  node-14:
+    docker:
+      - image: circleci/node:14
     steps: *buildSteps
 
 workflows:
   version: 2
   build:
     jobs:
-      - node-6
-      - node-8
       - node-10
       - node-12
+      - node-14
