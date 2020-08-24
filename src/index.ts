@@ -30,10 +30,10 @@ addDeprecated(
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
 	fn: (value: T, key: string) => R,
-): R[] => Object.keys(obj).map(key => fn(obj[key], key));
+): R[] => Object.keys(obj).map((key) => fn(obj[key], key));
 
 const NumberIsFinite: (v: any) => v is number =
-	(Number as any).isFinite || (v => typeof v === 'number' && isFinite(v));
+	(Number as any).isFinite || ((v) => typeof v === 'number' && isFinite(v));
 
 const isString = (v: any): v is string => typeof v === 'string';
 
@@ -104,7 +104,7 @@ class Poll<T extends PromiseResultTypes> {
 			// Catch errors in event subscribers so that they don't trigger
 			// the 'catch' below, and that subsequent subscribers will still
 			// be called
-			this.subscribers.data.forEach(fn => {
+			this.subscribers.data.forEach((fn) => {
 				try {
 					fn(response);
 				} catch (error) {
@@ -120,7 +120,7 @@ class Poll<T extends PromiseResultTypes> {
 			}
 			this.restartTimeout();
 
-			this.subscribers.error.forEach(fn => {
+			this.subscribers.error.forEach((fn) => {
 				try {
 					fn(err);
 				} catch (error) {
@@ -240,7 +240,7 @@ const bracketJoin = (arr: string[][], separator: string) => {
 	}
 	const resultArr: string[] = [];
 	arr
-		.map(subArr => {
+		.map((subArr) => {
 			if (subArr.length > 1) {
 				return `(${subArr.join('')})`;
 			}
@@ -347,12 +347,12 @@ const filterFunction = (
 		return [`${fnName}(${operands.join()})`];
 	} else if (Array.isArray(filter)) {
 		const filterArr = handleFilterArray(filter);
-		let filterStr = filterArr.map(subArr => subArr.join('')).join(',');
+		let filterStr = filterArr.map((subArr) => subArr.join('')).join(',');
 		filterStr = `${fnName}(${filterStr})`;
 		return addParentKey(filterStr, parentKey);
 	} else if (isObject(filter)) {
 		const filterArr = handleFilterObject(filter);
-		let filterStr = filterArr.map(subArr => subArr.join('')).join(',');
+		let filterStr = filterArr.map((subArr) => subArr.join('')).join(',');
 		filterStr = `${fnName}(${filterStr})`;
 		return addParentKey(filterStr, parentKey);
 	} else {
@@ -596,7 +596,7 @@ const handleFilterArray = (
 		);
 	}
 
-	return filter.map(value => {
+	return filter.map((value) => {
 		return buildFilter(value, parentKey);
 	});
 };
@@ -631,7 +631,7 @@ const buildOrderBy = (orderby: OrderBy): string => {
 		if (orderby.length === 0) {
 			throw new Error(`'$orderby' arrays have to have at least 1 element`);
 		}
-		const result = orderby.map(value => {
+		const result = orderby.map((value) => {
 			if (Array.isArray(value)) {
 				throw new Error(`'$orderby' cannot have nested arrays`);
 			}
@@ -790,7 +790,7 @@ const handleExpandArray = (expands: Array<string | ResourceExpand>) => {
 		);
 	}
 
-	return expands.map(expand => {
+	return expands.map((expand) => {
 		return buildExpand(expand);
 	});
 };
@@ -919,7 +919,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	): (data: AnyObject) => PromiseResultTypes {
 		const singular = params.id != null;
 
-		return data => {
+		return (data) => {
 			if (!isObject(data)) {
 				throw new Error(`Response was not a JSON object: '${typeof data}'`);
 			}
