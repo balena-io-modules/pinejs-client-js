@@ -1,4 +1,14 @@
 - commits:
+    - subject: Update dev dependencies
+      hash: c131ef723a228e19caf21bc92e9bf9456b7bc1e0
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.7.2
+  date: 2020-08-24T12:12:05.946Z
+- commits:
     - subject: Fix prepare $count typings
       hash: fe63b2ba648b0ef545afe9fd18d433faca4af6a2
       body: ''
