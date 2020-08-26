@@ -1,4 +1,14 @@
 - commits:
+    - subject: 'Improve $orderby typing to allow `[{a: ''desc''}, {b: ''asc''}]`'
+      hash: 3f66006790c0ace813dd902125b22cf79f2a3095
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.7.3
+  date: 2020-08-26T15:41:19.488Z
+- commits:
     - subject: Update dev dependencies
       hash: c131ef723a228e19caf21bc92e9bf9456b7bc1e0
       body: ''
