@@ -1421,7 +1421,7 @@ export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
 
 export type OrderBy =
 	| string
-	| string[]
+	| OrderBy[]
 	| {
 			[index: string]: 'asc' | 'desc';
 	  };
