@@ -1,4 +1,14 @@
 - commits:
+    - subject: Add support for $format
+      hash: aa85327cb7910c74b1bed5323f7ae708aeb2d2b9
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+  version: 6.8.0
+  date: 2020-09-03T15:46:49.095Z
+- commits:
     - subject: 'Improve $orderby typing to allow `[{a: ''desc''}, {b: ''asc''}]`'
       hash: 3f66006790c0ace813dd902125b22cf79f2a3095
       body: ''
