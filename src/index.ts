@@ -49,12 +49,13 @@ const isValidOption = (
 	key: string,
 ): key is keyof ODataOptionsWithoutCount & string => {
 	return (
+		key === '$select' ||
 		key === '$filter' ||
 		key === '$expand' ||
 		key === '$orderby' ||
 		key === '$top' ||
 		key === '$skip' ||
-		key === '$select'
+		key === '$format'
 	);
 };
 const encodedSlash = encodeURIComponent('/');
@@ -1436,6 +1437,7 @@ export interface ODataOptionsWithoutCount {
 	$top?: number;
 	$skip?: number;
 	$select?: string | string[];
+	$format?: string;
 	[index: string]:
 		| undefined
 		| ParameterAlias

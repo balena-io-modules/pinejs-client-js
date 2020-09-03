@@ -25,6 +25,7 @@ testOption = (option, input, output) ->
 testOrderBy = _.partial(testOption, '$orderby')
 testTop = _.partial(testOption, '$top')
 testSkip = _.partial(testOption, '$skip')
+testFormat = _.partial(testOption, '$format')
 testSelect = _.partial(testOption, '$select')
 testCustom = _.partial(testOption, 'custom')
 testParam = _.partial(testOption, '@param')
@@ -115,6 +116,17 @@ testSkip(
 testSkip(
 	'1'
 	new Error("'$skip' option has to be a number")
+)
+
+
+testFormat(
+	'json;metadata=full'
+	'json;metadata=full'
+)
+
+testFormat(
+	'json;metadata=none'
+	'json;metadata=none'
 )
 
 
