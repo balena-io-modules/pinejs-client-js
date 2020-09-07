@@ -1,4 +1,16 @@
 - commits:
+    - subject: Add 'getOrCreate' method supporting natural keys
+      hash: 5aa39b34fef7c7a4bbb27c2c81bb1c8ee4ee2c94
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+  version: 6.9.0
+  date: 2020-09-07T10:54:14.786Z
+- commits:
     - subject: Add support for $format
       hash: aa85327cb7910c74b1bed5323f7ae708aeb2d2b9
       body: ''
