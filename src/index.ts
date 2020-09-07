@@ -1003,6 +1003,41 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this.request({ ...params, method: 'DELETE' });
 	}
 
+	public async getOrCreate(params: GetOrCreateParams): Promise<AnyObject> {
+		const { id, body, ...restParams } = params;
+
+		if (params.resource.endsWith('/$count')) {
+			throw new Error('getOrCreate does not support $count on resources');
+		}
+
+		if (body == null) {
+			throw new Error('The body property is missing');
+		}
+
+		if (!isObject(id) || isDate(id) || Object.keys(id).length === 0) {
+			throw new Error(
+				'The id property must be an object with the natural key of the model',
+			);
+		}
+
+		const result = await this.get({
+			...restParams,
+			id,
+		});
+
+		if (result != null) {
+			return result;
+		}
+
+		return await this.post({
+			...restParams,
+			body: {
+				...id,
+				...body,
+			},
+		});
+	}
+
 	public async upsert(params: UpsertParams): Promise<undefined | AnyObject> {
 		const { id, body, ...restParams } = params;
 
@@ -1460,11 +1495,10 @@ type BaseResourceId =
 	| {
 			'@': string;
 	  };
-type ResourceId =
-	| BaseResourceId
-	| {
-			[key: string]: BaseResourceId;
-	  };
+type ResourceAlternateKey = {
+	[key: string]: BaseResourceId;
+};
+type ResourceId = BaseResourceId | ResourceAlternateKey;
 
 type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';
 
@@ -1485,6 +1519,12 @@ export interface Params {
 export interface SubscribeParams extends Params {
 	method?: 'GET';
 	pollInterval?: number;
+}
+
+export interface GetOrCreateParams extends Omit<Params, 'method'> {
+	id: ResourceAlternateKey;
+	resource: string;
+	body: AnyObject;
 }
 
 export interface UpsertParams extends Omit<Params, 'id' | 'method'> {
