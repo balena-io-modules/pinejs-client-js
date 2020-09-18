@@ -810,11 +810,11 @@ const buildExpand = (expand: Expand): string => {
 	}
 };
 
-const validParams: SharedParam[] = [
+const validParams = [
 	'apiPrefix',
 	'passthrough',
 	'passthroughByMethod',
-];
+] as const;
 
 export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	parameterAliases?: T,
@@ -1500,8 +1500,6 @@ type ResourceAlternateKey = {
 };
 type ResourceId = BaseResourceId | ResourceAlternateKey;
 
-type SharedParam = 'apiPrefix' | 'passthrough' | 'passthroughByMethod';
-
 export type AnyObject = Dictionary<any>;
 
 export interface Params {
@@ -1512,7 +1510,7 @@ export interface Params {
 	url?: string;
 	body?: AnyObject;
 	passthrough?: AnyObject;
-	passthroughByMethod?: { [method in ODataMethod]: AnyObject };
+	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
 	options?: ODataOptions;
 }
 
