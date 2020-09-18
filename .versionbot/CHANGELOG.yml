@@ -1,4 +1,14 @@
 - commits:
+    - subject: Improve typings
+      hash: c8cd644f5e9d8eb43895086cd9ca453b9d651fd6
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.9.1
+  date: 2020-09-17T18:15:44.916Z
+- commits:
     - subject: Add 'getOrCreate' method supporting natural keys
       hash: 5aa39b34fef7c7a4bbb27c2c81bb1c8ee4ee2c94
       body: ''
