@@ -31,19 +31,25 @@
     "@balena/es-version": "^1.0.0"
   },
   "devDependencies": {
-    "@balena/lint": "^5.2.0",
+    "@balena/lint": "^5.2.1",
     "chai": "^4.2.0",
     "coffee-script": "~1.12.7",
-    "husky": "^4.2.5",
-    "lint-staged": "^10.3.0",
+    "husky": "^4.3.0",
+    "lint-staged": "^10.4.2",
     "lodash": "^4.17.20",
-    "mocha": "^7.2.0",
+    "mocha": "^8.2.0",
     "require-npm4-to-publish": "^1.0.0",
-    "typescript": "^4.0.2"
+    "typescript": "^4.0.3"
   },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
     }
+  },
+  "mocha": {
+    "reporter": "spec",
+    "recursive": true,
+    "require": "coffee-script/register",
+    "_": "test/*.coffee"
   }
 }
