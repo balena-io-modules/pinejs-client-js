@@ -2,13 +2,16 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
-const noop = () => {
+const noop = (): void => {
 	// noop
 };
 const deprecated = {} as {
 	[key in 'expandFilter' | 'countInResource' | 'countInExpand']: () => void;
 };
-const addDeprecated = (name: keyof typeof deprecated, message: string) => {
+const addDeprecated = (
+	name: keyof typeof deprecated,
+	message: string,
+): void => {
 	deprecated[name] = () => {
 		console.warn('pinejs-client deprecated:', message);
 		deprecated[name] = noop;
@@ -86,12 +89,12 @@ class Poll<T extends PromiseResultTypes> {
 		this.start();
 	}
 
-	public setPollInterval(intervalTime: number) {
+	public setPollInterval(intervalTime: number): void {
 		this.intervalTime = intervalTime;
 		this.restartTimeout();
 	}
 
-	public async runRequest() {
+	public async runRequest(): Promise<void> {
 		if (this.stopped || this.requestFn == null) {
 			return;
 		}
@@ -148,26 +151,26 @@ class Poll<T extends PromiseResultTypes> {
 		};
 	}
 
-	public start() {
+	public start(): void {
 		this.stopped = false;
 		this.runRequest();
 	}
 
-	public stop() {
+	public stop(): void {
 		if (this.pollInterval) {
 			clearTimeout(this.pollInterval);
 		}
 		this.stopped = true;
 	}
 
-	public destroy() {
+	public destroy(): void {
 		this.stop();
 		this.requestFn = null;
 		this.subscribers.error.length = 0;
 		this.subscribers.data.length = 0;
 	}
 
-	private restartTimeout() {
+	private restartTimeout(): void {
 		if (this.stopped) {
 			return;
 		}
@@ -189,7 +192,7 @@ const isPrimitive = (value?: unknown): value is Primitive => {
 };
 
 // Escape a resource name (string), or resource path (array)
-const escapeResource = (resource: string | string[]) => {
+const escapeResource = (resource: string | string[]): string => {
 	if (isString(resource)) {
 		resource = encodeURIComponent(resource);
 	} else if (Array.isArray(resource)) {
@@ -202,7 +205,7 @@ const escapeResource = (resource: string | string[]) => {
 };
 
 // Escape a primitive value
-const escapeValue = (value: Primitive) => {
+const escapeValue = (value: Primitive): string | number | boolean | null => {
 	if (isString(value)) {
 		value = value.replace(/'/g, "''");
 		return `'${encodeURIComponent(value)}'`;
@@ -224,7 +227,7 @@ const escapeParameterAlias = (value: unknown): string => {
 	return `@${encodeURIComponent(value)}`;
 };
 
-const join = (strOrArray: string | string[], separator = ',') => {
+const join = (strOrArray: string | string[], separator = ','): string => {
 	if (isString(strOrArray)) {
 		return strOrArray;
 	} else if (Array.isArray(strOrArray)) {
@@ -235,7 +238,7 @@ const join = (strOrArray: string | string[], separator = ',') => {
 };
 
 // Join together a bunch of statements making sure the whole lot is correctly parenthesised
-const bracketJoin = (arr: string[][], separator: string) => {
+const bracketJoin = (arr: string[][], separator: string): string[] => {
 	if (arr.length === 1) {
 		return arr[0];
 	}
@@ -261,7 +264,7 @@ const addParentKey = (
 	filter: string[] | string | boolean | number | null,
 	parentKey?: string[],
 	operator = ' eq ',
-) => {
+): string[] => {
 	if (parentKey != null) {
 		if (Array.isArray(filter)) {
 			if (filter.length === 1) {
@@ -284,7 +287,7 @@ const applyBinds = (
 	filter: string,
 	params: Dictionary<Filter>,
 	parentKey?: string[],
-) => {
+): string[] => {
 	for (const index of Object.keys(params)) {
 		const param = params[index];
 		let paramStr = `(${buildFilter(param).join('')})`;
@@ -303,7 +306,7 @@ const filterOperation = (
 	filter: FilterOperationValue,
 	operator: FilterOperationKey,
 	parentKey?: string[],
-) => {
+): string[] => {
 	const op = ' ' + operator.slice(1) + ' ';
 	if (isPrimitive(filter)) {
 		const filterStr = escapeValue(filter);
@@ -559,7 +562,10 @@ const handleFilterOperator = (
 	}
 };
 
-const handleFilterObject = (filter: FilterObj, parentKey?: string[]) => {
+const handleFilterObject = (
+	filter: FilterObj,
+	parentKey?: string[],
+): string[][] => {
 	return mapObj(filter, (value, key) => {
 		if (value === undefined) {
 			throw new Error(
@@ -588,7 +594,7 @@ const handleFilterArray = (
 	filter: FilterArray,
 	parentKey?: string[],
 	minElements = 2,
-) => {
+): string[][] => {
 	if (filter.length < minElements) {
 		throw new Error(
 			`Filter arrays must have at least ${minElements} elements, got: ${JSON.stringify(
@@ -662,7 +668,7 @@ const buildOrderBy = (orderby: OrderBy): string => {
 const buildOption = (
 	option: string,
 	value: ODataOptionsWithoutCount[string],
-) => {
+): string => {
 	let compiledValue: string = '';
 	switch (option) {
 		case '$filter':
@@ -759,7 +765,7 @@ const handleExpandOptions = (
 	expandStr = escapeResource(parentKey) + expandStr;
 	return expandStr;
 };
-const handleExpandObject = (expand: ResourceExpand) => {
+const handleExpandObject = (expand: ResourceExpand): string[] => {
 	const expands = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			throw new Error(
@@ -782,7 +788,9 @@ const handleExpandObject = (expand: ResourceExpand) => {
 	return expands;
 };
 
-const handleExpandArray = (expands: Array<string | ResourceExpand>) => {
+const handleExpandArray = (
+	expands: Array<string | ResourceExpand>,
+): string[] => {
 	if (expands.length < 1) {
 		throw new Error(
 			`Expand arrays must have at least 1 elements, got: ${JSON.stringify(
@@ -838,9 +846,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					(this[validParam] as PinejsClientCore<
-						PinejsClient
-					>[typeof validParam]) = value;
+					(this[
+						validParam
+					] as PinejsClientCore<PinejsClient>[typeof validParam]) = value;
 				}
 			}
 		}
@@ -858,16 +866,18 @@ export abstract class PinejsClientCore<PinejsClient> {
 		const cloneParams: typeof params = {};
 		for (const validParam of validParams) {
 			if (this[validParam] != null) {
-				(cloneParams[validParam] as PinejsClientCore<
-					PinejsClient
-				>[typeof validParam]) = this[validParam];
+				(cloneParams[
+					validParam
+				] as PinejsClientCore<PinejsClient>[typeof validParam]) = this[
+					validParam
+				];
 			}
 
 			const paramValue = params?.[validParam];
 			if (paramValue != null) {
-				(cloneParams[validParam] as PinejsClientCore<
-					PinejsClient
-				>[typeof validParam]) = paramValue;
+				(cloneParams[
+					validParam
+				] as PinejsClientCore<PinejsClient>[typeof validParam]) = paramValue;
 			}
 		}
 
