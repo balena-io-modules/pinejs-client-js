@@ -1,4 +1,14 @@
 - commits:
+    - subject: Update dependencies
+      hash: 764a29ab100601362e2018c8867be7e66ea10c71
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.9.4
+  date: 2021-03-10T20:28:20.915Z
+- commits:
     - subject: Explicitly specify return types for all functions
       hash: d53b6cef4ba00527b889d49a6567b8964457025e
       body: ''
