@@ -834,7 +834,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	public apiPrefix: string = '/';
 	public passthrough: AnyObject = {};
 	public passthroughByMethod: AnyObject = {};
-	public backendParams: AnyObject;
+	public backendParams?: AnyObject;
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
 	constructor(params: string | Params) {
