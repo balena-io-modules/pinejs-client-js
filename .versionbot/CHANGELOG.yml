@@ -1,4 +1,14 @@
 - commits:
+    - subject: Enable strict tsconfig options by default
+      hash: 8ad51e0af76b9e6c1676a0e4069d851f7b3c5211
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.9.5
+  date: 2021-03-22T14:28:40.467Z
+- commits:
     - subject: Update dependencies
       hash: 764a29ab100601362e2018c8867be7e66ea10c71
       body: ''
