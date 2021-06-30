@@ -868,9 +868,8 @@ export abstract class PinejsClientCore<PinejsClient> {
 			if (this[validParam] != null) {
 				(cloneParams[
 					validParam
-				] as PinejsClientCore<PinejsClient>[typeof validParam]) = this[
-					validParam
-				];
+				] as PinejsClientCore<PinejsClient>[typeof validParam]) =
+					this[validParam];
 			}
 
 			const paramValue = params?.[validParam];
