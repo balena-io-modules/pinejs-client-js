@@ -1,4 +1,27 @@
 - commits:
+    - subject: Reformat with the latest prettier
+      hash: 42108027c8c473b4d49e66054a7618d2a4211b79
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+    - subject: Delete CODEOWNERS
+      hash: bfe5e906b9e5d00c0efa7a380609552600d9328b
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+        See: >-
+          https://www.flowdock.com/app/rulemotion/pub/threads/trLcZFnSX9fLZn4LiaIv4xuBbah
+        see: >-
+          https://www.flowdock.com/app/rulemotion/pub/threads/trLcZFnSX9fLZn4LiaIv4xuBbah
+      author: Thodoris Greasidis
+  version: 6.9.6
+  date: 2021-06-30T21:30:37.871Z
+- commits:
     - subject: Enable strict tsconfig options by default
       hash: 8ad51e0af76b9e6c1676a0e4069d851f7b3c5211
       body: ''
