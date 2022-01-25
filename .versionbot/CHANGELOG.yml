@@ -1,4 +1,14 @@
 - commits:
+    - subject: Add optional retry logic to client
+      hash: d5496ebe73a0db28ac1c123575e80c9d25367d48
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Paul Jonathan Zoulin
+  version: 6.10.0
+  date: 2022-01-24T19:05:04.020Z
+- commits:
     - subject: Reformat with the latest prettier
       hash: 42108027c8c473b4d49e66054a7618d2a4211b79
       body: ''
