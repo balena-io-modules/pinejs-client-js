@@ -118,7 +118,7 @@ class Poll<T extends PromiseResultTypes> {
 					);
 				}
 			});
-		} catch (err) {
+		} catch (err: any) {
 			if (this.stopped) {
 				return;
 			}
@@ -822,6 +822,7 @@ const validParams = [
 	'apiPrefix',
 	'passthrough',
 	'passthroughByMethod',
+	'retry',
 ] as const;
 
 export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
@@ -830,11 +831,26 @@ export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
 	passthrough?: Params['passthrough'],
 ) => U;
 
+export type RetryParametersObj = {
+	canRetry?: (err: any) => boolean;
+	onRetry?: (
+		prevErr: any,
+		delayMs: number,
+		attempt: number,
+		maxAttempts: number,
+	) => void;
+	minDelayMs?: number;
+	maxDelayMs?: number;
+	maxAttempts?: number;
+};
+export type RetryParameters = RetryParametersObj | false;
+
 export abstract class PinejsClientCore<PinejsClient> {
 	public apiPrefix: string = '/';
 	public passthrough: AnyObject = {};
 	public passthroughByMethod: AnyObject = {};
 	public backendParams?: AnyObject;
+	public retry: RetryParameters = false;
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
 	constructor(params: string | Params) {
@@ -850,6 +866,82 @@ export abstract class PinejsClientCore<PinejsClient> {
 						validParam
 					] as PinejsClientCore<PinejsClient>[typeof validParam]) = value;
 				}
+			}
+		}
+	}
+
+	private canRetryDefaultHandler(err: any) {
+		const code = err?.statusCode;
+		return code == null || code === 429 || (code >= 500 && code < 600);
+	}
+
+	protected async callWithRetry<T>(
+		fnCall: () => Promise<T>,
+		retry?: RetryParameters,
+	): Promise<T> {
+		// Explicitly passing retry as false disables retrying for this call.
+		if (retry === false || (retry == null && this.retry === false)) {
+			return await fnCall();
+		}
+
+		const retryDefaultParameters = this.retry || {};
+		const retryParameters = retry || {};
+
+		const minDelayMs =
+			retryParameters.minDelayMs ?? retryDefaultParameters.minDelayMs;
+		const maxDelayMs =
+			retryParameters.maxDelayMs ?? retryDefaultParameters.maxDelayMs;
+		const maxAttempts =
+			retryParameters.maxAttempts ?? retryDefaultParameters.maxAttempts;
+
+		if (minDelayMs == null || minDelayMs <= 0) {
+			throw new Error(
+				`pinejs-client minDelayMs must be a positive integer, got: '${minDelayMs}'`,
+			);
+		}
+		if (maxDelayMs == null || maxDelayMs <= 0) {
+			throw new Error(
+				`pinejs-client maxDelayMs must be a positive integer, got: '${maxDelayMs}'`,
+			);
+		}
+		if (maxAttempts == null || maxAttempts <= 0) {
+			throw new Error(
+				`pinejs-client maxAttempts be a positive integer, got: '${maxDelayMs}'`,
+			);
+		}
+		if (minDelayMs > maxDelayMs) {
+			throw new Error(
+				'pinejs-client maxDelayMs must be greater than or equal to minDelayMs',
+			);
+		}
+
+		const onRetryHandler =
+			retryParameters.onRetry ?? retryDefaultParameters.onRetry;
+
+		let attempt = 1;
+
+		const canRetryHandler =
+			retryParameters.canRetry ??
+			retryDefaultParameters.canRetry ??
+			this.canRetryDefaultHandler;
+
+		while (true) {
+			try {
+				return await fnCall();
+			} catch (err) {
+				if (attempt >= maxAttempts || !canRetryHandler(err)) {
+					throw err;
+				}
+
+				const delayMs = Math.min(2 ** (attempt - 1) * minDelayMs, maxDelayMs);
+
+				// note that attempt is incremented before calling onRetryHandler because
+				// retries effectively begin with attempt number 2.
+				attempt++;
+				onRetryHandler?.(err, delayMs, attempt, maxAttempts);
+				await new Promise<void>((resolve) => {
+					setTimeout(resolve, delayMs);
+				});
 			}
 		}
 	}
@@ -1074,7 +1166,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		};
 		try {
 			return await this.post(postParams);
-		} catch (err) {
+		} catch (err: any) {
 			const isUniqueKeyViolationResponse =
 				err.statusCode === 409 && /unique/i.test(err.body);
 
@@ -1305,7 +1397,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 			);
 		}
 		let { method, apiPrefix } = params;
-		const { body, passthrough = {} } = params;
+		const { body, passthrough = {}, retry } = params;
 
 		apiPrefix = apiPrefix ?? this.apiPrefix;
 		const url = apiPrefix + this.compile(params);
@@ -1322,7 +1414,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 			method,
 		};
 
-		return this._request(opts);
+		return this.callWithRetry(async () => {
+			return await this._request(opts);
+		}, retry);
 	}
 
 	public abstract _request(
@@ -1521,6 +1615,7 @@ export interface Params {
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
 	options?: ODataOptions;
+	retry?: RetryParameters;
 }
 
 export interface SubscribeParams extends Params {
