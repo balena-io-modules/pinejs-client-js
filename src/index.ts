@@ -1414,9 +1414,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 			method,
 		};
 
-		return this.callWithRetry(async () => {
-			return await this._request(opts);
-		}, retry);
+		// Do not await this._request result, so that we can preserve
+		// the potentially enhanced promise-like result.
+		return this.callWithRetry(() => this._request(opts), retry);
 	}
 
 	public abstract _request(
