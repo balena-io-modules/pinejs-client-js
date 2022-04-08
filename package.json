@@ -28,18 +28,18 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@balena/es-version": "^1.0.0"
+    "@balena/es-version": "^1.0.1"
   },
   "devDependencies": {
-    "@balena/lint": "^5.4.1",
-    "chai": "^4.3.4",
+    "@balena/lint": "^5.4.2",
+    "chai": "^4.3.6",
     "coffee-script": "~1.12.7",
     "husky": "^4.3.8",
-    "lint-staged": "^10.5.4",
+    "lint-staged": "^12.3.7",
     "lodash": "^4.17.21",
-    "mocha": "^8.3.2",
+    "mocha": "^9.2.2",
     "require-npm4-to-publish": "^1.0.0",
-    "typescript": "^4.2.3"
+    "typescript": "^4.6.3"
   },
   "husky": {
     "hooks": {
