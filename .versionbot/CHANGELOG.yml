@@ -1,4 +1,22 @@
 - commits:
+    - subject: Update dependencies
+      hash: edc7575ac0976037506deb076d034e7cf08ce5bb
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+    - subject: Remove circleci
+      hash: 59c5a36292a80149b305d83a4d22b4d2dbe3001d
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 6.10.2
+  title: "'Remove circleci/update deps'"
+  date: 2022-04-08T13:22:23.848Z
+- commits:
     - subject: Do not await the _request() result to allow enhanced promises downstream
       hash: a209138f928809869d68e05cdcea4c2bf0d1fac1
       body: ""
