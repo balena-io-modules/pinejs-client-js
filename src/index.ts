@@ -1584,8 +1584,9 @@ export interface ODataOptionsWithoutCount {
 		| Expand
 		| OrderBy;
 }
+export type ODataCountOptions = Pick<ODataOptionsWithoutCount, '$filter'>;
 export interface ODataOptions extends ODataOptionsWithoutCount {
-	$count?: ODataOptionsWithoutCount;
+	$count?: ODataCountOptions;
 }
 export type OptionsObject = ODataOptions;
 
