@@ -1,6 +1,6 @@
 {
   "name": "pinejs-client-core",
-  "version": "6.10.2",
+  "version": "6.10.3",
   "description": "This module provides the core tools to enable easier interaction with the pinejs API.",
   "browser": "es2015",
   "main": "index.js",
@@ -53,6 +53,6 @@
     "_": "test/*.coffee"
   },
   "versionist": {
-    "publishedAt": "2022-04-08T13:22:24.063Z"
+    "publishedAt": "2022-09-15T15:20:32.881Z"
   }
 }

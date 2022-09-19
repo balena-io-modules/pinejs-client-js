@@ -1,4 +1,19 @@
 - commits:
+    - subject: Fix $count typings to only allow $filter under it
+      hash: d4cb65524ba2076df05f03574ce39acd547daa63
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        See: https://docs.oasis-open.org/odata/odata/v4.01/os/abnf/odata-abnf-construction-rules.txt
+        see: https://docs.oasis-open.org/odata/odata/v4.01/os/abnf/odata-abnf-construction-rules.txt
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+  version: 6.10.3
+  title: "'Fix  typings to only allow  under it'"
+  date: 2022-09-15T15:20:32.755Z
+- commits:
     - subject: Update dependencies
       hash: edc7575ac0976037506deb076d034e7cf08ce5bb
       body: ""
