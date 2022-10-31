@@ -1,4 +1,18 @@
 - commits:
+    - subject: "tests: Support `.only` & `.skip` in the higher level test functions"
+      hash: 9326a2d23d40831be6100241ae92fdec57404806
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+      nested: []
+  version: 6.10.6
+  title: ""
+  date: 2022-10-31T13:32:10.558Z
+- commits:
     - subject: "Flowzone: Use inherited secrets"
       hash: b3bf8b0cae0c40980f76a952d1890a228d48bd3c
       body: ""
