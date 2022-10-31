@@ -660,6 +660,22 @@ testFilter(
 	'a/$count eq 1'
 )
 
+testFilter(
+	$lt: [
+		a: $count: {}
+		1
+	]
+	'a/$count lt 1'
+)
+
+testFilter(
+	$lt: [
+		a: $count: $filter: b: 'c'
+		1
+	]
+	"a/$count($filter=b eq 'c') lt 1"
+)
+
 # Test functions
 testFunction('contains')
 testFunction('endswith')
@@ -727,6 +743,28 @@ testLambda = (operator) ->
 			createFilter
 				$alias: 'b'
 		new Error("Lambda expression (#{operator}) has no expr defined.")
+	)
+
+	testFilter(
+		a:
+			createFilter
+				$alias: 'al'
+				$expr: $eq: [
+					al: b: $count: {}
+					1
+				]
+		"a/#{operator.slice(1)}(al:al/b/$count eq 1)"
+	)
+
+	testFilter(
+		a:
+			createFilter
+				$alias: 'al'
+				$expr: $eq: [
+					al: b: $count: $filter: c: 'd'
+					1
+				]
+		"a/#{operator.slice(1)}(al:al/b/$count($filter=c eq 'd') eq 1)"
 	)
 
 # Test $any

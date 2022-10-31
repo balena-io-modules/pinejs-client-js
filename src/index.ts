@@ -66,6 +66,7 @@ const trailingCountRegex = new RegExp(
 );
 
 const ODataOptionCodeExampleMap = {
+	$filter: '$filter: a: $op: [b: $count: ... ]',
 	$expand: '$expand: a: $count: ...',
 	$orderby: "$orderby: { a: { $count: ... }, $dir: 'asc' }",
 };
@@ -481,9 +482,26 @@ const handleFilterOperator = (
 		}
 		case '$count': {
 			let keys = ['$count'];
+			if (
+				parentKey != null &&
+				isObject(filter) &&
+				// Handles the `$filter: $op: [ {a: {$count: {'...'}}}, value]`` case.
+				(Object.keys(filter).length === 0 || filter.hasOwnProperty('$filter'))
+			) {
+				keys = parentKey.slice(0, parentKey.length - 1);
+				keys.push(
+					handleOptions(
+						'$filter',
+						{ $count: filter as { $filter?: Filter } },
+						parentKey[parentKey.length - 1],
+					),
+				);
+				return [keys.join('/')];
+			}
 			if (parentKey != null) {
 				keys = parentKey.concat(keys);
 			}
+			// Handles the `$filter: a: $count: value` case.
 			return buildFilter(filter as Filter, keys);
 		}
 		// break
