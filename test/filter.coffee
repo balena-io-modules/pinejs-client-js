@@ -1,7 +1,7 @@
-{ test } = require './test'
+{ buildMochaHelper, test } = require './test'
 _ = require 'lodash'
 
-testFilter = (input, output) ->
+testFilter = buildMochaHelper it, (it, input, output) ->
 	resource = 'test'
 	if not _.isError(output)
 		countOutput = resource + '/$count?$filter=' + output
