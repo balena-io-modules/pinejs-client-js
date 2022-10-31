@@ -1,7 +1,7 @@
-{ test } = require './test'
+{ buildMochaHelper, test } = require './test'
 _ = require 'lodash'
 
-testId = (input, output) ->
+testId = buildMochaHelper it, (it, input, output) ->
 	resource = 'test'
 	if not _.isError(output)
 		output = "#{resource}(#{output})"
@@ -11,7 +11,7 @@ testId = (input, output) ->
 			id: input
 		}
 
-testOption = (option, input, output) ->
+testOption = buildMochaHelper it, (it, option, input, output) ->
 	resource = 'test'
 	if not _.isError(output)
 		output = "#{resource}?#{option}=#{output}"
