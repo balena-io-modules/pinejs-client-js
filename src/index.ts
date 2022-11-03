@@ -5,30 +5,26 @@ export interface Dictionary<T> {
 const noop = (): void => {
 	// noop
 };
-const deprecated = {} as {
-	[key in 'expandFilter' | 'countInResource' | 'countInExpand']: () => void;
-};
-const addDeprecated = (
-	name: keyof typeof deprecated,
-	message: string,
-): void => {
-	deprecated[name] = () => {
-		console.warn('pinejs-client deprecated:', message);
-		deprecated[name] = noop;
+const deprecated = (() => {
+	const deprecationMessages = {
+		expandFilter:
+			'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+		countInResource:
+			"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
+		countInExpand:
+			"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
 	};
-};
-addDeprecated(
-	'expandFilter',
-	'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
-);
-addDeprecated(
-	'countInResource',
-	"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
-);
-addDeprecated(
-	'countInExpand',
-	"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
-);
+	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
+	for (const key of Object.keys(deprecationMessages) as Array<
+		keyof typeof deprecationMessages
+	>) {
+		result[key] = () => {
+			console.warn('pinejs-client deprecated:', deprecationMessages[key]);
+			result[key] = noop;
+		};
+	}
+	return result;
+})();
 
 const mapObj = <T, R>(
 	obj: Dictionary<T>,
