@@ -1,4 +1,18 @@
 - commits:
+    - subject: Refactor the deprecation message definitions
+      hash: 941b08a4359d11bef0d36645d2b4b358a3b1090e
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+      nested: []
+  version: 6.10.7
+  title: ""
+  date: 2022-11-07T17:51:35.292Z
+- commits:
     - subject: "tests: Support `.only` & `.skip` in the higher level test functions"
       hash: 9326a2d23d40831be6100241ae92fdec57404806
       body: ""
