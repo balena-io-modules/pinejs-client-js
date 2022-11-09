@@ -1,4 +1,31 @@
 - commits:
+    - subject: "Deprecate non-$filter props inside `$expand: { a: { $count: {...}}}`"
+      hash: 97066f1d1359eb0d340a216fa9aec1ba81dc8052
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+      nested: []
+    - subject: "Add support for `$orderby: { a: { $count: ... }, $dir: 'asc' }`
+        notation"
+      hash: 570f0400e518efc0499a0111873768b5dc4c94f5
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+        See: https://jel.ly.fish/thread-f02087f0-7415-42ac-9b54-75fd10fd0c5c
+        see: https://jel.ly.fish/thread-f02087f0-7415-42ac-9b54-75fd10fd0c5c
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+      nested: []
+  version: 6.11.0
+  title: ""
+  date: 2022-11-09T15:59:01.304Z
+- commits:
     - subject: Refactor the deprecation message definitions
       hash: 941b08a4359d11bef0d36645d2b4b358a3b1090e
       body: ""
