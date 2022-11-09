@@ -13,6 +13,8 @@ const deprecated = (() => {
 			"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
 		countInExpand:
 			"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
+		non$filterOptionIn$expand$count:
+			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 	};
 	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
 	for (const key of Object.keys(deprecationMessages) as Array<
@@ -62,6 +64,11 @@ const encodedCount = encodeURIComponent('$count');
 const trailingCountRegex = new RegExp(
 	`(?:(?:${encodedSlash})|/)${encodedCount}$`,
 );
+
+const ODataOptionCodeExampleMap = {
+	$expand: '$expand: a: $count: ...',
+	$orderby: "$orderby: { a: { $count: ... }, $dir: 'asc' }",
+};
 
 interface PollOnObj {
 	unsubscribe: () => void;
@@ -642,11 +649,35 @@ const buildOrderBy = (orderby: OrderBy): string => {
 		});
 		return join(result);
 	} else if (isObject(orderby)) {
-		const result = mapObj(orderby, (dir, key) => {
+		const { $dir, ...restOrderby } = orderby;
+		const $orderby: Dictionary<typeof restOrderby[string]> = restOrderby;
+		const result = mapObj($orderby, (dirOrOptions, key) => {
+			let propertyPath = key;
+			let dir = $dir;
+			if (typeof dirOrOptions === 'string') {
+				dir = dirOrOptions;
+			} else {
+				const keys = Object.keys(dirOrOptions);
+				if (!dirOrOptions.hasOwnProperty('$count') || keys.length > 1) {
+					throw new Error(
+						`When using '${
+							ODataOptionCodeExampleMap['$orderby']
+						}' you can only specify $count, got: '${JSON.stringify(keys)}'`,
+					);
+				}
+				propertyPath = handleOptions('$orderby', dirOrOptions, propertyPath);
+			}
+
+			if (dir == null) {
+				throw new Error(
+					`'$orderby' objects should either use the '{ a: 'asc' }' or the ${ODataOptionCodeExampleMap.$orderby} notation`,
+				);
+			}
+
 			if (dir !== 'asc' && dir !== 'desc') {
 				throw new Error(`'$orderby' direction must be 'asc' or 'desc'`);
 			}
-			return `${key} ${dir}`;
+			return `${propertyPath} ${dir}`;
 		});
 		if (result.length !== 1) {
 			throw new Error(
@@ -723,43 +754,65 @@ const buildOption = (
 	return `${option}=${compiledValue}`;
 };
 
-const handleExpandOptions = (
-	expand: ODataOptions,
+const handleOptions = (
+	optionOperation: keyof typeof ODataOptionCodeExampleMap,
+	options: ODataOptions,
 	parentKey: string,
 ): string => {
-	if (parentKey.endsWith('/$count')) {
-		deprecated.countInExpand();
-	}
-	if (expand.hasOwnProperty('$count')) {
-		const keys = Object.keys(expand);
+	if (options.hasOwnProperty('$count')) {
+		const keys = Object.keys(options);
 		if (keys.length > 1) {
 			throw new Error(
-				`When using '$expand: a: $count: ...' you can only specify $count, got: '${JSON.stringify(
-					keys,
-				)}'`,
+				`When using '${
+					ODataOptionCodeExampleMap[optionOperation]
+				}' you can only specify $count, got: '${JSON.stringify(keys)}'`,
 			);
 		}
-		expand = expand.$count!;
+
+		options = options.$count!;
 		parentKey += '/$count';
+		// Check whether there is anything else other than $filter in the $count
+		// and error b/c it's invalid.
+		if (
+			Object.keys(options).length > (options.hasOwnProperty('$filter') ? 1 : 0)
+		) {
+			// TODO: Remove the optionOperation check in the next major,
+			// so that it throws for all operators.
+			if (optionOperation === '$expand') {
+				deprecated.non$filterOptionIn$expand$count();
+			} else {
+				throw new Error(
+					`When using '${
+						ODataOptionCodeExampleMap[optionOperation]
+					}' you can only specify $filter in the $count, got: '${JSON.stringify(
+						Object.keys(options),
+					)}'`,
+				);
+			}
+		}
 	}
-	const expandOptions = mapObj(expand, (value, key) => {
+	const optionsArray = mapObj(options, (value, key) => {
 		if (key[0] === '$') {
 			if (!isValidOption(key)) {
 				throw new Error(`Unknown key option '${key}'`);
 			}
 			return buildOption(key, value);
-		} else {
+		}
+		if (optionOperation === '$expand') {
 			throw new Error(
 				`'$expand: ${parentKey}: ${key}: ...' is invalid, use '$expand: ${parentKey}: $expand: ${key}: ...' instead.`,
 			);
 		}
+		throw new Error(
+			`'${optionOperation}: ${parentKey}: ${key}: ...' is invalid.`,
+		);
 	});
-	let expandStr = expandOptions.join(';');
-	if (expandStr.length > 0) {
-		expandStr = `(${expandStr})`;
+	let optionsStr = optionsArray.join(';');
+	if (optionsStr.length > 0) {
+		optionsStr = `(${optionsStr})`;
 	}
-	expandStr = escapeResource(parentKey) + expandStr;
-	return expandStr;
+	optionsStr = escapeResource(parentKey) + optionsStr;
+	return optionsStr;
 };
 const handleExpandObject = (expand: ResourceExpand): string[] => {
 	const expands = mapObj(expand, (value, key) => {
@@ -779,7 +832,10 @@ const handleExpandObject = (expand: ResourceExpand): string[] => {
 				`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`,
 			);
 		}
-		return handleExpandOptions(value, key);
+		if (key.endsWith('/$count')) {
+			deprecated.countInExpand();
+		}
+		return handleOptions('$expand', value, key);
 	});
 	return expands;
 };
@@ -1554,12 +1610,13 @@ export interface ResourceExpand extends Dictionary<ODataOptions> {}
 
 export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
 
+type OrderByDirection = 'asc' | 'desc';
+
 export type OrderBy =
 	| string
 	| OrderBy[]
-	| {
-			[index: string]: 'asc' | 'desc';
-	  };
+	| Dictionary<OrderByDirection>
+	| (Dictionary<{ $count: ODataCountOptions }> & { $dir: OrderByDirection });
 
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;

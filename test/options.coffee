@@ -96,6 +96,53 @@ testOrderBy(
 	new Error("'$orderby' option has to be either a string, array, or object")
 )
 
+testOrderBy(
+	a: { $count: {} }
+	$dir: 'desc'
+	'a/$count desc'
+)
+
+testOrderBy(
+	a: { $count: $filter: d: 'e' }
+	$dir: 'desc'
+	"a/$count($filter=d eq 'e') desc"
+)
+
+testOrderBy(
+	[{
+		a: { $count: $filter: d: 'e' }
+		$dir: 'desc'
+	}, {
+		b: { $count: {} }
+		$dir: 'desc'
+	}, {
+		c: 'asc'
+	}]
+	"a/$count($filter=d eq 'e') desc,b/$count desc,c asc"
+)
+
+testOrderBy(
+	a: $count: {}
+	new Error(''''$orderby' objects should either use the '{ a: 'asc' }' or the $orderby: { a: { $count: ... }, $dir: 'asc' } notation''')
+)
+
+testOrderBy(
+	a: $filter: d: 'e'
+	$dir: 'desc'
+	new Error('''When using '$orderby: { a: { $count: ... }, $dir: 'asc' }' you can only specify $count, got: '["$filter"]''')
+)
+testOrderBy(
+	a: $count: $expand: 'e'
+	$dir: 'desc'
+	new Error('''When using '$orderby: { a: { $count: ... }, $dir: 'asc' }' you can only specify $filter in the $count, got: '["$expand"]''')
+)
+testOrderBy(
+	a: $count:
+		$expand: 'e'
+		$filter: d: 'e'
+	$dir: 'desc'
+	new Error('''When using '$orderby: { a: { $count: ... }, $dir: 'asc' }' you can only specify $filter in the $count, got: '["$expand","$filter"]''')
+)
 
 testTop(
 	1
