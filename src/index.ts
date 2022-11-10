@@ -13,6 +13,10 @@ const deprecated = (() => {
 			"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
 		countInExpand:
 			"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
+		countWithNestedOperationInFilter:
+			"'`$filter: { a: { $count: { $op: number } } }` is deprecated, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.",
+		countInOrderBy:
+			"'`$orderby: 'a/$count'` is deprecated, please use `$orderby: { a: { $count: {...} } }` instead.",
 		non$filterOptionIn$expand$count:
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 	};
@@ -66,6 +70,7 @@ const trailingCountRegex = new RegExp(
 );
 
 const ODataOptionCodeExampleMap = {
+	$filter: '$filter: a: $op: [b: $count: ... ]',
 	$expand: '$expand: a: $count: ...',
 	$orderby: "$orderby: { a: { $count: ... }, $dir: 'asc' }",
 };
@@ -481,9 +486,27 @@ const handleFilterOperator = (
 		}
 		case '$count': {
 			let keys = ['$count'];
+			if (
+				parentKey != null &&
+				isObject(filter) &&
+				// Handles the `$filter: $op: [ {a: {$count: {'...'}}}, value]`` case.
+				(Object.keys(filter).length === 0 || filter.hasOwnProperty('$filter'))
+			) {
+				keys = parentKey.slice(0, parentKey.length - 1);
+				keys.push(
+					handleOptions(
+						'$filter',
+						{ $count: filter as { $filter?: Filter } },
+						parentKey[parentKey.length - 1],
+					),
+				);
+				return [keys.join('/')];
+			}
 			if (parentKey != null) {
 				keys = parentKey.concat(keys);
 			}
+			// Handles the `$filter: a: $count: value` case.
+			deprecated.countWithNestedOperationInFilter();
 			return buildFilter(filter as Filter, keys);
 		}
 		// break
@@ -636,6 +659,9 @@ const buildFilter = (
 
 const buildOrderBy = (orderby: OrderBy): string => {
 	if (isString(orderby)) {
+		if (/\/\$count\b/.test(orderby)) {
+			deprecated.countInOrderBy();
+		}
 		return orderby;
 	} else if (Array.isArray(orderby)) {
 		if (orderby.length === 0) {
