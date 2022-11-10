@@ -1,4 +1,38 @@
 - commits:
+    - subject: Deprecate the 'a/count' notation in $orderby
+      hash: f1aaa244418a413860cde2a42a0a3e44d00249d2
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+      nested: []
+    - subject: "Deprecate the $count: { $op: number } notation"
+      hash: 7501cc05ede27af86604ca0720f2ca5f99334f02
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+      nested: []
+    - subject: "Add support for `$filter: { $op: [{ $count: {} }, number] }` notation"
+      hash: 4a5c6ba07ce6e0e54bbea64c70be64c31e956080
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+        signed-off-by: Thodoris Greasidis <thodoris@balena.io>
+      author: Thodoris Greasidis
+      nested: []
+  version: 6.12.0
+  title: ""
+  date: 2022-11-10T22:13:38.655Z
+- commits:
     - subject: "Deprecate non-$filter props inside `$expand: { a: { $count: {...}}}`"
       hash: 97066f1d1359eb0d340a216fa9aec1ba81dc8052
       body: ""
