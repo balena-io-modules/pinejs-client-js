@@ -15,6 +15,8 @@ const deprecated = (() => {
 			"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
 		countWithNestedOperationInFilter:
 			"'`$filter: { a: { $count: { $op: number } } }` is deprecated, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.",
+		countInOrderBy:
+			"'`$orderby: 'a/$count'` is deprecated, please use `$orderby: { a: { $count: {...} } }` instead.",
 		non$filterOptionIn$expand$count:
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 	};
@@ -657,6 +659,9 @@ const buildFilter = (
 
 const buildOrderBy = (orderby: OrderBy): string => {
 	if (isString(orderby)) {
+		if (/\/\$count\b/.test(orderby)) {
+			deprecated.countInOrderBy();
+		}
 		return orderby;
 	} else if (Array.isArray(orderby)) {
 		if (orderby.length === 0) {
