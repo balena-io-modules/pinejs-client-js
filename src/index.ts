@@ -13,6 +13,8 @@ const deprecated = (() => {
 			"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
 		countInExpand:
 			"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
+		countWithNestedOperationInFilter:
+			"'`$filter: { a: { $count: { $op: number } } }` is deprecated, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.",
 		non$filterOptionIn$expand$count:
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 	};
@@ -502,6 +504,7 @@ const handleFilterOperator = (
 				keys = parentKey.concat(keys);
 			}
 			// Handles the `$filter: a: $count: value` case.
+			deprecated.countWithNestedOperationInFilter();
 			return buildFilter(filter as Filter, keys);
 		}
 		// break
