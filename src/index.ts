@@ -1490,7 +1490,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		params: Params,
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | void>;
-	public request(
+	public async request(
 		params: Params,
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | void> {
@@ -1523,9 +1523,34 @@ export abstract class PinejsClientCore<PinejsClient> {
 			method,
 		};
 
+		if (body) {
+			const blobKeys = Object.keys(body).filter(
+				(key) => body[key] instanceof Blob,
+			);
+
+			if (blobKeys.length > 0) {
+				blobKeys.forEach(async (key) => {
+					const fileBlob = body[key] as Blob;
+
+					const data = await fileBlob.arrayBuffer();
+					opts.body[key] = {
+						fieldname: key,
+						mimetype: fileBlob.type,
+						buffer: {
+							type: 'Buffer',
+							data,
+						},
+						size: fileBlob.size,
+					};
+				});
+			}
+		}
+
 		// Do not await this._request result, so that we can preserve
 		// the potentially enhanced promise-like result.
-		return this.callWithRetry(() => this._request(opts), retry);
+		return this.callWithRetry(async () => {
+			return this._request(opts);
+		}, retry);
 	}
 
 	public abstract _request(
