@@ -1,4 +1,16 @@
 - commits:
+    - subject: Update TypeScript to 4.9.3
+      hash: e41e987dd08a02f8805f345fa6c3e50c71f9d517
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+      nested: []
+  version: 6.12.1
+  title: ""
+  date: 2022-11-15T22:41:19.258Z
+- commits:
     - subject: Deprecate the 'a/count' notation in $orderby
       hash: f1aaa244418a413860cde2a42a0a3e44d00249d2
       body: ""
