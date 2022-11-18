@@ -2,6 +2,35 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
+type Letter =
+	| 'a'
+	| 'b'
+	| 'c'
+	| 'd'
+	| 'e'
+	| 'f'
+	| 'g'
+	| 'h'
+	| 'i'
+	| 'j'
+	| 'k'
+	| 'l'
+	| 'm'
+	| 'n'
+	| 'o'
+	| 'p'
+	| 'q'
+	| 'r'
+	| 's'
+	| 't'
+	| 'u'
+	| 'v'
+	| 'w'
+	| 'x'
+	| 'y'
+	| 'z';
+type StartsWithLetter = `${Letter}${string}`;
+
 const noop = (): void => {
 	// noop
 };
@@ -676,7 +705,9 @@ const buildOrderBy = (orderby: OrderBy): string => {
 		return join(result);
 	} else if (isObject(orderby)) {
 		const { $dir, ...restOrderby } = orderby;
-		const $orderby: Dictionary<typeof restOrderby[string]> = restOrderby;
+		const $orderby: Dictionary<
+			OrderByDirection | { $count: ODataCountOptions }
+		> = restOrderby;
 		const result = mapObj($orderby, (dirOrOptions, key) => {
 			let propertyPath = key;
 			let dir = $dir;
@@ -1642,7 +1673,12 @@ export type OrderBy =
 	| string
 	| OrderBy[]
 	| Dictionary<OrderByDirection>
-	| (Dictionary<{ $count: ODataCountOptions }> & { $dir: OrderByDirection });
+	| {
+			[k: StartsWithLetter]: {
+				$count: ODataCountOptions;
+			};
+			$dir: OrderByDirection;
+	  };
 
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
