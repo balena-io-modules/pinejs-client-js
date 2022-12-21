@@ -1,4 +1,18 @@
 - commits:
+    - subject: Add files to opts when  are present as part of body
+      hash: b780bae929428f42ed3411da1a1a337ff5e8cf2a
+      body: ""
+      footer:
+        Change-Type: patch
+        change-type: patch
+        Signed-off-by: Nitish Agarwal <1592163+nitishagar@users.noreply.github.com>
+        signed-off-by: Nitish Agarwal <1592163+nitishagar@users.noreply.github.com>
+      author: Nitish Agarwal
+      nested: []
+  version: 6.12.3
+  title: ""
+  date: 2022-12-21T05:01:36.579Z
+- commits:
     - subject: "Fix `$orderby: { a: { $count: ... }, $dir: 'asc' }` typings"
       hash: c62fb38c7cafa840aa799e112d96a7448e02a824
       body: ""
