@@ -15,9 +15,7 @@
     "npm": ">=6.0.0"
   },
   "scripts": {
-    "lint:coffee": "balena-lint test/",
-    "lint:typescript": "balena-lint --typescript src",
-    "lint": "npm run lint:coffee && npm run lint:typescript",
+    "lint": "balena-lint --typescript src test",
     "pretest": "npm run build",
     "test": "mocha",
     "posttest": "npm run lint",
@@ -28,7 +26,7 @@
     "build": "npm run build-es2015 && npm run build-es2018 && npm run build-types",
     "prepublish": "require-npm4-to-publish",
     "prepack": "npm run build",
-    "prettify": "balena-lint --typescript --fix src"
+    "prettify": "balena-lint --typescript --fix src test"
   },
   "license": "MIT",
   "dependencies": {
@@ -36,13 +34,16 @@
   },
   "devDependencies": {
     "@balena/lint": "^5.4.2",
+    "@types/chai": "^4.3.4",
+    "@types/lodash": "^4.14.191",
+    "@types/mocha": "^10.0.1",
     "chai": "^4.3.6",
-    "coffee-script": "~1.12.7",
     "husky": "^4.3.8",
     "lint-staged": "^12.3.7",
     "lodash": "^4.17.21",
     "mocha": "^9.2.2",
     "require-npm4-to-publish": "^1.0.0",
+    "ts-node": "^10.9.1",
     "typescript": "^4.9.3"
   },
   "husky": {
@@ -53,8 +54,8 @@
   "mocha": {
     "reporter": "spec",
     "recursive": true,
-    "require": "coffee-script/register",
-    "_": "test/*.coffee"
+    "require": "ts-node/register/transpile-only",
+    "_": "test/*.ts"
   },
   "versionist": {
     "publishedAt": "2022-11-18T10:22:54.950Z"
