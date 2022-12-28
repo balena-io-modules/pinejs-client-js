@@ -1,4 +1,16 @@
 - commits:
+    - subject: "CI: Convert tests to TypeScript"
+      hash: 683efba924728fc57cbb9a43b7b65f124903661e
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Josh Bowling
+      nested: []
+  version: 6.12.3
+  title: ""
+  date: 2022-12-28T09:32:01.282Z
+- commits:
     - subject: "Fix `$orderby: { a: { $count: ... }, $dir: 'asc' }` typings"
       hash: c62fb38c7cafa840aa799e112d96a7448e02a824
       body: ""
