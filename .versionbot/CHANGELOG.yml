@@ -1,4 +1,16 @@
 - commits:
+    - subject: Avoid an unnecessary function creation on each get() call
+      hash: 782e43ef40a22fa4c8e0f3d64917b03e07c77522
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+      nested: []
+  version: 6.12.4
+  title: ""
+  date: 2023-05-09T13:11:13.136Z
+- commits:
     - subject: "CI: Convert tests to TypeScript"
       hash: 683efba924728fc57cbb9a43b7b65f124903661e
       body: ""
