@@ -1111,9 +1111,49 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 
 		const result = await this.request({ ...params, method: 'GET' });
-		return this.transformGetResult(params)(result);
+		return this._transformGetResult(params, result);
 	}
 
+	protected _transformGetResult(
+		params: Params & {
+			options: { $count: NonNullable<ODataOptions['$count']> };
+		},
+		data: AnyObject,
+	): number;
+	protected _transformGetResult(
+		params: Params & { id: NonNullable<Params['id']> },
+		data: AnyObject,
+	): AnyObject | undefined;
+	protected _transformGetResult(
+		params: Omit<Params, 'id'>,
+		data: AnyObject,
+	): AnyObject[];
+	protected _transformGetResult(
+		params: Params,
+		data: AnyObject,
+	): PromiseResultTypes {
+		if (!isObject(data)) {
+			throw new Error(`Response was not a JSON object: '${typeof data}'`);
+		}
+		if (data.d == null) {
+			throw new Error(
+				"Invalid response received, the 'd' property is missing.",
+			);
+		}
+		if (params.id != null) {
+			// singular
+			if (data.d.length > 1) {
+				throw new Error(
+					'Returned multiple results when only one was expected.',
+				);
+			}
+			return data.d[0];
+		}
+		return data.d;
+	}
+
+	// TODO: Change its interface to how _transformGetResult looks in the next major
+	/** @deprecated */
 	protected transformGetResult(
 		params: Params & {
 			options: { $count: NonNullable<ODataOptions['$count']> };
@@ -1128,27 +1168,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	protected transformGetResult(
 		params: Params,
 	): (data: AnyObject) => PromiseResultTypes {
-		const singular = params.id != null;
-
-		return (data) => {
-			if (!isObject(data)) {
-				throw new Error(`Response was not a JSON object: '${typeof data}'`);
-			}
-			if (data.d == null) {
-				throw new Error(
-					"Invalid response received, the 'd' property is missing.",
-				);
-			}
-			if (singular) {
-				if (data.d.length > 1) {
-					throw new Error(
-						'Returned multiple results when only one was expected.',
-					);
-				}
-				return data.d[0];
-			}
-			return data.d;
-		};
+		return (data) => this._transformGetResult(params, data);
 	}
 
 	public subscribe(
@@ -1340,11 +1360,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		} else {
 			params.method = params.method.toUpperCase() as typeof params.method;
 		}
-		const { body: defaultBody } = params;
-		const { passthrough: defaultPassthrough } = params;
-
-		const transformFn =
-			params.method === 'GET' ? this.transformGetResult(params) : undefined;
+		const { body: defaultBody, passthrough: defaultPassthrough } = params;
 
 		return async (parameterAliases, body, passthrough) => {
 			if (body != null) {
@@ -1379,8 +1395,8 @@ export abstract class PinejsClientCore<PinejsClient> {
 				params.url = compiledUrl;
 			}
 			const result = await this.request(params);
-			if (transformFn != null) {
-				return transformFn(result as AnyObject);
+			if (params.method === 'GET') {
+				return this._transformGetResult(params, result as AnyObject);
 			}
 			return result;
 		};
