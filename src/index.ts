@@ -104,6 +104,12 @@ const ODataOptionCodeExampleMap = {
 	$orderby: "$orderby: { a: { $count: ... }, $dir: 'asc' }",
 };
 
+const durationTimepartFlagEntries = [
+	['hours', 'H'],
+	['minutes', 'M'],
+	['seconds', 'S'],
+] as const;
+
 interface PollOnObj {
 	unsubscribe: () => void;
 }
@@ -464,6 +470,35 @@ const handleFilterOperator = (
 				operator,
 				parentKey,
 			);
+		case '$duration':
+			const durationValue = filter as DurationValue;
+			if (!isObject(durationValue)) {
+				throw new Error(`Expected type for ${operator}, got: ${typeof filter}`);
+			}
+			let durationString = 'P';
+			if (durationValue.days) {
+				durationString += `${durationValue.days}D`;
+			}
+
+			let timePart = '';
+			for (const [partKey, partFlag] of durationTimepartFlagEntries) {
+				if (durationValue[partKey]) {
+					timePart += `${durationValue[partKey]}${partFlag}`;
+				}
+			}
+			if (timePart.length > 0) {
+				durationString += `T${timePart}`;
+			}
+
+			if (durationString.length <= 1) {
+				throw new Error(
+					`Expected ${operator} to include duration properties, got: ${typeof filter}`,
+				);
+			}
+			if (durationValue.negative) {
+				durationString = `-${durationString}`;
+			}
+			return addParentKey(`duration'${durationString}'`, parentKey);
 		// break
 		case '$raw': {
 			filter = filter as FilterType<typeof operator>;
@@ -1600,6 +1635,14 @@ type FilterFunctionKey =
 	| '$cast';
 type FilterFunctionValue = Filter;
 
+type DurationValue = {
+	negative?: boolean;
+	days?: number;
+	hours?: number;
+	minutes?: number;
+	seconds?: number;
+};
+
 export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
 	'@'?: string;
 
@@ -1654,6 +1697,7 @@ export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
 	$time?: FilterFunctionValue;
 	$totaloffsetminutes?: FilterFunctionValue;
 	$now?: FilterFunctionValue;
+	$duration?: DurationValue;
 	$maxdatetime?: FilterFunctionValue;
 	$mindatetime?: FilterFunctionValue;
 	$totalseconds?: FilterFunctionValue;

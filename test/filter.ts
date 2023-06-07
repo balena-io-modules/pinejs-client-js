@@ -131,7 +131,94 @@ const testOperator = function (operator: string) {
 		`a ${operator} (${rawDatetime})`,
 	);
 
-	return testFilter(
+	testFilter(
+		{
+			a: createFilter({
+				$duration: 'P6D',
+			}),
+		},
+		new Error(`Expected type for $duration, got: string`),
+	);
+
+	testFilter(
+		{
+			a: createFilter({
+				$duration: {
+					negative: true,
+					days: 6,
+					hours: 23,
+					minutes: 59,
+					seconds: 59.9999,
+				},
+			}),
+		},
+		`a ${operator} duration'-P6DT23H59M59.9999S'`,
+	);
+
+	testFilter(
+		{
+			a: createFilter({
+				$duration: {
+					days: 6,
+				},
+			}),
+		},
+		`a ${operator} duration'P6D'`,
+	);
+
+	testFilter(
+		{
+			a: createFilter({
+				$duration: {
+					hours: 23,
+				},
+			}),
+		},
+		`a ${operator} duration'PT23H'`,
+	);
+
+	testFilter(
+		{
+			a: createFilter({
+				$duration: {
+					minutes: 1,
+				},
+			}),
+		},
+		`a ${operator} duration'PT1M'`,
+	);
+
+	testFilter(
+		{
+			a: createFilter({
+				$duration: {
+					seconds: 10,
+				},
+			}),
+		},
+		`a ${operator} duration'PT10S'`,
+	);
+
+	testFilter(
+		{
+			a: createFilter({
+				$sub: [
+					{ $now: {} },
+					{
+						$duration: {
+							days: 6,
+							hours: 23,
+							minutes: 59,
+							seconds: 59.9999,
+						},
+					},
+				],
+			}),
+		},
+		`a ${operator} (now() sub duration'P6DT23H59M59.9999S')`,
+	);
+
+	testFilter(
 		{
 			a: createFilter({
 				$or: [{ $: 'b' }, { $: 'c' }],
