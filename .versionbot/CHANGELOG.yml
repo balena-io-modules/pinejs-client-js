@@ -1,4 +1,16 @@
 - commits:
+    - subject: Add support for $duration
+      hash: 05edeeea86147ac49dd864ae6e0b46ffc73f6fc4
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Thodoris Greasidis
+      nested: []
+  version: 6.13.0
+  title: ""
+  date: 2023-07-11T13:16:05.245Z
+- commits:
     - subject: Avoid an unnecessary function creation on each get() call
       hash: 782e43ef40a22fa4c8e0f3d64917b03e07c77522
       body: ""
