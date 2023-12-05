@@ -962,6 +962,23 @@ const buildExpand = (expand: Expand): string => {
 	}
 };
 
+const getRetryAfterHeaderDelayMs = (
+	getRetryAfterHeader: RetryParametersObj['getRetryAfterHeader'],
+	err: unknown,
+) => {
+	const retryAfterRaw = getRetryAfterHeader?.(err);
+	if (typeof retryAfterRaw !== 'string') {
+		return;
+	}
+
+	// TODO: Add support for parsing and converting HTTP date format values to delay.
+	const retryAfterSeconds = parseInt(retryAfterRaw, 10);
+	if (!Number.isInteger(retryAfterSeconds) || retryAfterSeconds < 0) {
+		return;
+	}
+	return retryAfterSeconds * 1000;
+};
+
 const validParams = [
 	'apiPrefix',
 	'passthrough',
@@ -983,6 +1000,7 @@ export type RetryParametersObj = {
 		attempt: number,
 		maxAttempts: number,
 	) => void;
+	getRetryAfterHeader?: (err: unknown) => string | undefined;
 	minDelayMs?: number;
 	maxDelayMs?: number;
 	maxAttempts?: number;
@@ -1062,6 +1080,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 		const onRetryHandler =
 			retryParameters.onRetry ?? retryDefaultParameters.onRetry;
 
+		const getRetryAfterHeader =
+			retryParameters.getRetryAfterHeader ??
+			retryDefaultParameters.getRetryAfterHeader;
+
 		let attempt = 1;
 
 		const canRetryHandler =
@@ -1077,11 +1099,18 @@ export abstract class PinejsClientCore<PinejsClient> {
 					throw err;
 				}
 
-				const delayMs = Math.min(2 ** (attempt - 1) * minDelayMs, maxDelayMs);
+				let delayMs = Math.min(2 ** (attempt - 1) * minDelayMs, maxDelayMs);
 
 				// note that attempt is incremented before calling onRetryHandler because
 				// retries effectively begin with attempt number 2.
 				attempt++;
+				const retryAfterDelayMs = getRetryAfterHeaderDelayMs(
+					getRetryAfterHeader,
+					err,
+				);
+				if (retryAfterDelayMs != null && retryAfterDelayMs > delayMs) {
+					delayMs = retryAfterDelayMs;
+				}
 				onRetryHandler?.(err, delayMs, attempt, maxAttempts);
 				await new Promise<void>((resolve) => {
 					setTimeout(resolve, delayMs);
