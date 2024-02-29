@@ -76,8 +76,7 @@ const isBoolean = (v: any): v is boolean => v === true || v === false;
 const isDate = (v: any): v is Date =>
 	Object.prototype.toString.call(v) === '[object Date]';
 
-const isObject = (v: any): v is AnyObject =>
-	typeof v != null && typeof v === 'object';
+const isObject = (v: any): v is AnyObject => v != null && typeof v === 'object';
 
 const isValidOption = (
 	key: string,
@@ -127,7 +126,10 @@ class Poll<T extends PromiseResultTypes> {
 
 	private requestFn: null | (() => Promise<T>);
 
-	constructor(requestFn: () => Promise<T>, private intervalTime = 10000) {
+	constructor(
+		requestFn: () => Promise<T>,
+		private intervalTime = 10000,
+	) {
 		this.requestFn = requestFn;
 		this.start();
 	}
@@ -196,7 +198,7 @@ class Poll<T extends PromiseResultTypes> {
 
 	public start(): void {
 		this.stopped = false;
-		this.runRequest();
+		void this.runRequest();
 	}
 
 	public stop(): void {
@@ -470,7 +472,7 @@ const handleFilterOperator = (
 				operator,
 				parentKey,
 			);
-		case '$duration':
+		case '$duration': {
 			const durationValue = filter as DurationValue;
 			if (!isObject(durationValue)) {
 				throw new Error(`Expected type for ${operator}, got: ${typeof filter}`);
@@ -499,6 +501,7 @@ const handleFilterOperator = (
 				durationString = `-${durationString}`;
 			}
 			return addParentKey(`duration'${durationString}'`, parentKey);
+		}
 		// break
 		case '$raw': {
 			filter = filter as FilterType<typeof operator>;
@@ -554,7 +557,8 @@ const handleFilterOperator = (
 				parentKey != null &&
 				isObject(filter) &&
 				// Handles the `$filter: $op: [ {a: {$count: {'...'}}}, value]`` case.
-				(Object.keys(filter).length === 0 || filter.hasOwnProperty('$filter'))
+				(Object.keys(filter).length === 0 ||
+					Object.prototype.hasOwnProperty.call(filter, '$filter'))
 			) {
 				keys = parentKey.slice(0, parentKey.length - 1);
 				keys.push(
@@ -750,7 +754,10 @@ const buildOrderBy = (orderby: OrderBy): string => {
 				dir = dirOrOptions;
 			} else {
 				const keys = Object.keys(dirOrOptions);
-				if (!dirOrOptions.hasOwnProperty('$count') || keys.length > 1) {
+				if (
+					!Object.prototype.hasOwnProperty.call(dirOrOptions, '$count') ||
+					keys.length > 1
+				) {
 					throw new Error(
 						`When using '${
 							ODataOptionCodeExampleMap['$orderby']
@@ -800,14 +807,15 @@ const buildOption = (
 			compiledValue = buildOrderBy(value as OrderBy);
 			break;
 		case '$top':
-		case '$skip':
+		case '$skip': {
 			const num = value;
 			if (!NumberIsFinite(num)) {
 				throw new Error(`'${option}' option has to be a number`);
 			}
 			compiledValue = '' + num;
 			break;
-		case '$select':
+		}
+		case '$select': {
 			const select = value;
 			if (isString(select)) {
 				compiledValue = join(select);
@@ -822,6 +830,7 @@ const buildOption = (
 				);
 			}
 			break;
+		}
 		default:
 			// Escape parameter aliases as primitives
 			if (option[0] === '@') {
@@ -851,7 +860,7 @@ const handleOptions = (
 	options: ODataOptions,
 	parentKey: string,
 ): string => {
-	if (options.hasOwnProperty('$count')) {
+	if (Object.prototype.hasOwnProperty.call(options, '$count')) {
 		const keys = Object.keys(options);
 		if (keys.length > 1) {
 			throw new Error(
@@ -866,7 +875,8 @@ const handleOptions = (
 		// Check whether there is anything else other than $filter in the $count
 		// and error b/c it's invalid.
 		if (
-			Object.keys(options).length > (options.hasOwnProperty('$filter') ? 1 : 0)
+			Object.keys(options).length >
+			(Object.prototype.hasOwnProperty.call(options, '$filter') ? 1 : 0)
 		) {
 			// TODO: Remove the optionOperation check in the next major,
 			// so that it throws for all operators.
@@ -1091,6 +1101,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 			retryDefaultParameters.canRetry ??
 			this.canRetryDefaultHandler;
 
+		// eslint-disable-next-line no-constant-condition -- we handle retry logic/delaying within the loop
 		while (true) {
 			try {
 				return await fnCall();
@@ -1153,8 +1164,8 @@ export abstract class PinejsClientCore<PinejsClient> {
 			cloneBackendParams = { ...cloneBackendParams, ...backendParams };
 		}
 		return new (this.constructor as new (
-			params: Params,
-			backendParams: AnyObject,
+			$params: Params,
+			$backendParams: AnyObject,
 		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
 
@@ -1482,7 +1493,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 			let url = escapeResource(params.resource);
 			let { options } = params;
 
-			if (options?.hasOwnProperty('$count')) {
+			if (
+				options != null &&
+				Object.prototype.hasOwnProperty.call(options, '$count')
+			) {
 				const keys = Object.keys(options);
 				if (keys.length > 1) {
 					throw new Error(
@@ -1495,7 +1509,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 				options = options.$count as ODataOptionsWithoutCount;
 			}
 
-			if (params.hasOwnProperty('id')) {
+			if (Object.prototype.hasOwnProperty.call(params, 'id')) {
 				const { id } = params;
 				if (id == null) {
 					throw new Error('If the id property is set it must be non-null');
@@ -1614,7 +1628,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 			url: string;
 			body?: AnyObject;
 		} & AnyObject,
-	): Promise<{}>;
+	): Promise<NonNullable<unknown>>;
 }
 
 export type PromiseResultTypes = number | AnyObject | AnyObject[] | undefined;
@@ -1737,7 +1751,7 @@ export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
 	$cast?: FilterFunctionValue;
 }
 
-export interface FilterArray extends Array<Filter> {}
+export type FilterArray = Filter[];
 export type FilterBaseType = string | number | null | boolean | Date;
 export type RawFilter =
 	| string
@@ -1752,7 +1766,7 @@ export interface Lambda {
 }
 export type Filter = FilterObj | FilterArray | FilterBaseType;
 
-export interface ResourceExpand extends Dictionary<ODataOptions> {}
+export type ResourceExpand = Dictionary<ODataOptions>;
 
 export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
 
