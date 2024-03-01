@@ -1,4 +1,15 @@
+// TODO: This should probably be imported from abstract-sql-to-typescript
+type TEST_X = boolean | string | Date | number;
+type TEST<T extends object = object> = {
+	[key in keyof T]: TEST_X | { __id: TEST_X } | TEST[];
+};
+type ExpandableStringKeyOf<T extends TEST> = StringKeyOf<ResourceExpand<T>>;
+type ExtractExpand<T extends TEST, U extends keyof T> = NonNullable<
+	Extract<T[U], any[]>[number]
+>;
+
 type StringKeyOf<T> = keyof T & string;
+
 export interface Dictionary<T> {
 	[index: string]: T;
 }
@@ -922,6 +933,9 @@ const handleExpandObject = (expand: ResourceExpand): string[] => {
 				'Cannot have expand options without first expanding something!',
 			);
 		}
+		if (value == null) {
+			throw new Error(`TODO: 1`);
+		}
 		if (isPrimitive(value)) {
 			const jsonValue = JSON.stringify(value);
 			throw new Error(
@@ -941,9 +955,7 @@ const handleExpandObject = (expand: ResourceExpand): string[] => {
 	return expands;
 };
 
-const handleExpandArray = (
-	expands: Array<string | ResourceExpand>,
-): string[] => {
+const handleExpandArray = (expands: BaseExpand[]): string[] => {
 	if (expands.length < 1) {
 		throw new Error(
 			`Expand arrays must have at least 1 elements, got: ${JSON.stringify(
@@ -1168,16 +1180,20 @@ export abstract class PinejsClientCore<PinejsClient> {
 		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
 
-	public async get(
-		params: Params & {
+	public async get<T extends TEST = AnyObject>(
+		params: Params<T> & {
 			options: { $count: NonNullable<ODataOptions['$count']> };
 		},
 	): Promise<number>;
-	public async get(
-		params: Params & { id: NonNullable<Params['id']> },
+	public async get<T extends TEST = AnyObject>(
+		params: Params<T> & { id: NonNullable<Params<T>['id']> },
 	): Promise<AnyObject | undefined>;
-	public async get(params: Omit<Params, 'id'>): Promise<AnyObject[]>;
-	public async get(params: Params): Promise<PromiseResultTypes> {
+	public async get<T extends TEST = AnyObject>(
+		params: Omit<Params<T>, 'id'>,
+	): Promise<AnyObject[]>;
+	public async get<T extends TEST = AnyObject>(
+		params: Params<T>,
+	): Promise<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
 				'`get(url)` is no longer supported, please use `get({ url })` instead.',
@@ -1765,9 +1781,18 @@ export interface Lambda {
 }
 export type Filter = FilterObj | FilterArray | FilterBaseType;
 
-export type ResourceExpand = Dictionary<ODataOptions>;
+export type ResourceExpand<T extends TEST = AnyObject> = {
+	[resource in StringKeyOf<T> as ExtractExpand<T, resource> extends never
+		? never
+		: resource]?: ODataOptions<ExtractExpand<T, resource>>;
+};
 
-export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
+export type BaseExpand<T extends TEST = AnyObject> =
+	| ExpandableStringKeyOf<T>
+	| ResourceExpand<T>;
+export type Expand<T extends TEST = AnyObject> =
+	| BaseExpand<T>
+	| Array<BaseExpand<T>>;
 
 type OrderByDirection = 'asc' | 'desc';
 
@@ -1788,9 +1813,9 @@ export type OrderBy =
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
 
-export interface ODataOptionsWithoutCount {
+export interface ODataOptionsWithoutCount<T extends TEST = AnyObject> {
 	$filter?: Filter;
-	$expand?: Expand;
+	$expand?: Expand<T>;
 	$orderby?: OrderBy;
 	$top?: number;
 	$skip?: number;
@@ -1801,11 +1826,12 @@ export interface ODataOptionsWithoutCount {
 		| ParameterAlias
 		| string[]
 		| Filter
-		| Expand
+		| Expand<T>
 		| OrderBy;
 }
 export type ODataCountOptions = Pick<ODataOptionsWithoutCount, '$filter'>;
-export interface ODataOptions extends ODataOptionsWithoutCount {
+export interface ODataOptions<T extends TEST = AnyObject>
+	extends ODataOptionsWithoutCount<T> {
 	$count?: ODataCountOptions;
 }
 export type OptionsObject = ODataOptions;
@@ -1826,7 +1852,7 @@ type ResourceId = BaseResourceId | ResourceAlternateKey;
 
 export type AnyObject = Dictionary<any>;
 
-export interface Params {
+export interface Params<T extends TEST = AnyObject> {
 	apiPrefix?: string;
 	method?: ODataMethod;
 	resource?: string;
@@ -1835,7 +1861,7 @@ export interface Params {
 	body?: AnyObject;
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
-	options?: ODataOptions;
+	options?: ODataOptions<T>;
 	retry?: RetryParameters;
 }
 
