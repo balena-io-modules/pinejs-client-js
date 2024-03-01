@@ -801,9 +801,9 @@ const buildOrderBy = (orderby: OrderBy): string => {
 	}
 };
 
-const buildOption = (
+const buildOption = <T extends TEST>(
 	option: string,
-	value: ODataOptionsWithoutCount[string],
+	value: ODataOptionsWithoutCount<T>[string],
 ): string => {
 	let compiledValue: string = '';
 	switch (option) {
@@ -811,7 +811,7 @@ const buildOption = (
 			compiledValue = buildFilter(value as Filter).join('');
 			break;
 		case '$expand':
-			compiledValue = buildExpand(value as Expand);
+			compiledValue = buildExpand(value as Expand<T>);
 			break;
 		case '$orderby':
 			compiledValue = buildOrderBy(value as OrderBy);
@@ -957,7 +957,9 @@ const handleExpandObject = <T extends TEST>(
 	return expands;
 };
 
-const handleExpandArray = (expands: BaseExpand[]): string[] => {
+const handleExpandArray = <T extends TEST>(
+	expands: Array<BaseExpand<T>>,
+): string[] => {
 	if (expands.length < 1) {
 		throw new Error(
 			`Expand arrays must have at least 1 elements, got: ${JSON.stringify(
@@ -971,7 +973,7 @@ const handleExpandArray = (expands: BaseExpand[]): string[] => {
 	});
 };
 
-const buildExpand = (expand: Expand): string => {
+const buildExpand = <T extends TEST>(expand: Expand<T>): string => {
 	if (isPrimitive(expand)) {
 		return escapeResource(expand);
 	} else if (Array.isArray(expand)) {
@@ -1783,18 +1785,16 @@ export interface Lambda {
 }
 export type Filter = FilterObj | FilterArray | FilterBaseType;
 
-export type ResourceExpand<T extends TEST = AnyObject> = {
+export type ResourceExpand<T extends TEST> = {
 	[resource in StringKeyOf<T> as ExtractExpand<T, resource> extends never
 		? never
 		: resource]?: ODataOptions<ExtractExpand<T, resource>>;
 };
 
-export type BaseExpand<T extends TEST = AnyObject> =
+export type BaseExpand<T extends TEST> =
 	| ExpandableStringKeyOf<T>
 	| ResourceExpand<T>;
-export type Expand<T extends TEST = AnyObject> =
-	| BaseExpand<T>
-	| Array<BaseExpand<T>>;
+export type Expand<T extends TEST> = BaseExpand<T> | Array<BaseExpand<T>>;
 
 type OrderByDirection = 'asc' | 'desc';
 
