@@ -1811,8 +1811,8 @@ export type ODataCountOptions<T extends TEST> = Pick<
 	'$filter'
 >;
 export interface ODataOptions<T extends TEST>
-	extends ODataOptionsWithoutCount<T> {
-	$count?: ODataCountOptions<T>;
+	extends ODataOptionsWithoutCount<NoInfer<T>> {
+	$count?: ODataCountOptions<NoInfer<T>>;
 }
 export type OptionsObject<T extends TEST> = ODataOptions<T>;
 
