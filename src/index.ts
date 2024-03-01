@@ -14,6 +14,63 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
+type LowerLetter =
+	| 'a'
+	| 'b'
+	| 'c'
+	| 'd'
+	| 'e'
+	| 'f'
+	| 'g'
+	| 'h'
+	| 'i'
+	| 'j'
+	| 'k'
+	| 'l'
+	| 'm'
+	| 'n'
+	| 'o'
+	| 'p'
+	| 'q'
+	| 'r'
+	| 's'
+	| 't'
+	| 'u'
+	| 'v'
+	| 'w'
+	| 'x'
+	| 'y'
+	| 'z';
+type UpperLetter =
+	| 'A'
+	| 'B'
+	| 'C'
+	| 'D'
+	| 'E'
+	| 'F'
+	| 'G'
+	| 'H'
+	| 'I'
+	| 'J'
+	| 'K'
+	| 'L'
+	| 'M'
+	| 'N'
+	| 'O'
+	| 'P'
+	| 'Q'
+	| 'R'
+	| 'S'
+	| 'T'
+	| 'U'
+	| 'V'
+	| 'W'
+	| 'X'
+	| 'Y'
+	| 'Z';
+type Letter = LowerLetter | UpperLetter;
+type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
 const noop = (): void => {
 	// noop
 };
@@ -400,9 +457,9 @@ type FilterType<
 	T extends TEST,
 > = NonNullable<FilterObj<T>[Operator]>;
 // Handle special cases for all the different $ operators.
-const handleFilterOperator = <T extends TEST>(
-	filter: FilterObj<T>[string],
-	operator: keyof FilterObj<T>,
+const handleFilterOperator = <T extends TEST, U extends FilterOperations<T>>(
+	filter: FilterOperations<T>[keyof FilterOperations<T>],
+	operator: keyof FilterOperations<T>,
 	parentKey?: string[],
 ): string[] => {
 	switch (operator) {
@@ -489,13 +546,13 @@ const handleFilterOperator = <T extends TEST>(
 		}
 		// break
 		case '$raw': {
-			filter = filter as FilterType<typeof operator, T>;
-			if (isString(filter)) {
-				filter = `(${filter})`;
-				return addParentKey(filter, parentKey);
-			} else if (!isPrimitive(filter)) {
-				if (Array.isArray(filter)) {
-					const [rawFilter, ...params] = filter;
+			const filterx = filter as U[typeof operator];
+			// filter = filter as FilterType<typeof operator, T>;
+			if (isString(filterx)) {
+				return addParentKey(`(${filterx})`, parentKey);
+			} else if (!isPrimitive(filterx)) {
+				if (Array.isArray(filterx)) {
+					const [rawFilter, ...params] = filterx;
 					if (!isString(rawFilter)) {
 						throw new Error(
 							`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
@@ -506,29 +563,30 @@ const handleFilterOperator = <T extends TEST>(
 						mappedParams[index + 1] = params[index];
 					}
 					return applyBinds(rawFilter, mappedParams, parentKey);
-				} else if (isObject(filter)) {
-					const filterStr = filter.$string;
+				} else if (isObject(filterx)) {
+					const filterStr = filterx.$string;
 					if (!isString(filterStr)) {
 						throw new Error(
 							`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
 						);
 					}
 					const mappedParams: Dictionary<Filter<T>> = {};
-					for (const index in filter) {
+					for (const index in filterx) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
 								throw new Error(
 									`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
 								);
 							}
-							mappedParams[index] = filter[index] as Filter<T>;
+							mappedParams[index] =
+								filterx[index as `${Letter | Digit}${string}`];
 						}
 					}
 					return applyBinds(filterStr, mappedParams, parentKey);
 				}
 			}
 			throw new Error(
-				`Expected string/array/object for ${operator}, got: ${typeof filter}`,
+				`Expected string/array/object for ${operator}, got: ${typeof filterx}`,
 			);
 		}
 		// break
@@ -613,9 +671,9 @@ const handleFilterOperator = <T extends TEST>(
 		// break
 		case '$any':
 		case '$all': {
-			filter = filter as FilterType<typeof operator, T>;
-			const alias = filter.$alias;
-			const expr = filter.$expr;
+			const filterx = filter as FilterType<typeof operator, T>;
+			const alias = filterx.$alias;
+			const expr = filterx.$expr;
 			if (alias == null) {
 				throw new Error(
 					`Lambda expression (${operator}) has no alias defined.`,
@@ -652,12 +710,16 @@ const handleFilterObject = <T extends TEST>(
 			);
 		}
 		if (key[0] === '$') {
-			return handleFilterOperator(value, key, parentKey);
+			return handleFilterOperator(
+				value,
+				key as keyof FilterOperations<T>,
+				parentKey,
+			);
 		} else if (key[0] === '@') {
 			const parameterAlias = escapeParameterAlias(value);
 			return addParentKey(parameterAlias, parentKey);
 		} else {
-			let keys = [key];
+			let keys: string[] = [key];
 			if (parentKey != null) {
 				if (parentKey.length > 0) {
 					deprecated.expandFilter();
@@ -1683,9 +1745,9 @@ type DurationValue = {
 	seconds?: number;
 };
 
-export interface FilterObj<T extends TEST>
-	extends Dictionary<Filter<T> | Lambda<T> | undefined> {
-	'@'?: string;
+type FilterOperations<T extends TEST> = {
+	// TODO: This parameter alias probably belongs elsewhere
+	// '@'?: string;
 
 	$raw?: RawFilter<T>;
 
@@ -1747,7 +1809,10 @@ export interface FilterObj<T extends TEST>
 	$ceiling?: FilterFunctionValue<T>;
 	$isof?: FilterFunctionValue<T>;
 	$cast?: FilterFunctionValue<T>;
-}
+};
+export type FilterObj<T extends TEST> = {
+	[key in StringKeyOf<T>]?: Filter<T> | Lambda<T> | undefined;
+} & FilterOperations<T>;
 
 export type FilterArray<T extends TEST> = Array<Filter<T>>;
 export type FilterBaseType = string | number | null | boolean | Date;
@@ -1756,11 +1821,13 @@ export type RawFilter<T extends TEST> =
 	| [string, ...Array<Filter<T>>]
 	| {
 			$string: string;
-			[index: string]: Filter<T>;
+			[index: `${Letter | Digit}${string}`]: Filter<T>;
 	  };
-export interface Lambda<T extends TEST> {
-	$alias: string;
-	$expr: Filter<T>;
+
+// TODO: Lambdas need a real re-think because we need to know the property name, eg `belongs_to__application: { $any: {... } }` needs T to become `Application` rather than `Device`
+export interface Lambda<T extends TEST, Alias extends string = string> {
+	$alias: Alias;
+	$expr: Filter<T & { [a in Alias]: T }>;
 }
 export type Filter<T extends TEST> =
 	| FilterObj<T>
