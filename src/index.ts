@@ -738,7 +738,7 @@ const buildFilter = (
 	}
 };
 
-const buildOrderBy = (orderby: OrderBy): string => {
+const buildOrderBy = <T extends TEST>(orderby: OrderBy<T>): string => {
 	if (isString(orderby)) {
 		if (/\/\$count\b/.test(orderby)) {
 			deprecated.countInOrderBy();
@@ -814,7 +814,7 @@ const buildOption = <T extends TEST>(
 			compiledValue = buildExpand(value as Expand<T>);
 			break;
 		case '$orderby':
-			compiledValue = buildOrderBy(value as OrderBy);
+			compiledValue = buildOrderBy(value as OrderBy<T>);
 			break;
 		case '$top':
 		case '$skip': {
@@ -1798,15 +1798,15 @@ export type Expand<T extends TEST> = BaseExpand<T> | Array<BaseExpand<T>>;
 
 type OrderByDirection = 'asc' | 'desc';
 
-export type OrderBy =
-	| string
-	| OrderBy[]
+export type OrderBy<T extends TEST> =
+	| StringKeyOf<T>
+	| Array<OrderBy<T>>
 	| {
 			[k: StartsWithLetter]: OrderByDirection;
 	  }
 	| ({
 			[k: StartsWithLetter]: {
-				$count: ODataCountOptions;
+				$count: ODataCountOptions<T>;
 			};
 	  } & {
 			$dir: OrderByDirection;
@@ -1818,7 +1818,7 @@ export type ParameterAlias = Primitive;
 export interface ODataOptionsWithoutCount<T extends TEST = AnyObject> {
 	$filter?: Filter;
 	$expand?: Expand<T>;
-	$orderby?: OrderBy;
+	$orderby?: OrderBy<T>;
 	$top?: number;
 	$skip?: number;
 	$select?: string | string[];
@@ -1829,12 +1829,15 @@ export interface ODataOptionsWithoutCount<T extends TEST = AnyObject> {
 		| string[]
 		| Filter
 		| Expand<T>
-		| OrderBy;
+		| OrderBy<T>;
 }
-export type ODataCountOptions = Pick<ODataOptionsWithoutCount, '$filter'>;
+export type ODataCountOptions<T extends TEST> = Pick<
+	ODataOptionsWithoutCount<T>,
+	'$filter'
+>;
 export interface ODataOptions<T extends TEST = AnyObject>
 	extends ODataOptionsWithoutCount<T> {
-	$count?: ODataCountOptions;
+	$count?: ODataCountOptions<T>;
 }
 export type OptionsObject = ODataOptions;
 
