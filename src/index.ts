@@ -14,35 +14,6 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
-type Letter =
-	| 'a'
-	| 'b'
-	| 'c'
-	| 'd'
-	| 'e'
-	| 'f'
-	| 'g'
-	| 'h'
-	| 'i'
-	| 'j'
-	| 'k'
-	| 'l'
-	| 'm'
-	| 'n'
-	| 'o'
-	| 'p'
-	| 'q'
-	| 'r'
-	| 's'
-	| 't'
-	| 'u'
-	| 'v'
-	| 'w'
-	| 'x'
-	| 'y'
-	| 'z';
-type StartsWithLetter = `${Letter}${string}`;
-
 const noop = (): void => {
 	// noop
 };
@@ -760,6 +731,9 @@ const buildOrderBy = <T extends TEST>(orderby: OrderBy<T>): string => {
 		const result = mapObj($orderby, (dirOrOptions, key) => {
 			let propertyPath: string = key;
 			let dir = $dir;
+			if (dirOrOptions == null) {
+				throw new Error('TODO 2');
+			}
 			if (typeof dirOrOptions === 'string') {
 				dir = dirOrOptions;
 			} else {
@@ -1802,10 +1776,10 @@ export type OrderBy<T extends TEST> =
 	| StringKeyOf<T>
 	| Array<OrderBy<T>>
 	| {
-			[k: StartsWithLetter]: OrderByDirection;
+			[k in StringKeyOf<T>]?: OrderByDirection;
 	  }
 	| ({
-			[k: StartsWithLetter]: {
+			[k in StringKeyOf<T>]?: {
 				$count: ODataCountOptions<T>;
 			};
 	  } & {
