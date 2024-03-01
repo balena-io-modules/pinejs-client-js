@@ -1775,9 +1775,7 @@ type OrderByDirection = 'asc' | 'desc';
 export type OrderBy<T extends TEST> =
 	| StringKeyOf<T>
 	| Array<OrderBy<T>>
-	| {
-			[k in StringKeyOf<T>]?: OrderByDirection;
-	  }
+	| { [k in StringKeyOf<T>]?: OrderByDirection }
 	| ({
 			[k in StringKeyOf<T>]?: {
 				$count: ODataCountOptions<T>;
