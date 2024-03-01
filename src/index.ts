@@ -926,7 +926,9 @@ const handleOptions = (
 	optionsStr = escapeResource(parentKey) + optionsStr;
 	return optionsStr;
 };
-const handleExpandObject = (expand: ResourceExpand): string[] => {
+const handleExpandObject = <T extends TEST>(
+	expand: ResourceExpand<T>,
+): string[] => {
 	const expands = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			throw new Error(
