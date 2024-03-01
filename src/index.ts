@@ -62,9 +62,9 @@ const isDate = (v: any): v is Date =>
 const isObject = (v: unknown): v is object =>
 	v != null && typeof v === 'object';
 
-const isValidOption = (
+const isValidOption = <T extends TEST>(
 	key: string,
-): key is StringKeyOf<ODataOptionsWithoutCount> => {
+): key is StringKeyOf<ODataOptionsWithoutCount<T>> => {
 	return (
 		key === '$select' ||
 		key === '$filter' ||
@@ -839,9 +839,9 @@ const buildOption = <T extends TEST>(
 	return `${option}=${compiledValue}`;
 };
 
-const handleOptions = (
+const handleOptions = <T extends TEST>(
 	optionOperation: keyof typeof ODataOptionCodeExampleMap,
-	options: ODataOptions,
+	options: ODataOptions<T>,
 	parentKey: string,
 ): string => {
 	if (Object.prototype.hasOwnProperty.call(options, '$count')) {
@@ -1160,7 +1160,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 
 	public async get<T extends TEST = AnyObject>(
 		params: Params<T> & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 	): Promise<number>;
 	public async get<T extends TEST = AnyObject>(
@@ -1182,9 +1182,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this._transformGetResult(params, result);
 	}
 
-	protected _transformGetResult(
-		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+	protected _transformGetResult<T extends TEST = AnyObject>(
+		params: Params<T> & {
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 		data: AnyObject,
 	): number;
@@ -1222,9 +1222,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 
 	// TODO: Change its interface to how _transformGetResult looks in the next major
 	/** @deprecated */
-	protected transformGetResult(
+	protected transformGetResult<T extends TEST = AnyObject>(
 		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 	): (data: AnyObject) => number;
 	protected transformGetResult(
@@ -1239,9 +1239,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return (data) => this._transformGetResult(params, data);
 	}
 
-	public subscribe(
+	public subscribe<T extends TEST = AnyObject>(
 		params: SubscribeParams & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 	): Poll<number>;
 	public subscribe(
@@ -1387,10 +1387,13 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 	}
 
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		U extends TEST = AnyObject,
+	>(
+		params: Params<U> & {
 			method?: 'GET';
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<U>['$count']> };
 		},
 	): PreparedFn<T, Promise<number>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
@@ -1470,7 +1473,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		};
 	}
 
-	public compile(params: Params): string {
+	public compile<T extends TEST = AnyObject>(params: Params<T>): string {
 		if (isString(params)) {
 			throw new Error('Params must be an object not a string');
 		}
@@ -1499,7 +1502,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 					);
 				}
 				url += '/$count';
-				options = options.$count as ODataOptionsWithoutCount;
+				options = options.$count as ODataOptionsWithoutCount<T>;
 			}
 
 			if (Object.prototype.hasOwnProperty.call(params, 'id')) {
@@ -1548,10 +1551,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 	}
 
-	public request(
-		params: Params & {
+	public request<T extends TEST = AnyObject>(
+		params: Params<T> & {
 			method?: 'GET';
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 	): Promise<number>;
 	public request(
@@ -1787,7 +1790,7 @@ export type OrderBy<T extends TEST> =
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
 
-export interface ODataOptionsWithoutCount<T extends TEST = AnyObject> {
+export interface ODataOptionsWithoutCount<T extends TEST> {
 	$filter?: Filter;
 	$expand?: Expand<T>;
 	$orderby?: OrderBy<T>;
@@ -1807,11 +1810,11 @@ export type ODataCountOptions<T extends TEST> = Pick<
 	ODataOptionsWithoutCount<T>,
 	'$filter'
 >;
-export interface ODataOptions<T extends TEST = AnyObject>
+export interface ODataOptions<T extends TEST>
 	extends ODataOptionsWithoutCount<T> {
 	$count?: ODataCountOptions<T>;
 }
-export type OptionsObject = ODataOptions;
+export type OptionsObject<T extends TEST> = ODataOptions<T>;
 
 export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
