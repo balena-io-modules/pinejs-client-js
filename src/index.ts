@@ -1793,7 +1793,7 @@ export interface ODataOptionsWithoutCount<T extends TEST = AnyObject> {
 	$orderby?: OrderBy<T>;
 	$top?: number;
 	$skip?: number;
-	$select?: string | string[];
+	$select?: StringKeyOf<T> | Array<StringKeyOf<T>>;
 	$format?: string;
 	[index: string]:
 		| undefined
