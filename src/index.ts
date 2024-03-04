@@ -1,9 +1,20 @@
+// TODO: This should probably be imported from abstract-sql-to-typescript
+type TEST_X = boolean | string | Date | number;
+export type TEST<T extends object = object> = {
+	[key in keyof T]: TEST_X | { __id: TEST_X } | TEST[];
+};
+type ExpandableStringKeyOf<T extends TEST> = StringKeyOf<ResourceExpand<T>>;
+type ExtractExpand<T extends TEST, U extends keyof T> = NonNullable<
+	Extract<T[U], any[]>[number]
+>;
+
 type StringKeyOf<T> = keyof T & string;
+
 export interface Dictionary<T> {
 	[index: string]: T;
 }
 
-type Letter =
+type LowerLetter =
 	| 'a'
 	| 'b'
 	| 'c'
@@ -30,7 +41,35 @@ type Letter =
 	| 'x'
 	| 'y'
 	| 'z';
-type StartsWithLetter = `${Letter}${string}`;
+type UpperLetter =
+	| 'A'
+	| 'B'
+	| 'C'
+	| 'D'
+	| 'E'
+	| 'F'
+	| 'G'
+	| 'H'
+	| 'I'
+	| 'J'
+	| 'K'
+	| 'L'
+	| 'M'
+	| 'N'
+	| 'O'
+	| 'P'
+	| 'Q'
+	| 'R'
+	| 'S'
+	| 'T'
+	| 'U'
+	| 'V'
+	| 'W'
+	| 'X'
+	| 'Y'
+	| 'Z';
+type Letter = LowerLetter | UpperLetter;
+type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 const noop = (): void => {
 	// noop
@@ -80,9 +119,9 @@ const isDate = (v: any): v is Date =>
 const isObject = (v: unknown): v is object =>
 	v != null && typeof v === 'object';
 
-const isValidOption = (
+const isValidOption = <T extends TEST>(
 	key: string,
-): key is StringKeyOf<ODataOptionsWithoutCount> => {
+): key is StringKeyOf<ODataOptionsWithoutCount<T>> => {
 	return (
 		key === '$select' ||
 		key === '$filter' ||
@@ -330,9 +369,9 @@ const addParentKey = (
 	return [`${filter}`];
 };
 
-const applyBinds = (
+const applyBinds = <T extends TEST>(
 	filter: string,
-	params: Dictionary<Filter>,
+	params: Dictionary<Filter<T>>,
 	parentKey?: string[],
 ): string[] => {
 	for (const index of Object.keys(params)) {
@@ -349,8 +388,8 @@ const applyBinds = (
 	return addParentKey(filter, parentKey);
 };
 
-const filterOperation = (
-	filter: FilterOperationValue,
+const filterOperation = <T extends TEST>(
+	filter: FilterOperationValue<T>,
 	operator: FilterOperationKey,
 	parentKey?: string[],
 ): string[] => {
@@ -383,8 +422,8 @@ const filterOperation = (
 		);
 	}
 };
-const filterFunction = (
-	filter: FilterFunctionValue,
+const filterFunction = <T extends TEST>(
+	filter: FilterFunctionValue<T>,
 	fnIdentifier: FilterFunctionKey,
 	parentKey?: string[],
 ): string[] => {
@@ -413,13 +452,14 @@ const filterFunction = (
 	}
 };
 
-type FilterType<Operator extends keyof FilterObj> = NonNullable<
-	FilterObj[Operator]
->;
+type FilterType<
+	Operator extends keyof FilterObj<T>,
+	T extends TEST,
+> = NonNullable<FilterObj<T>[Operator]>;
 // Handle special cases for all the different $ operators.
-const handleFilterOperator = (
-	filter: FilterObj[string],
-	operator: keyof FilterObj,
+const handleFilterOperator = <T extends TEST, U extends FilterOperations<T>>(
+	filter: FilterOperations<T>[keyof FilterOperations<T>],
+	operator: keyof FilterOperations<T>,
 	parentKey?: string[],
 ): string[] => {
 	switch (operator) {
@@ -435,7 +475,7 @@ const handleFilterOperator = (
 		case '$div':
 		case '$mod':
 			return filterOperation(
-				filter as FilterType<typeof operator>,
+				filter as FilterType<typeof operator, T>,
 				operator,
 				parentKey,
 			);
@@ -470,7 +510,7 @@ const handleFilterOperator = (
 		case '$isof':
 		case '$cast':
 			return filterFunction(
-				filter as FilterType<typeof operator>,
+				filter as FilterType<typeof operator, T>,
 				operator,
 				parentKey,
 			);
@@ -506,51 +546,52 @@ const handleFilterOperator = (
 		}
 		// break
 		case '$raw': {
-			filter = filter as FilterType<typeof operator>;
-			if (isString(filter)) {
-				filter = `(${filter})`;
-				return addParentKey(filter, parentKey);
-			} else if (!isPrimitive(filter)) {
-				if (Array.isArray(filter)) {
-					const [rawFilter, ...params] = filter;
+			const filterx = filter as U[typeof operator];
+			// filter = filter as FilterType<typeof operator, T>;
+			if (isString(filterx)) {
+				return addParentKey(`(${filterx})`, parentKey);
+			} else if (!isPrimitive(filterx)) {
+				if (Array.isArray(filterx)) {
+					const [rawFilter, ...params] = filterx;
 					if (!isString(rawFilter)) {
 						throw new Error(
 							`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
 						);
 					}
-					const mappedParams: Dictionary<Filter> = {};
+					const mappedParams: Dictionary<Filter<T>> = {};
 					for (let index = 0; index < params.length; index++) {
 						mappedParams[index + 1] = params[index];
 					}
 					return applyBinds(rawFilter, mappedParams, parentKey);
-				} else if (isObject(filter)) {
-					const filterStr = filter.$string;
+				} else if (isObject(filterx)) {
+					const filterStr = filterx.$string;
 					if (!isString(filterStr)) {
 						throw new Error(
 							`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
 						);
 					}
-					const mappedParams: Dictionary<Filter> = {};
-					for (const index in filter) {
+					const mappedParams: Dictionary<Filter<T>> = {};
+					for (const index in filterx) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
 								throw new Error(
 									`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
 								);
 							}
-							mappedParams[index] = filter[index] as Filter;
+							mappedParams[index] =
+								filterx[index as `${Letter | Digit}${string}`];
 						}
 					}
 					return applyBinds(filterStr, mappedParams, parentKey);
 				}
 			}
 			throw new Error(
-				`Expected string/array/object for ${operator}, got: ${typeof filter}`,
+				`Expected string/array/object for ${operator}, got: ${typeof filterx}`,
 			);
 		}
 		// break
 		case '$': {
-			const resource = escapeResource(filter as FilterType<typeof operator>);
+			const resource = escapeResource(filter as FilterType<typeof operator, T>);
 			return addParentKey(resource, parentKey);
 		}
 		case '$count': {
@@ -566,7 +607,7 @@ const handleFilterOperator = (
 				keys.push(
 					handleOptions(
 						'$filter',
-						{ $count: filter as { $filter?: Filter } },
+						{ $count: filter as { $filter?: Filter<T> } },
 						parentKey[parentKey.length - 1],
 					),
 				);
@@ -577,13 +618,13 @@ const handleFilterOperator = (
 			}
 			// Handles the `$filter: a: $count: value` case.
 			deprecated.countWithNestedOperationInFilter();
-			return buildFilter(filter as Filter, keys);
+			return buildFilter(filter as Filter<T>, keys);
 		}
 		// break
 		case '$and':
 		case '$or': {
 			const filterStr = buildFilter(
-				filter as FilterType<typeof operator>,
+				filter as FilterType<typeof operator, T>,
 				undefined,
 				` ${operator.slice(1)} `,
 			);
@@ -591,7 +632,7 @@ const handleFilterOperator = (
 		}
 		// break
 		case '$in': {
-			filter = filter as FilterType<typeof operator>;
+			filter = filter as FilterType<typeof operator, T>;
 			if (isPrimitive(filter)) {
 				const filterStr = escapeValue(filter);
 				return addParentKey(filterStr, parentKey, ' eq ');
@@ -623,16 +664,16 @@ const handleFilterOperator = (
 		// break
 		case '$not': {
 			const filterStr = `not(${buildFilter(
-				filter as FilterType<typeof operator>,
+				filter as FilterType<typeof operator, T>,
 			).join('')})`;
 			return addParentKey(filterStr, parentKey);
 		}
 		// break
 		case '$any':
 		case '$all': {
-			filter = filter as FilterType<typeof operator>;
-			const alias = filter.$alias;
-			const expr = filter.$expr;
+			const filterx = filter as FilterType<typeof operator, T>;
+			const alias = filterx.$alias;
+			const expr = filterx.$expr;
 			if (alias == null) {
 				throw new Error(
 					`Lambda expression (${operator}) has no alias defined.`,
@@ -658,8 +699,8 @@ const handleFilterOperator = (
 	}
 };
 
-const handleFilterObject = (
-	filter: FilterObj,
+const handleFilterObject = <T extends TEST>(
+	filter: FilterObj<T>,
 	parentKey?: string[],
 ): string[][] => {
 	return mapObj(filter, (value, key) => {
@@ -669,25 +710,29 @@ const handleFilterObject = (
 			);
 		}
 		if (key[0] === '$') {
-			return handleFilterOperator(value, key, parentKey);
+			return handleFilterOperator(
+				value,
+				key as keyof FilterOperations<T>,
+				parentKey,
+			);
 		} else if (key[0] === '@') {
 			const parameterAlias = escapeParameterAlias(value);
 			return addParentKey(parameterAlias, parentKey);
 		} else {
-			let keys = [key];
+			let keys: string[] = [key];
 			if (parentKey != null) {
 				if (parentKey.length > 0) {
 					deprecated.expandFilter();
 				}
 				keys = parentKey.concat(keys);
 			}
-			return buildFilter(value as Filter, keys);
+			return buildFilter(value, keys);
 		}
 	});
 };
 
-const handleFilterArray = (
-	filter: FilterArray,
+const handleFilterArray = <T extends TEST>(
+	filter: FilterArray<T>,
 	parentKey?: string[],
 	minElements = 2,
 ): string[][] => {
@@ -705,8 +750,8 @@ const handleFilterArray = (
 };
 
 // Turn a filter query object into an OData $filter string
-const buildFilter = (
-	filter: Filter,
+const buildFilter = <T extends TEST>(
+	filter: Filter<T>,
 	parentKey?: string[],
 	joinStr?: string,
 ): string[] => {
@@ -727,7 +772,7 @@ const buildFilter = (
 	}
 };
 
-const buildOrderBy = (orderby: OrderBy): string => {
+const buildOrderBy = <T extends TEST>(orderby: OrderBy<T>): string => {
 	if (isString(orderby)) {
 		if (/\/\$count\b/.test(orderby)) {
 			deprecated.countInOrderBy();
@@ -749,6 +794,9 @@ const buildOrderBy = (orderby: OrderBy): string => {
 		const result = mapObj($orderby, (dirOrOptions, key) => {
 			let propertyPath: string = key;
 			let dir = $dir;
+			if (dirOrOptions == null) {
+				throw new Error('TODO 2');
+			}
 			if (typeof dirOrOptions === 'string') {
 				dir = dirOrOptions;
 			} else {
@@ -790,20 +838,20 @@ const buildOrderBy = (orderby: OrderBy): string => {
 	}
 };
 
-const buildOption = (
+const buildOption = <T extends TEST>(
 	option: string,
-	value: ODataOptionsWithoutCount[string],
+	value: ODataOptionsWithoutCount<T>[string],
 ): string => {
 	let compiledValue: string = '';
 	switch (option) {
 		case '$filter':
-			compiledValue = buildFilter(value as Filter).join('');
+			compiledValue = buildFilter(value as Filter<T>).join('');
 			break;
 		case '$expand':
-			compiledValue = buildExpand(value as Expand);
+			compiledValue = buildExpand(value as Expand<T>);
 			break;
 		case '$orderby':
-			compiledValue = buildOrderBy(value as OrderBy);
+			compiledValue = buildOrderBy(value as OrderBy<T>);
 			break;
 		case '$top':
 		case '$skip': {
@@ -854,9 +902,9 @@ const buildOption = (
 	return `${option}=${compiledValue}`;
 };
 
-const handleOptions = (
+const handleOptions = <T extends TEST>(
 	optionOperation: keyof typeof ODataOptionCodeExampleMap,
-	options: ODataOptions,
+	options: ODataOptions<T>,
 	parentKey: string,
 ): string => {
 	if (Object.prototype.hasOwnProperty.call(options, '$count')) {
@@ -915,12 +963,17 @@ const handleOptions = (
 	optionsStr = escapeResource(parentKey) + optionsStr;
 	return optionsStr;
 };
-const handleExpandObject = (expand: ResourceExpand): string[] => {
+const handleExpandObject = <T extends TEST>(
+	expand: ResourceExpand<T>,
+): string[] => {
 	const expands = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			throw new Error(
 				'Cannot have expand options without first expanding something!',
 			);
+		}
+		if (value == null) {
+			throw new Error(`TODO: 1`);
 		}
 		if (isPrimitive(value)) {
 			const jsonValue = JSON.stringify(value);
@@ -941,8 +994,8 @@ const handleExpandObject = (expand: ResourceExpand): string[] => {
 	return expands;
 };
 
-const handleExpandArray = (
-	expands: Array<string | ResourceExpand>,
+const handleExpandArray = <T extends TEST>(
+	expands: Array<BaseExpand<T>>,
 ): string[] => {
 	if (expands.length < 1) {
 		throw new Error(
@@ -957,7 +1010,7 @@ const handleExpandArray = (
 	});
 };
 
-const buildExpand = (expand: Expand): string => {
+const buildExpand = <T extends TEST>(expand: Expand<T>): string => {
 	if (isPrimitive(expand)) {
 		return escapeResource(expand);
 	} else if (Array.isArray(expand)) {
@@ -1168,16 +1221,20 @@ export abstract class PinejsClientCore<PinejsClient> {
 		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
 
-	public async get(
-		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+	public async get<T extends TEST = AnyObject>(
+		params: Params<T> & {
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 	): Promise<number>;
-	public async get(
-		params: Params & { id: NonNullable<Params['id']> },
+	public async get<T extends TEST = AnyObject>(
+		params: Params<T> & { id: NonNullable<Params<T>['id']> },
 	): Promise<AnyObject | undefined>;
-	public async get(params: Omit<Params, 'id'>): Promise<AnyObject[]>;
-	public async get(params: Params): Promise<PromiseResultTypes> {
+	public async get<T extends TEST = AnyObject>(
+		params: Omit<Params<T>, 'id'>,
+	): Promise<AnyObject[]>;
+	public async get<T extends TEST = AnyObject>(
+		params: Params<T>,
+	): Promise<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
 				'`get(url)` is no longer supported, please use `get({ url })` instead.',
@@ -1188,9 +1245,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return this._transformGetResult(params, result);
 	}
 
-	protected _transformGetResult(
-		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+	protected _transformGetResult<T extends TEST = AnyObject>(
+		params: Params<T> & {
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 		data: AnyObject,
 	): number;
@@ -1228,9 +1285,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 
 	// TODO: Change its interface to how _transformGetResult looks in the next major
 	/** @deprecated */
-	protected transformGetResult(
+	protected transformGetResult<T extends TEST = AnyObject>(
 		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 	): (data: AnyObject) => number;
 	protected transformGetResult(
@@ -1245,9 +1302,9 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return (data) => this._transformGetResult(params, data);
 	}
 
-	public subscribe(
+	public subscribe<T extends TEST = AnyObject>(
 		params: SubscribeParams & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 	): Poll<number>;
 	public subscribe(
@@ -1393,10 +1450,13 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 	}
 
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		U extends TEST = AnyObject,
+	>(
+		params: Params<U> & {
 			method?: 'GET';
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<U>['$count']> };
 		},
 	): PreparedFn<T, Promise<number>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
@@ -1476,7 +1536,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		};
 	}
 
-	public compile(params: Params): string {
+	public compile<T extends TEST = AnyObject>(params: Params<T>): string {
 		if (isString(params)) {
 			throw new Error('Params must be an object not a string');
 		}
@@ -1505,7 +1565,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 					);
 				}
 				url += '/$count';
-				options = options.$count as ODataOptionsWithoutCount;
+				options = options.$count as ODataOptionsWithoutCount<T>;
 			}
 
 			if (Object.prototype.hasOwnProperty.call(params, 'id')) {
@@ -1554,10 +1614,10 @@ export abstract class PinejsClientCore<PinejsClient> {
 		}
 	}
 
-	public request(
-		params: Params & {
+	public request<T extends TEST = AnyObject>(
+		params: Params<T> & {
 			method?: 'GET';
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<T>['$count']> };
 		},
 	): Promise<number>;
 	public request(
@@ -1644,7 +1704,7 @@ type FilterOperationKey =
 	| '$mul'
 	| '$div'
 	| '$mod';
-type FilterOperationValue = Filter;
+type FilterOperationValue<T extends TEST> = Filter<T>;
 type FilterFunctionKey =
 	| '$contains'
 	| '$endswith'
@@ -1675,7 +1735,7 @@ type FilterFunctionKey =
 	| '$ceiling'
 	| '$isof'
 	| '$cast';
-type FilterFunctionValue = Filter;
+type FilterFunctionValue<T extends TEST> = Filter<T>;
 
 type DurationValue = {
 	negative?: boolean;
@@ -1685,102 +1745,121 @@ type DurationValue = {
 	seconds?: number;
 };
 
-export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
-	'@'?: string;
+type FilterOperations<T extends TEST> = {
+	// TODO: This parameter alias probably belongs elsewhere
+	// '@'?: string;
 
-	$raw?: RawFilter;
+	$raw?: RawFilter<T>;
 
 	$?: string | string[];
 
-	$count?: Filter;
+	$count?: Filter<T>;
 
-	$and?: Filter;
-	$or?: Filter;
+	$and?: Filter<T>;
+	$or?: Filter<T>;
 
-	$in?: Filter;
+	$in?: Filter<T>;
 
-	$not?: Filter;
+	$not?: Filter<T>;
 
-	$any?: Lambda;
-	$all?: Lambda;
+	$any?: Lambda<T>;
+	$all?: Lambda<T>;
 
 	// Filter operations
-	$ne?: FilterOperationValue;
-	$eq?: FilterOperationValue;
-	$gt?: FilterOperationValue;
-	$ge?: FilterOperationValue;
-	$lt?: FilterOperationValue;
-	$le?: FilterOperationValue;
-	$add?: FilterOperationValue;
-	$sub?: FilterOperationValue;
-	$mul?: FilterOperationValue;
-	$div?: FilterOperationValue;
-	$mod?: FilterOperationValue;
+	$ne?: FilterOperationValue<T>;
+	$eq?: FilterOperationValue<T>;
+	$gt?: FilterOperationValue<T>;
+	$ge?: FilterOperationValue<T>;
+	$lt?: FilterOperationValue<T>;
+	$le?: FilterOperationValue<T>;
+	$add?: FilterOperationValue<T>;
+	$sub?: FilterOperationValue<T>;
+	$mul?: FilterOperationValue<T>;
+	$div?: FilterOperationValue<T>;
+	$mod?: FilterOperationValue<T>;
 
 	// Filter functions
-	$contains?: FilterFunctionValue;
-	$endswith?: FilterFunctionValue;
-	$startswith?: FilterFunctionValue;
-	$length?: FilterFunctionValue;
-	$indexof?: FilterFunctionValue;
-	$substring?: FilterFunctionValue;
-	$tolower?: FilterFunctionValue;
-	$toupper?: FilterFunctionValue;
-	$trim?: FilterFunctionValue;
-	$concat?: FilterFunctionValue;
-	$year?: FilterFunctionValue;
-	$month?: FilterFunctionValue;
-	$day?: FilterFunctionValue;
-	$hour?: FilterFunctionValue;
-	$minute?: FilterFunctionValue;
-	$second?: FilterFunctionValue;
-	$fractionalseconds?: FilterFunctionValue;
-	$date?: FilterFunctionValue;
-	$time?: FilterFunctionValue;
-	$totaloffsetminutes?: FilterFunctionValue;
-	$now?: FilterFunctionValue;
+	$contains?: FilterFunctionValue<T>;
+	$endswith?: FilterFunctionValue<T>;
+	$startswith?: FilterFunctionValue<T>;
+	$length?: FilterFunctionValue<T>;
+	$indexof?: FilterFunctionValue<T>;
+	$substring?: FilterFunctionValue<T>;
+	$tolower?: FilterFunctionValue<T>;
+	$toupper?: FilterFunctionValue<T>;
+	$trim?: FilterFunctionValue<T>;
+	$concat?: FilterFunctionValue<T>;
+	$year?: FilterFunctionValue<T>;
+	$month?: FilterFunctionValue<T>;
+	$day?: FilterFunctionValue<T>;
+	$hour?: FilterFunctionValue<T>;
+	$minute?: FilterFunctionValue<T>;
+	$second?: FilterFunctionValue<T>;
+	$fractionalseconds?: FilterFunctionValue<T>;
+	$date?: FilterFunctionValue<T>;
+	$time?: FilterFunctionValue<T>;
+	$totaloffsetminutes?: FilterFunctionValue<T>;
+	$now?: FilterFunctionValue<T>;
 	$duration?: DurationValue;
-	$maxdatetime?: FilterFunctionValue;
-	$mindatetime?: FilterFunctionValue;
-	$totalseconds?: FilterFunctionValue;
-	$round?: FilterFunctionValue;
-	$floor?: FilterFunctionValue;
-	$ceiling?: FilterFunctionValue;
-	$isof?: FilterFunctionValue;
-	$cast?: FilterFunctionValue;
-}
+	$maxdatetime?: FilterFunctionValue<T>;
+	$mindatetime?: FilterFunctionValue<T>;
+	$totalseconds?: FilterFunctionValue<T>;
+	$round?: FilterFunctionValue<T>;
+	$floor?: FilterFunctionValue<T>;
+	$ceiling?: FilterFunctionValue<T>;
+	$isof?: FilterFunctionValue<T>;
+	$cast?: FilterFunctionValue<T>;
+};
+export type FilterObj<T extends TEST> = {
+	[key in StringKeyOf<T>]?: Filter<T> | Lambda<T> | undefined;
+} & FilterOperations<T>;
 
-export type FilterArray = Filter[];
+export type FilterArray<T extends TEST> = Array<Filter<T>>;
 export type FilterBaseType = string | number | null | boolean | Date;
-export type RawFilter =
+export type RawFilter<T extends TEST> =
 	| string
-	| [string, ...Filter[]]
+	| [string, ...Array<Filter<T>>]
 	| {
 			$string: string;
-			[index: string]: Filter;
+			[index: `${Letter | Digit}${string}`]: Filter<T>;
 	  };
-export interface Lambda {
-	$alias: string;
-	$expr: Filter;
+
+// TODO: Lambdas need a real re-think because we need to know the property name, eg `belongs_to__application: { $any: {... } }` needs T to become `Application` rather than `Device`
+export interface Lambda<T extends TEST, Alias extends string = string> {
+	$alias: Alias;
+	$expr: Filter<T & { [a in Alias]: T }>;
 }
-export type Filter = FilterObj | FilterArray | FilterBaseType;
+export type Filter<T extends TEST> =
+	| FilterObj<T>
+	| FilterArray<T>
+	| FilterBaseType;
 
-export type ResourceExpand = Dictionary<ODataOptions>;
+export type ResourceExpand<T extends TEST> = {
+	[resource in StringKeyOf<T> as ExtractExpand<T, resource> extends never
+		? never
+		: resource]?: ODataOptions<ExtractExpand<T, resource>>;
+};
 
-export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
+export type BaseExpand<T extends TEST> =
+	| ExpandableStringKeyOf<T>
+	| ResourceExpand<T>;
+export type Expand<T extends TEST> = BaseExpand<T> | Array<BaseExpand<T>>;
 
 type OrderByDirection = 'asc' | 'desc';
 
-export type OrderBy =
-	| string
-	| OrderBy[]
-	| {
-			[k: StartsWithLetter]: OrderByDirection;
-	  }
+export type OrderBy<T extends TEST> =
+	| StringKeyOf<T>
+	| Array<OrderBy<T>>
+	| { [k in StringKeyOf<T>]?: OrderByDirection }
 	| ({
-			[k: StartsWithLetter]: {
-				$count: ODataCountOptions;
+			[k: `${Letter}${string}`]: {
+				$count: ODataCountOptions<T>;
 			};
+			// This typed version doesn't play nice because trying to declare a matching object
+			// fails because $dir cannot match the index signature.
+			// [k in StringKeyOf<T>]?: {
+			// 	$count: ODataCountOptions<T>;
+			// };
 	  } & {
 			$dir: OrderByDirection;
 	  });
@@ -1788,27 +1867,31 @@ export type OrderBy =
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
 
-export interface ODataOptionsWithoutCount {
-	$filter?: Filter;
-	$expand?: Expand;
-	$orderby?: OrderBy;
+export interface ODataOptionsWithoutCount<T extends TEST> {
+	$filter?: Filter<T>;
+	$expand?: Expand<T>;
+	$orderby?: OrderBy<T>;
 	$top?: number;
 	$skip?: number;
-	$select?: string | string[];
+	$select?: StringKeyOf<T> | Array<StringKeyOf<T>>;
 	$format?: string;
 	[index: string]:
 		| undefined
 		| ParameterAlias
 		| string[]
-		| Filter
-		| Expand
-		| OrderBy;
+		| Filter<T>
+		| Expand<T>
+		| OrderBy<T>;
 }
-export type ODataCountOptions = Pick<ODataOptionsWithoutCount, '$filter'>;
-export interface ODataOptions extends ODataOptionsWithoutCount {
-	$count?: ODataCountOptions;
+export type ODataCountOptions<T extends TEST> = Pick<
+	ODataOptionsWithoutCount<T>,
+	'$filter'
+>;
+export interface ODataOptions<T extends TEST>
+	extends ODataOptionsWithoutCount<NoInfer<T>> {
+	$count?: ODataCountOptions<NoInfer<T>>;
 }
-export type OptionsObject = ODataOptions;
+export type OptionsObject<T extends TEST> = ODataOptions<T>;
 
 export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -1826,7 +1909,7 @@ type ResourceId = BaseResourceId | ResourceAlternateKey;
 
 export type AnyObject = Dictionary<any>;
 
-export interface Params {
+export interface Params<T extends TEST = AnyObject> {
 	apiPrefix?: string;
 	method?: ODataMethod;
 	resource?: string;
@@ -1835,7 +1918,7 @@ export interface Params {
 	body?: AnyObject;
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
-	options?: ODataOptions;
+	options?: ODataOptions<T>;
 	retry?: RetryParameters;
 }
 
