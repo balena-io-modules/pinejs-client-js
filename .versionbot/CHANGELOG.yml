@@ -1,4 +1,16 @@
 - commits:
+    - subject: Update dependencies
+      hash: 4e982dab1dcd6d786e4224b695aa2801c283b9f7
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.1
+  title: ""
+  date: 2024-03-04T16:05:19.595Z
+- commits:
     - subject: Respect the Retry-After header when clients define the
         getRetryAfterHeader option
       hash: 04f146bbe2127f4bc140ce7c7e9d9d78f62e00dd
