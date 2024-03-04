@@ -15,7 +15,7 @@
     "npm": ">=6.0.0"
   },
   "scripts": {
-    "lint": "balena-lint --typescript src test",
+    "lint": "balena-lint -t tsconfig.dev.json src test",
     "pretest": "npm run build",
     "test": "mocha",
     "posttest": "npm run lint",
@@ -26,25 +26,25 @@
     "build": "npm run build-es2015 && npm run build-es2018 && npm run build-types",
     "prepublish": "require-npm4-to-publish",
     "prepack": "npm run build",
-    "prettify": "balena-lint --typescript --fix src test"
+    "prettify": "balena-lint -t tsconfig.dev.json --fix src test"
   },
   "license": "MIT",
   "dependencies": {
-    "@balena/es-version": "^1.0.1"
+    "@balena/es-version": "^1.0.3"
   },
   "devDependencies": {
-    "@balena/lint": "^5.4.2",
-    "@types/chai": "^4.3.4",
-    "@types/lodash": "^4.14.191",
-    "@types/mocha": "^10.0.1",
-    "chai": "^4.3.6",
+    "@balena/lint": "^7.3.0",
+    "@types/chai": "^4.3.12",
+    "@types/lodash": "^4.14.202",
+    "@types/mocha": "^10.0.6",
+    "chai": "^4.4.1",
     "husky": "^4.3.8",
-    "lint-staged": "^12.3.7",
+    "lint-staged": "^15.2.2",
     "lodash": "^4.17.21",
-    "mocha": "^9.2.2",
+    "mocha": "^10.3.0",
     "require-npm4-to-publish": "^1.0.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.9.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   },
   "husky": {
     "hooks": {

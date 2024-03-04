@@ -861,8 +861,8 @@ const testLambda = function (operator: string) {
 		$expr?:
 			| { b: { c: string } }
 			| { b: { c: string } }
-			| { $eq: {} }
-			| { $eq: {} };
+			| { $eq: object }
+			| { $eq: object };
 	}) => ({
 		[operator]: partialFilter,
 	});
