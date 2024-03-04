@@ -1852,9 +1852,14 @@ export type OrderBy<T extends TEST> =
 	| Array<OrderBy<T>>
 	| { [k in StringKeyOf<T>]?: OrderByDirection }
 	| ({
-			[k in StringKeyOf<T>]?: {
+			[k: `${Letter}${string}`]: {
 				$count: ODataCountOptions<T>;
 			};
+			// This typed version doesn't play nice because trying to declare a matching object
+			// fails because $dir cannot match the index signature.
+			// [k in StringKeyOf<T>]?: {
+			// 	$count: ODataCountOptions<T>;
+			// };
 	  } & {
 			$dir: OrderByDirection;
 	  });
