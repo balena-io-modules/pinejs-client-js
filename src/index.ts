@@ -726,7 +726,7 @@ const handleFilterObject = <T extends TEST>(
 				}
 				keys = parentKey.concat(keys);
 			}
-			return buildFilter(value as Filter<T>, keys);
+			return buildFilter(value, keys);
 		}
 	});
 };
