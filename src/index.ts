@@ -1,3 +1,4 @@
+type StringKeyOf<T> = keyof T & string;
 export interface Dictionary<T> {
 	[index: string]: T;
 }
@@ -61,10 +62,10 @@ const deprecated = (() => {
 	return result;
 })();
 
-const mapObj = <T, R>(
-	obj: Dictionary<T>,
-	fn: (value: T, key: string) => R,
-): R[] => Object.keys(obj).map((key) => fn(obj[key], key));
+const mapObj = <T extends Dictionary<any>, R>(
+	obj: T,
+	fn: (value: T[StringKeyOf<T>], key: StringKeyOf<T>) => R,
+): R[] => Object.keys(obj).map((key: StringKeyOf<T>) => fn(obj[key], key));
 
 const NumberIsFinite: (v: any) => v is number =
 	(Number as any).isFinite || ((v) => typeof v === 'number' && isFinite(v));
@@ -76,11 +77,12 @@ const isBoolean = (v: any): v is boolean => v === true || v === false;
 const isDate = (v: any): v is Date =>
 	Object.prototype.toString.call(v) === '[object Date]';
 
-const isObject = (v: any): v is AnyObject => v != null && typeof v === 'object';
+const isObject = (v: unknown): v is object =>
+	v != null && typeof v === 'object';
 
 const isValidOption = (
 	key: string,
-): key is keyof ODataOptionsWithoutCount & string => {
+): key is StringKeyOf<ODataOptionsWithoutCount> => {
 	return (
 		key === '$select' ||
 		key === '$filter' ||
@@ -743,12 +745,9 @@ const buildOrderBy = (orderby: OrderBy): string => {
 		});
 		return join(result);
 	} else if (isObject(orderby)) {
-		const { $dir, ...restOrderby } = orderby;
-		const $orderby: Dictionary<
-			OrderByDirection | { $count: ODataCountOptions }
-		> = restOrderby;
+		const { $dir, ...$orderby } = orderby as typeof orderby & { $dir?: string };
 		const result = mapObj($orderby, (dirOrOptions, key) => {
-			let propertyPath = key;
+			let propertyPath: string = key;
 			let dir = $dir;
 			if (typeof dirOrOptions === 'string') {
 				dir = dirOrOptions;
@@ -1025,7 +1024,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	public retry: RetryParameters = false;
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
-	constructor(params: string | Params) {
+	constructor(params: string | ConstructorParams) {
 		if (isString(params)) {
 			params = { apiPrefix: params };
 		}
@@ -1132,7 +1131,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 
 	// `backendParams` must be used by a backend for any additional parameters it may have.
 	public clone(
-		params: string | Params,
+		params: string | ConstructorParams,
 		backendParams?: AnyObject,
 	): PinejsClient {
 		if (isString(params)) {
@@ -1164,7 +1163,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 			cloneBackendParams = { ...cloneBackendParams, ...backendParams };
 		}
 		return new (this.constructor as new (
-			$params: Params,
+			$params: ConstructorParams,
 			$backendParams: AnyObject,
 		) => PinejsClient)(cloneParams, cloneBackendParams);
 	}
@@ -1775,13 +1774,16 @@ type OrderByDirection = 'asc' | 'desc';
 export type OrderBy =
 	| string
 	| OrderBy[]
-	| Dictionary<OrderByDirection>
 	| {
+			[k: StartsWithLetter]: OrderByDirection;
+	  }
+	| ({
 			[k: StartsWithLetter]: {
 				$count: ODataCountOptions;
 			};
+	  } & {
 			$dir: OrderByDirection;
-	  };
+	  });
 
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
@@ -1836,6 +1838,8 @@ export interface Params {
 	options?: ODataOptions;
 	retry?: RetryParameters;
 }
+
+export type ConstructorParams = Pick<Params, (typeof validParams)[number]>;
 
 export interface SubscribeParams extends Params {
 	method?: 'GET';
