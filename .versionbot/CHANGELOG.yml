@@ -1,4 +1,16 @@
 - commits:
+    - subject: Improve typings
+      hash: 45240b18c41f7558bed64fb2e5689d58b7742f51
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.2
+  title: ""
+  date: 2024-03-04T16:18:00.230Z
+- commits:
     - subject: Update dependencies
       hash: 4e982dab1dcd6d786e4224b695aa2801c283b9f7
       body: ""
