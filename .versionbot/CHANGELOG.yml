@@ -1,4 +1,16 @@
 - commits:
+    - subject: Update dev dependencies
+      hash: 4042a5be6e35d26f3db74309a5c3e5e3948cb75c
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.3
+  title: ""
+  date: 2024-04-17T15:47:43.685Z
+- commits:
     - subject: Improve typings
       hash: 45240b18c41f7558bed64fb2e5689d58b7742f51
       body: ""
@@ -1230,7 +1242,8 @@
         The subscribe method takes the same parameters as the get method and
         returns an
 
-        event emitter. The emitter will periodically run the request specified in the
+        event emitter. The emitter will periodically run the request specified
+        in the
 
         parameters and emit the response.
 
