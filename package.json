@@ -24,6 +24,7 @@
     "build-es2018": "tsc --target es2018 --outDir es2018",
     "build-types": "tsc --emitDeclarationOnly --outDir .",
     "build": "npm run build-es2015 && npm run build-es2018 && npm run build-types",
+    "prepare": "node -e \"try { (await import('husky')).default() } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e }\" --input-type module",
     "prepublish": "require-npm4-to-publish",
     "prepack": "npm run build",
     "prettify": "balena-lint -t tsconfig.dev.json --fix src test"
@@ -33,23 +34,18 @@
     "@balena/es-version": "^1.0.3"
   },
   "devDependencies": {
-    "@balena/lint": "^7.3.0",
-    "@types/chai": "^4.3.12",
-    "@types/lodash": "^4.14.202",
+    "@balena/lint": "^8.0.1",
+    "@types/chai": "^4.3.14",
+    "@types/lodash": "^4.17.0",
     "@types/mocha": "^10.0.6",
     "chai": "^4.4.1",
-    "husky": "^4.3.8",
+    "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "lodash": "^4.17.21",
-    "mocha": "^10.3.0",
+    "mocha": "^10.4.0",
     "require-npm4-to-publish": "^1.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
+    "typescript": "^5.4.5"
   },
   "mocha": {
     "reporter": "spec",
