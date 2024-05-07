@@ -1016,7 +1016,10 @@ export type RetryParametersObj = {
 };
 export type RetryParameters = RetryParametersObj | false;
 
-export abstract class PinejsClientCore<PinejsClient> {
+export abstract class PinejsClientCore<
+	/** @deprecated This was for the purposes of `clone` and we now use `this` for that */
+	PinejsClient = unknown,
+> {
 	public apiPrefix: string = '/';
 	public passthrough: AnyObject = {};
 	public passthroughByMethod: AnyObject = {};
@@ -1133,7 +1136,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 	public clone(
 		params: string | ConstructorParams,
 		backendParams?: AnyObject,
-	): PinejsClient {
+	): this {
 		if (isString(params)) {
 			params = { apiPrefix: params };
 		}
@@ -1165,7 +1168,7 @@ export abstract class PinejsClientCore<PinejsClient> {
 		return new (this.constructor as new (
 			$params: ConstructorParams,
 			$backendParams: AnyObject,
-		) => PinejsClient)(cloneParams, cloneBackendParams);
+		) => this)(cloneParams, cloneBackendParams);
 	}
 
 	public async get(
