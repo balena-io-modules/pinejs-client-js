@@ -1,4 +1,17 @@
 - commits:
+    - subject: Deprecate the generic `PinejsClient` typing in favor of using `this`
+        for `.clone` typing
+      hash: 010c949c91a1765bec8050140fa35367a8279950
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.4
+  title: ""
+  date: 2024-05-08T01:05:08.480Z
+- commits:
     - subject: Update dev dependencies
       hash: 4042a5be6e35d26f3db74309a5c3e5e3948cb75c
       body: ""
