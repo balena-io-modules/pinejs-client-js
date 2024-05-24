@@ -1,3 +1,7 @@
+function isArray(value: any): value is readonly unknown[] {
+	// See: https://github.com/microsoft/TypeScript/issues/17002
+	return Array.isArray(value);
+}
 type StringKeyOf<T> = keyof T & string;
 export interface Dictionary<T> {
 	[index: string]: T;
@@ -242,7 +246,7 @@ const isPrimitive = (value?: unknown): value is Primitive => {
 const escapeResource = (resource: string | string[]): string => {
 	if (isString(resource)) {
 		resource = encodeURIComponent(resource);
-	} else if (Array.isArray(resource)) {
+	} else if (isArray(resource)) {
 		resource = resource.map(encodeURIComponent).join('/');
 	} else {
 		throw new Error('Not a valid resource: ' + typeof resource);
@@ -277,7 +281,7 @@ const escapeParameterAlias = (value: unknown): string => {
 const join = (strOrArray: string | string[], separator = ','): string => {
 	if (isString(strOrArray)) {
 		return strOrArray;
-	} else if (Array.isArray(strOrArray)) {
+	} else if (isArray(strOrArray)) {
 		return strOrArray.join(separator);
 	} else {
 		throw new Error('Expected a string or array, got: ' + typeof strOrArray);
@@ -313,7 +317,7 @@ const addParentKey = (
 	operator = ' eq ',
 ): string[] => {
 	if (parentKey != null) {
-		if (Array.isArray(filter)) {
+		if (isArray(filter)) {
 			if (filter.length === 1) {
 				filter = filter[0];
 			} else {
@@ -324,7 +328,7 @@ const addParentKey = (
 		}
 		return [escapeResource(parentKey), operator, filter];
 	}
-	if (Array.isArray(filter)) {
+	if (isArray(filter)) {
 		return filter;
 	}
 	return [`${filter}`];
@@ -358,7 +362,7 @@ const filterOperation = (
 	if (isPrimitive(filter)) {
 		const filterStr = escapeValue(filter);
 		return addParentKey(filterStr, parentKey, op);
-	} else if (Array.isArray(filter)) {
+	} else if (isArray(filter)) {
 		const filterArr = handleFilterArray(filter);
 		const filterStr = bracketJoin(filterArr, op);
 		return addParentKey(filterStr, parentKey);
@@ -396,7 +400,7 @@ const filterFunction = (
 		}
 		operands.push(escapeValue(filter));
 		return [`${fnName}(${operands.join()})`];
-	} else if (Array.isArray(filter)) {
+	} else if (isArray(filter)) {
 		const filterArr = handleFilterArray(filter);
 		let filterStr = filterArr.map((subArr) => subArr.join('')).join(',');
 		filterStr = `${fnName}(${filterStr})`;
@@ -506,13 +510,13 @@ const handleFilterOperator = (
 		}
 		// break
 		case '$raw': {
-			filter = filter as FilterType<typeof operator>;
-			if (isString(filter)) {
-				filter = `(${filter})`;
-				return addParentKey(filter, parentKey);
-			} else if (!isPrimitive(filter)) {
-				if (Array.isArray(filter)) {
-					const [rawFilter, ...params] = filter;
+			const filterx = filter as FilterType<typeof operator>;
+			if (isString(filterx)) {
+				return addParentKey(`(${filterx})`, parentKey);
+			} else if (!isPrimitive(filterx)) {
+				// This needs to use the mutable version `Array.isArray` or otherwise the destructuring gets the wrong types?
+				if (Array.isArray(filterx)) {
+					const [rawFilter, ...params] = filterx;
 					if (!isString(rawFilter)) {
 						throw new Error(
 							`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
@@ -523,29 +527,29 @@ const handleFilterOperator = (
 						mappedParams[index + 1] = params[index];
 					}
 					return applyBinds(rawFilter, mappedParams, parentKey);
-				} else if (isObject(filter)) {
-					const filterStr = filter.$string;
+				} else if (isObject(filterx)) {
+					const filterStr = filterx.$string;
 					if (!isString(filterStr)) {
 						throw new Error(
 							`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
 						);
 					}
 					const mappedParams: Dictionary<Filter> = {};
-					for (const index in filter) {
+					for (const index in filterx) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
 								throw new Error(
 									`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
 								);
 							}
-							mappedParams[index] = filter[index] as Filter;
+							mappedParams[index] = filterx[index] as Filter;
 						}
 					}
 					return applyBinds(filterStr, mappedParams, parentKey);
 				}
 			}
 			throw new Error(
-				`Expected string/array/object for ${operator}, got: ${typeof filter}`,
+				`Expected string/array/object for ${operator}, got: ${typeof filterx}`,
 			);
 		}
 		// break
@@ -595,7 +599,7 @@ const handleFilterOperator = (
 			if (isPrimitive(filter)) {
 				const filterStr = escapeValue(filter);
 				return addParentKey(filterStr, parentKey, ' eq ');
-			} else if (Array.isArray(filter)) {
+			} else if (isArray(filter)) {
 				if (filter.every(isPrimitive)) {
 					const filterStr = handleFilterArray(filter, undefined, 1);
 					const inStr = bracketJoin(filterStr, ', ').join('');
@@ -713,7 +717,7 @@ const buildFilter = (
 	if (isPrimitive(filter)) {
 		const filterStr = escapeValue(filter);
 		return addParentKey(filterStr, parentKey);
-	} else if (Array.isArray(filter)) {
+	} else if (isArray(filter)) {
 		const filterArr = handleFilterArray(filter);
 		const filterStr = bracketJoin(filterArr, joinStr ?? ' or ');
 		return addParentKey(filterStr, parentKey);
@@ -733,12 +737,12 @@ const buildOrderBy = (orderby: OrderBy): string => {
 			deprecated.countInOrderBy();
 		}
 		return orderby;
-	} else if (Array.isArray(orderby)) {
+	} else if (isArray(orderby)) {
 		if (orderby.length === 0) {
 			throw new Error(`'$orderby' arrays have to have at least 1 element`);
 		}
 		const result = orderby.map((value) => {
-			if (Array.isArray(value)) {
+			if (isArray(value)) {
 				throw new Error(`'$orderby' cannot have nested arrays`);
 			}
 			return buildOrderBy(value);
@@ -818,7 +822,7 @@ const buildOption = (
 			const select = value;
 			if (isString(select)) {
 				compiledValue = join(select);
-			} else if (Array.isArray(select)) {
+			} else if (isArray(select)) {
 				if (select.length === 0) {
 					throw new Error(`'${option}' arrays have to have at least 1 element`);
 				}
@@ -841,7 +845,7 @@ const buildOption = (
 				compiledValue = '' + escapeValue(value);
 			}
 			// Unknown values are left as-is
-			else if (Array.isArray(value)) {
+			else if (isArray(value)) {
 				compiledValue = join(value as string[]);
 			} else if (isString(value)) {
 				compiledValue = value;
@@ -928,7 +932,7 @@ const handleExpandObject = (expand: ResourceExpand): string[] => {
 				`'$expand: ${key}: ${jsonValue}' is invalid, use '$expand: ${key}: $expand: ${jsonValue}' instead.`,
 			);
 		}
-		if (Array.isArray(value)) {
+		if (isArray(value)) {
 			throw new Error(
 				`'$expand: ${key}: [...]' is invalid, use '$expand: ${key}: {...}' instead.`,
 			);
@@ -942,7 +946,7 @@ const handleExpandObject = (expand: ResourceExpand): string[] => {
 };
 
 const handleExpandArray = (
-	expands: Array<string | ResourceExpand>,
+	expands: ReadonlyArray<string | ResourceExpand>,
 ): string[] => {
 	if (expands.length < 1) {
 		throw new Error(
@@ -960,7 +964,7 @@ const handleExpandArray = (
 const buildExpand = (expand: Expand): string => {
 	if (isPrimitive(expand)) {
 		return escapeResource(expand);
-	} else if (Array.isArray(expand)) {
+	} else if (isArray(expand)) {
 		const expandStr = handleExpandArray(expand);
 		return join(expandStr);
 	} else if (isObject(expand)) {
@@ -1753,7 +1757,7 @@ export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
 	$cast?: FilterFunctionValue;
 }
 
-export type FilterArray = Filter[];
+export type FilterArray = readonly Filter[];
 export type FilterBaseType = string | number | null | boolean | Date;
 export type RawFilter =
 	| string
@@ -1770,13 +1774,16 @@ export type Filter = FilterObj | FilterArray | FilterBaseType;
 
 export type ResourceExpand = Dictionary<ODataOptions>;
 
-export type Expand = string | ResourceExpand | Array<string | ResourceExpand>;
+export type Expand =
+	| string
+	| ResourceExpand
+	| ReadonlyArray<string | ResourceExpand>;
 
 type OrderByDirection = 'asc' | 'desc';
 
 export type OrderBy =
 	| string
-	| OrderBy[]
+	| readonly OrderBy[]
 	| {
 			[k: StartsWithLetter]: OrderByDirection;
 	  }
@@ -1797,7 +1804,7 @@ export interface ODataOptionsWithoutCount {
 	$orderby?: OrderBy;
 	$top?: number;
 	$skip?: number;
-	$select?: string | string[];
+	$select?: string | readonly string[];
 	$format?: string;
 	[index: string]:
 		| undefined
