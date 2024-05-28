@@ -417,13 +417,13 @@ const filterFunction = (
 	}
 };
 
-type FilterType<Operator extends keyof FilterObj> = NonNullable<
-	FilterObj[Operator]
+type FilterType<Operator extends keyof AllFilterOperations> = NonNullable<
+	AllFilterOperations[Operator]
 >;
 // Handle special cases for all the different $ operators.
 const handleFilterOperator = (
-	filter: FilterObj[string],
-	operator: keyof FilterObj,
+	filter: AllFilterOperations[keyof AllFilterOperations],
+	operator: keyof AllFilterOperations,
 	parentKey?: string[],
 ): string[] => {
 	switch (operator) {
@@ -673,12 +673,16 @@ const handleFilterObject = (
 			);
 		}
 		if (key[0] === '$') {
-			return handleFilterOperator(value, key, parentKey);
+			return handleFilterOperator(
+				value,
+				key as keyof AllFilterOperations,
+				parentKey,
+			);
 		} else if (key[0] === '@') {
 			const parameterAlias = escapeParameterAlias(value);
 			return addParentKey(parameterAlias, parentKey);
 		} else {
-			let keys = [key];
+			let keys: string[] = [key];
 			if (parentKey != null) {
 				if (parentKey.length > 0) {
 					deprecated.expandFilter();
@@ -1692,24 +1696,26 @@ type DurationValue = {
 	seconds?: number;
 };
 
-export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
+type NestedFilterOperations = {
+	$count?: Filter;
+
+	$in?: Filter;
+
+	$any?: Lambda;
+	$all?: Lambda;
+};
+
+type FilterOperations = {
 	'@'?: string;
 
 	$raw?: RawFilter;
 
 	$?: string | string[];
 
-	$count?: Filter;
-
 	$and?: Filter;
 	$or?: Filter;
 
-	$in?: Filter;
-
 	$not?: Filter;
-
-	$any?: Lambda;
-	$all?: Lambda;
 
 	// Filter operations
 	$ne?: FilterOperationValue;
@@ -1755,7 +1761,13 @@ export interface FilterObj extends Dictionary<Filter | Lambda | undefined> {
 	$ceiling?: FilterFunctionValue;
 	$isof?: FilterFunctionValue;
 	$cast?: FilterFunctionValue;
-}
+};
+
+type AllFilterOperations = FilterOperations & NestedFilterOperations;
+
+export type FilterObj = {
+	[key: StartsWithLetter]: Filter | NestedFilterOperations | undefined;
+} & FilterOperations;
 
 export type FilterArray = readonly Filter[];
 export type FilterBaseType = string | number | null | boolean | Date;
