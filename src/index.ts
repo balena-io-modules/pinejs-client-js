@@ -1697,7 +1697,7 @@ type DurationValue = {
 };
 
 type NestedFilterOperations = {
-	$count?: Filter;
+	$count?: Filter | ODataCountOptions;
 
 	$in?: Filter;
 
