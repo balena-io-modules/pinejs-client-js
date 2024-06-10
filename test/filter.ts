@@ -16,21 +16,23 @@ const testFilter = buildMochaHelper(
 		} else {
 			countOutput = output;
 		}
-		it(`should compile ${JSON.stringify(input)} to ${output}`, () =>
+		it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
 			test(output, {
 				resource,
 				options: {
 					$filter: input,
 				},
-			}));
-		it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () =>
+			});
+		});
+		it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
 			test(countOutput, {
 				resource: `${resource}/$count`,
 				options: {
 					$filter: input,
 				},
-			}));
-		return it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () =>
+			});
+		});
+		it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
 			test(countOutput, {
 				resource,
 				options: {
@@ -38,7 +40,8 @@ const testFilter = buildMochaHelper(
 						$filter: input,
 					},
 				},
-			}));
+			});
+		});
 	},
 );
 
@@ -259,7 +262,7 @@ const testFunction = function (funcName: string) {
 		`a eq ${funcName}('b','c')`,
 	);
 
-	return testFilter(
+	testFilter(
 		{
 			a: createFilter({
 				b: 'c',
@@ -285,7 +288,7 @@ testFilter({ a: false }, 'a eq false');
 testFilter({ a: null }, 'a eq null');
 (function () {
 	const date = new Date();
-	return testFilter({ a: date }, `a eq datetime'${date.toISOString()}'`);
+	testFilter({ a: date }, `a eq datetime'${date.toISOString()}'`);
 })();
 
 // Test mixing operators
@@ -909,7 +912,7 @@ const testLambda = function (operator: string) {
 		`a/${operator.slice(1)}(al:al/b/$count eq 1)`,
 	);
 
-	return testFilter(
+	testFilter(
 		{
 			a: createFilter({
 				$alias: 'al',
