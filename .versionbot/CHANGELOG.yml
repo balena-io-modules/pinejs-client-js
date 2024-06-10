@@ -1,4 +1,16 @@
 - commits:
+    - subject: "Tests: remove unnecessary/unintended returns"
+      hash: b51e379e6a5b1c6cbc5cb83d6dcf537bc6776b05
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.8
+  title: ""
+  date: 2024-06-10T13:36:27.251Z
+- commits:
     - subject: Fix using top level $count downstream
       hash: 03553a4d582ac8354bf2adc47fbe63fefb587042
       body: |
