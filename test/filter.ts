@@ -1,49 +1,53 @@
-import { buildMochaHelper, test } from './test';
+import type { Filter, FilterObj } from '..';
+import { test } from './test';
 import * as _ from 'lodash';
 
-const testFilter = buildMochaHelper(
-	it,
-	function (
-		it: (arg0: string, arg1: { (): any; (): any; (): any }) => void,
-		input: any,
-		output: string,
-	) {
-		let countOutput: string;
-		const resource = 'test';
-		if (!_.isError(output)) {
-			countOutput = resource + '/$count?$filter=' + output;
-			output = resource + '?$filter=' + output;
-		} else {
-			countOutput = output;
-		}
-		it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
-			test(output, {
-				resource,
-				options: {
+function testFilter(
+	input: Filter,
+	output: string | Error,
+	$it?: Mocha.TestFunction,
+): void;
+function testFilter(input: any, output: Error, $it?: Mocha.TestFunction): void;
+function testFilter(
+	input: Filter,
+	output: string | Error,
+	$it: Mocha.TestFunction = it,
+): void {
+	let countOutput: string | Error;
+	const resource = 'test';
+	if (!_.isError(output)) {
+		countOutput = resource + '/$count?$filter=' + output;
+		output = resource + '?$filter=' + output;
+	} else {
+		countOutput = output;
+	}
+	$it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
+		test(output, {
+			resource,
+			options: {
+				$filter: input,
+			},
+		});
+	});
+	$it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
+		test(countOutput, {
+			resource: `${resource}/$count`,
+			options: {
+				$filter: input,
+			},
+		});
+	});
+	$it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
+		test(countOutput, {
+			resource,
+			options: {
+				$count: {
 					$filter: input,
 				},
-			});
+			},
 		});
-		it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
-			test(countOutput, {
-				resource: `${resource}/$count`,
-				options: {
-					$filter: input,
-				},
-			});
-		});
-		it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
-			test(countOutput, {
-				resource,
-				options: {
-					$count: {
-						$filter: input,
-					},
-				},
-			});
-		});
-	},
-);
+	});
+}
 
 testFilter(
 	{
@@ -62,7 +66,7 @@ testFilter(
 );
 
 const testOperator = function (operator: string) {
-	const createFilter = (partialFilter: any) => ({
+	const createFilter = (partialFilter: Filter) => ({
 		[`$${operator}`]: partialFilter,
 	});
 
@@ -136,6 +140,7 @@ const testOperator = function (operator: string) {
 
 	testFilter(
 		{
+			// @ts-expect-error This is intentionally invalid to test a failure
 			a: createFilter({
 				$duration: 'P6D',
 			}),
@@ -232,10 +237,10 @@ const testOperator = function (operator: string) {
 };
 
 const testFunction = function (funcName: string) {
-	const createFilter = function (partialFilter: any) {
-		const filter = {};
-		filter['$' + funcName] = partialFilter;
-		return filter;
+	const createFilter = function (partialFilter: Filter) {
+		return {
+			['$' + funcName]: partialFilter,
+		};
 	};
 
 	testFilter(createFilter(null), `${funcName}()`);
@@ -815,7 +820,7 @@ testFilter(
 testFilter(
 	{
 		$lt: [{ a: { $count: { $filter: { b: 'c' } } } }, 1],
-	},
+	} satisfies FilterObj,
 	"a/$count($filter=b eq 'c') lt 1",
 );
 

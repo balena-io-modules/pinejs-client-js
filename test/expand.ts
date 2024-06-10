@@ -1,7 +1,10 @@
+import type { Expand } from '..';
 import { test } from './test';
 import * as _ from 'lodash';
 
-function testExpand(input: any, output: any) {
+function testExpand(input: Expand, output: string | Error): void;
+function testExpand(input: any, output: Error): void;
+function testExpand(input: Expand, output: string | Error): void {
 	const resource = 'test';
 	if (!_.isError(output)) {
 		output = `${resource}?$expand=${output}`;
@@ -215,11 +218,12 @@ testExpand(
 	{
 		a: {
 			$count: {
+				// @ts-expect-error This isn't valid but is silently dropped for backwards compatibility
 				$select: 'a',
 				$filter: { b: 'c' },
 			},
 		},
-	},
+	} satisfies Expand as Expand,
 	"a/$count($select=a;$filter=b eq 'c')",
 	// new Error(`'When using '$expand: a: $count: ...' you can only specify $filter in the $count, got: '["$select","$filter"]'''`)
 );
