@@ -18,7 +18,7 @@
     "lint": "balena-lint -t tsconfig.dev.json src test",
     "pretest": "npm run build",
     "test": "mocha",
-    "posttest": "npm run lint",
+    "posttest": "npm run lint & npx tsc --noEmit --project tsconfig.dev.json",
     "test6": "npm run build && mocha",
     "build-es2015": "tsc --target es2015 --outDir es2015",
     "build-es2018": "tsc --target es2018 --outDir es2018",

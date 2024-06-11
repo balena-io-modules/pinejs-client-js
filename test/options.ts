@@ -1,44 +1,63 @@
-import { buildMochaHelper, test } from './test';
+import type { ODataOptions, Params } from '..';
+import { test } from './test';
 import * as _ from 'lodash';
 
-const testId = buildMochaHelper(it, (it: any, input: any, output: any) => {
+type Tail<T extends readonly any[]> = T extends readonly [any, ...infer U]
+	? U
+	: [];
+
+const testId = (
+	input: NonNullable<Params['id']>,
+	output: string | Error,
+	$it: Mocha.TestFunction = it,
+) => {
 	const resource = 'test';
 	if (!_.isError(output)) {
 		output = `${resource}(${output})`;
 	}
-	it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
+	$it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
 		test(output, {
 			resource,
 			id: input,
 		});
 	});
-});
+};
 
-const testOption = buildMochaHelper(
-	it,
-	(it: any, option: any, input: any, output: any) => {
-		const resource = 'test';
-		if (!_.isError(output)) {
-			output = `${resource}?${option}=${output}`;
-		}
-		it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
-			test(output, {
-				resource,
-				options: {
-					[option]: input,
-				},
-			});
+const testOption = <T extends keyof ODataOptions>(
+	option: T,
+	input: ODataOptions[T],
+	output: string | Error,
+	$it: Mocha.TestFunction = it,
+) => {
+	const resource = 'test';
+	if (!_.isError(output)) {
+		output = `${resource}?${option}=${output}`;
+	}
+	$it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
+		test(output, {
+			resource,
+			options: {
+				[option]: input,
+			},
 		});
-	},
-);
+	});
+};
 
-const testOrderBy = _.partial(testOption, '$orderby');
-const testTop = _.partial(testOption, '$top');
-const testSkip = _.partial(testOption, '$skip');
-const testFormat = _.partial(testOption, '$format');
-const testSelect = _.partial(testOption, '$select');
-const testCustom = _.partial(testOption, 'custom');
-const testParam = _.partial(testOption, '@param');
+const testOrderBy = (
+	...args: Tail<Parameters<typeof testOption<'$orderby'>>>
+) => testOption('$orderby', ...args);
+const testTop = (...args: Tail<Parameters<typeof testOption<'$top'>>>) =>
+	testOption('$top', ...args);
+const testSkip = (...args: Tail<Parameters<typeof testOption<'$skip'>>>) =>
+	testOption('$skip', ...args);
+const testFormat = (...args: Tail<Parameters<typeof testOption<'$format'>>>) =>
+	testOption('$format', ...args);
+const testSelect = (...args: Tail<Parameters<typeof testOption<'$select'>>>) =>
+	testOption('$select', ...args);
+const testCustom = (...args: Tail<Parameters<typeof testOption<'custom'>>>) =>
+	testOption('custom', ...args);
+const testParam = (...args: Tail<Parameters<typeof testOption<'@param'>>>) =>
+	testOption('@param', ...args);
 
 testId(1, '1');
 testId('Bob', "'Bob'");
@@ -76,6 +95,7 @@ testOrderBy([{ a: 'desc' }, { b: 'asc' }], 'a desc,b asc');
 testOrderBy([['a']], new Error("'$orderby' cannot have nested arrays"));
 
 testOrderBy(
+	// @ts-expect-error Testing intentionally invalid type
 	{ a: 'x' },
 	new Error("'$orderby' direction must be 'asc' or 'desc'"),
 );
@@ -88,6 +108,7 @@ testOrderBy(
 testOrderBy([], new Error("'$orderby' arrays have to have at least 1 element"));
 
 testOrderBy(
+	// @ts-expect-error Testing intentionally invalid type
 	1,
 	new Error("'$orderby' option has to be either a string, array, or object"),
 );
@@ -117,6 +138,7 @@ testOrderBy(
 );
 
 testOrderBy(
+	// @ts-expect-error Testing intentionally invalid type
 	{ a: { $count: {} } },
 	new Error(
 		`'$orderby' objects should either use the '{ a: 'asc' }' or the $orderby: { a: { $count: ... }, $dir: 'asc' } notation`,
@@ -124,6 +146,7 @@ testOrderBy(
 );
 
 testOrderBy(
+	// @ts-expect-error Testing intentionally invalid type
 	{ a: { $filter: { d: 'e' } }, $dir: 'desc' },
 	new Error(
 		`When using '$orderby: { a: { $count: ... }, $dir: 'asc' }' you can only specify $count, got: '["$filter"]'`,
@@ -131,6 +154,7 @@ testOrderBy(
 );
 
 testOrderBy(
+	// @ts-expect-error Testing intentionally invalid type
 	{ a: { $count: { $expand: 'e' } }, $dir: 'desc' },
 	new Error(
 		`When using '$orderby: { a: { $count: ... }, $dir: 'asc' }' you can only specify $filter in the $count, got: '["$expand"]`,
@@ -138,18 +162,21 @@ testOrderBy(
 );
 
 testOrderBy(
+	// @ts-expect-error Testing intentionally invalid type
 	{ a: { $count: { $expand: 'e', $filter: { d: 'e' } } }, $dir: 'desc' },
 	new Error(
 		`When using '$orderby: { a: { $count: ... }, $dir: 'asc' }' you can only specify $filter in the $count, got: '["$expand","$filter"]`,
 	),
 );
 
-testTop(1, 1);
+testTop(1, '1');
 
+// @ts-expect-error Testing intentionally invalid type
 testTop('1', new Error("'$top' option has to be a number"));
 
-testSkip(1, 1);
+testSkip(1, '1');
 
+// @ts-expect-error Testing intentionally invalid type
 testSkip('1', new Error("'$skip' option has to be a number"));
 
 testFormat('json;metadata=full', 'json;metadata=full');
@@ -162,6 +189,7 @@ testSelect(['a', 'b'], 'a,b');
 
 testSelect([], new Error(`'$select' arrays have to have at least 1 element`));
 
+// @ts-expect-error Testing intentionally invalid type
 testSelect(1, new Error("'$select' option has to be either a string or array"));
 
 testCustom('a', 'a');

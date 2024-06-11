@@ -10,7 +10,15 @@ class PinejsClient extends PinejsClientCore<PinejsClient> {
 }
 
 const core = new PinejsClient('/resin');
-export function test(expected: any, params: any) {
+export function test(expected: Error, params: any): void;
+export function test(
+	expected: string | Error,
+	params: Parameters<PinejsClientCore['compile']>[0],
+): void;
+export function test(
+	expected: string | Error,
+	params: Parameters<PinejsClientCore['compile']>[0],
+): void {
 	if (_.isError(expected)) {
 		expect(() => core.compile(params)).to.throw(
 			expected.constructor,
@@ -19,11 +27,4 @@ export function test(expected: any, params: any) {
 	} else {
 		expect(core.compile(params)).to.equal(expected);
 	}
-}
-
-export function buildMochaHelper(mochaFn: any, runExpectation: any) {
-	const ret = runExpectation.bind(null, mochaFn);
-	ret.skip = runExpectation.bind(null, mochaFn.skip);
-	ret.only = runExpectation.bind(null, mochaFn.only);
-	return ret;
 }
