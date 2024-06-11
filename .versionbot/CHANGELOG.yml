@@ -1,4 +1,16 @@
 - commits:
+    - subject: Include comments in generated output so that jsdoc is available
+      hash: 0a20be620a68b92ef95ce735eeebe3de0d754b7f
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.11
+  title: ""
+  date: 2024-06-11T15:00:11.283Z
+- commits:
     - subject: "Tests: improve typing of tests"
       hash: d970b64c9400e11ee55c29f16fe489c45b16a957
       body: ""
