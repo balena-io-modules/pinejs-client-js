@@ -6,7 +6,6 @@
 		"strictFunctionTypes": false,
 		"noUnusedParameters": true,
 		"noUnusedLocals": true,
-		"removeComments": true,
 		"preserveConstEnums": true,
 		"sourceMap": true,
 		"target": "es2015",
