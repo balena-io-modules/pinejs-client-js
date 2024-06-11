@@ -1,4 +1,16 @@
 - commits:
+    - subject: "Tests: improve typing of tests"
+      hash: d970b64c9400e11ee55c29f16fe489c45b16a957
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.10
+  title: ""
+  date: 2024-06-11T01:32:26.832Z
+- commits:
     - subject: Add `$filter` to nested `$count` typings
       hash: 2774bd0e8b03d6d204df41c2d4ebf3a9d039057e
       body: ""
