@@ -53,6 +53,10 @@ const deprecated = (() => {
 			"'`$orderby: 'a/$count'` is deprecated, please use `$orderby: { a: { $count: {...} } }` instead.",
 		non$filterOptionIn$expand$count:
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
+		urlInGetOrCreate:
+			'Passing `url` to `getOrCreate` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
+		urlInUpsert:
+			'Passing `url` to `upsert` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
 	};
 	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
 	for (const key of Object.keys(deprecationMessages) as Array<
@@ -1319,6 +1323,9 @@ export abstract class PinejsClientCore<
 	}
 
 	public async getOrCreate(params: GetOrCreateParams): Promise<AnyObject> {
+		if ('url' in params && params.url != null) {
+			deprecated.urlInGetOrCreate();
+		}
 		const { id, body, ...restParams } = params;
 
 		if (params.resource.endsWith('/$count')) {
@@ -1354,6 +1361,9 @@ export abstract class PinejsClientCore<
 	}
 
 	public async upsert(params: UpsertParams): Promise<undefined | AnyObject> {
+		if ('url' in params && params.url != null) {
+			deprecated.urlInUpsert();
+		}
 		const { id, body, ...restParams } = params;
 
 		if (!isObject(id)) {
@@ -1869,13 +1879,13 @@ export interface SubscribeParams extends Params {
 	pollInterval?: number;
 }
 
-export interface GetOrCreateParams extends Omit<Params, 'method'> {
+export interface GetOrCreateParams extends Omit<Params, 'method' | 'url'> {
 	id: ResourceAlternateKey;
 	resource: string;
 	body: AnyObject;
 }
 
-export interface UpsertParams extends Omit<Params, 'id' | 'method'> {
+export interface UpsertParams extends Omit<Params, 'id' | 'method' | 'url'> {
 	id: Dictionary<Primitive>;
 	resource: string;
 	body: AnyObject;
