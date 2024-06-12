@@ -1,4 +1,19 @@
 - commits:
+    - subject: Type `upsert` and `getOrCreate` as not accepting a `url`
+      hash: f5261feec2d9fd45bb52885d0aed9482f743df5a
+      body: |
+        This is because they are not designed to support using a `url` and are
+        likely to break in very weird and unexpected ways, and as such removing
+        it from the typing should reduce potential for surprising errors
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.12
+  title: ""
+  date: 2024-06-12T11:12:46.444Z
+- commits:
     - subject: Include comments in generated output so that jsdoc is available
       hash: 0a20be620a68b92ef95ce735eeebe3de0d754b7f
       body: ""
