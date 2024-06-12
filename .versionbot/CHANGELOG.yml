@@ -1,4 +1,22 @@
 - commits:
+    - subject: Deprecate passing `url` to helper functions
+      hash: 5ad1d4a417e2631d70acf7192b7132366a77be3b
+      body: |
+        The intention is that these are use as helpers functions to build the
+        url from an object and so passing a `url` directly is not really the
+        intent and interferes with improving the typings for the intended case.
+        It is still possible to pass urls directly to the `request` function if
+        it is essential but the true answer is to support building those urls,
+        and using `prepare` if it is necessary
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.14.13
+  title: ""
+  date: 2024-06-12T13:09:45.863Z
+- commits:
     - subject: Type `upsert` and `getOrCreate` as not accepting a `url`
       hash: f5261feec2d9fd45bb52885d0aed9482f743df5a
       body: |
