@@ -57,6 +57,18 @@ const deprecated = (() => {
 			'Passing `url` to `getOrCreate` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
 		urlInUpsert:
 			'Passing `url` to `upsert` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
+		urlInCompile:
+			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
+		urlInGet:
+			'Passing `url` to `get` is deprecated, please use a query object instead or use `request` directly.',
+		urlInPost:
+			'Passing `url` to `post` is deprecated, please use a query object instead or use `request` directly.',
+		urlInPatch:
+			'Passing `url` to `patch` is deprecated, please use a query object instead or use `request` directly.',
+		urlInPut:
+			'Passing `url` to `put` is deprecated, please use a query object instead or use `request` directly.',
+		urlInDelete:
+			'Passing `url` to `delete` is deprecated, please use a query object instead or use `request` directly.',
 	};
 	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
 	for (const key of Object.keys(deprecationMessages) as Array<
@@ -1192,11 +1204,18 @@ export abstract class PinejsClientCore<
 		params: Params & { id: NonNullable<Params['id']> },
 	): Promise<AnyObject | undefined>;
 	public async get(params: Omit<Params, 'id'>): Promise<AnyObject[]>;
+	/**
+	 * @deprecated GETing via `url` is deprecated
+	 */
+	public async get(
+		params: {
+			resource?: undefined;
+			url: NonNullable<Params['url']>;
+		} & Params,
+	): Promise<PromiseResultTypes>;
 	public async get(params: Params): Promise<PromiseResultTypes> {
-		if (isString(params)) {
-			throw new Error(
-				'`get(url)` is no longer supported, please use `get({ url })` instead.',
-			);
+		if (params.url != null) {
+			deprecated.urlInGet();
 		}
 
 		const result = await this.request({ ...params, method: 'GET' });
@@ -1285,40 +1304,67 @@ export abstract class PinejsClientCore<
 		return new Poll(requestFn, pollInterval);
 	}
 
+	public put(
+		params: { resource: NonNullable<Params['resource']> } & Params,
+	): Promise<void>;
+	/**
+	 * @deprecated PUTing via `url` is deprecated
+	 */
+	public put(
+		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	): Promise<void>;
 	public put(params: Params): Promise<void> {
-		if (isString(params)) {
-			throw new Error(
-				'`put(url)` is no longer supported, please use `put({ url })` instead.',
-			);
+		if (params.url != null) {
+			deprecated.urlInPut();
 		}
 		return this.request({ ...params, method: 'PUT' });
 	}
 
+	public patch(
+		params: { resource: NonNullable<Params['resource']> } & Params,
+	): Promise<void>;
+	/**
+	 * @deprecated PATCHing via `url` is deprecated
+	 */
+	public patch(
+		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	): Promise<void>;
 	public patch(params: Params): Promise<void> {
-		if (isString(params)) {
-			throw new Error(
-				'`patch(url)` is no longer supported, please use `patch({ url })` instead.',
-			);
+		if (params.url != null) {
+			deprecated.urlInPatch();
 		}
 		return this.request({ ...params, method: 'PATCH' });
 	}
 
+	public post(
+		params: { resource: NonNullable<Params['resource']> } & Params,
+	): Promise<AnyObject>;
+	/**
+	 * @deprecated POSTing via `url` is deprecated
+	 */
+	public post(
+		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	): Promise<AnyObject>;
 	public post(params: Params): Promise<AnyObject> {
-		if (isString(params)) {
-			throw new Error(
-				'`post(url)` is no longer supported, please use `post({ url })` instead.',
-			);
+		if (params.url != null) {
+			deprecated.urlInPost();
 		}
 		return this.request({ ...params, method: 'POST' });
 	}
 
+	public delete(
+		params: { resource: NonNullable<Params['resource']> } & Params,
+	): Promise<void>;
+	/**
+	 * @deprecated DELETEing via `url` is deprecated
+	 */
+	public delete(
+		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	): Promise<void>;
 	public delete(params: Params): Promise<void> {
-		if (isString(params)) {
-			throw new Error(
-				'`delete(url)` is no longer supported, please use `delete({ url })` instead.',
-			);
+		if (params.url != null) {
+			deprecated.urlInDelete();
 		}
-		params.method = 'DELETE';
 		return this.request({ ...params, method: 'DELETE' });
 	}
 
@@ -1448,7 +1494,7 @@ export abstract class PinejsClientCore<
 			);
 		}
 		// precompile the URL string to improve performance
-		const compiledUrl = this.compile(params);
+		const compiledUrl = params.url ?? this.compile(params);
 		const urlQueryParamsStr = compiledUrl.indexOf('?') === -1 ? '?' : '&';
 		if (params.method == null) {
 			params.method = 'GET';
@@ -1497,11 +1543,22 @@ export abstract class PinejsClientCore<
 		};
 	}
 
+	public compile(
+		params: { resource: NonNullable<Params['resource']> } & Params,
+	): string;
+	/**
+	 * @deprecated Compiling a `url` is deprecated, it's a noop so you can just use the url directly
+	 */
+	public compile(
+		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	): string;
+	public compile(params: Params): string;
 	public compile(params: Params): string {
 		if (isString(params)) {
 			throw new Error('Params must be an object not a string');
 		}
 		if (params.url != null) {
+			deprecated.urlInCompile();
 			return params.url;
 		} else {
 			if (params.resource == null) {
@@ -1623,7 +1680,7 @@ export abstract class PinejsClientCore<
 		const { body, passthrough = {}, retry } = params;
 
 		apiPrefix = apiPrefix ?? this.apiPrefix;
-		const url = apiPrefix + this.compile(params);
+		const url = apiPrefix + (params.url ?? this.compile(params));
 
 		method = method ?? 'GET';
 		method = method.toUpperCase() as typeof method;
