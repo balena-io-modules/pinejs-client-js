@@ -2,12 +2,49 @@ function isArray(value: any): value is readonly unknown[] {
 	// See: https://github.com/microsoft/TypeScript/issues/17002
 	return Array.isArray(value);
 }
+
+import type {
+	PickDeferred,
+	PickExpanded,
+	Resource,
+} from '@balena/abstract-sql-to-typescript';
+
+export type { Resource };
+
+export type AnyResourceObject = {
+	[key: `${Letter | Digit}${string}`]: any;
+};
+export type AnyResource = {
+	Read: AnyObject;
+	Write: AnyObject;
+};
+
 type StringKeyOf<T> = keyof T & string;
+
+type ExpandableStringKeyOf<T extends Resource['Read']> = StringKeyOf<
+	ResourceExpand<T>
+>;
+type ExtractExpand<T extends Resource['Read'], U extends keyof T> = NonNullable<
+	Extract<T[U], ReadonlyArray<Resource['Read']>>[number]
+>;
+type SelectPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
+	U['$select'] extends ReadonlyArray<StringKeyOf<T>>
+		? U['$select'][number]
+		: U['$select'] extends StringKeyOf<T>
+			? U['$select']
+			: never;
+type ExpandPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
+	U['$expand'] extends ReadonlyArray<StringKeyOf<T>>
+		? U['$expand'][number]
+		: U['$expand'] extends { [key in StringKeyOf<T>]?: any }
+			? StringKeyOf<U['$expand']>
+			: never;
+
 export interface Dictionary<T> {
 	[index: string]: T;
 }
 
-type Letter =
+type LowerLetter =
 	| 'a'
 	| 'b'
 	| 'c'
@@ -34,7 +71,35 @@ type Letter =
 	| 'x'
 	| 'y'
 	| 'z';
-type StartsWithLetter = `${Letter}${string}`;
+type UpperLetter =
+	| 'A'
+	| 'B'
+	| 'C'
+	| 'D'
+	| 'E'
+	| 'F'
+	| 'G'
+	| 'H'
+	| 'I'
+	| 'J'
+	| 'K'
+	| 'L'
+	| 'M'
+	| 'N'
+	| 'O'
+	| 'P'
+	| 'Q'
+	| 'R'
+	| 'S'
+	| 'T'
+	| 'U'
+	| 'V'
+	| 'W'
+	| 'X'
+	| 'Y'
+	| 'Z';
+type Letter = LowerLetter | UpperLetter;
+type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 const noop = (): void => {
 	// noop
@@ -100,9 +165,9 @@ const isDate = (v: any): v is Date =>
 const isObject = (v: unknown): v is object =>
 	v != null && typeof v === 'object';
 
-const isValidOption = (
+const isValidOption = <T extends Resource>(
 	key: string,
-): key is StringKeyOf<ODataOptionsWithoutCount> => {
+): key is StringKeyOf<ODataOptionsWithoutCount<T['Read']>> => {
 	return (
 		key === '$select' ||
 		key === '$filter' ||
@@ -350,9 +415,9 @@ const addParentKey = (
 	return [`${filter}`];
 };
 
-const applyBinds = (
+const applyBinds = <T extends Resource['Read']>(
 	filter: string,
-	params: Dictionary<Filter>,
+	params: Dictionary<Filter<T>>,
 	parentKey?: string[],
 ): string[] => {
 	for (const index of Object.keys(params)) {
@@ -369,8 +434,8 @@ const applyBinds = (
 	return addParentKey(filter, parentKey);
 };
 
-const filterOperation = (
-	filter: FilterOperationValue,
+const filterOperation = <T extends Resource['Read']>(
+	filter: FilterOperationValue<T>,
 	operator: FilterOperationKey,
 	parentKey?: string[],
 ): string[] => {
@@ -403,8 +468,8 @@ const filterOperation = (
 		);
 	}
 };
-const filterFunction = (
-	filter: FilterFunctionValue,
+const filterFunction = <T extends Resource['Read']>(
+	filter: FilterFunctionValue<T>,
 	fnIdentifier: FilterFunctionKey,
 	parentKey?: string[],
 ): string[] => {
@@ -433,13 +498,17 @@ const filterFunction = (
 	}
 };
 
-type FilterType<Operator extends keyof AllFilterOperations> = NonNullable<
-	AllFilterOperations[Operator]
->;
+type FilterType<
+	Operator extends keyof AllFilterOperations<T>,
+	T extends Resource['Read'],
+> = NonNullable<AllFilterOperations<T>[Operator]>;
 // Handle special cases for all the different $ operators.
-const handleFilterOperator = (
-	filter: AllFilterOperations[keyof AllFilterOperations],
-	operator: keyof AllFilterOperations,
+const handleFilterOperator = <
+	T extends Resource['Read'],
+	U extends AllFilterOperations<T>,
+>(
+	filter: AllFilterOperations<T>[keyof AllFilterOperations<T>],
+	operator: keyof AllFilterOperations<T>,
 	parentKey?: string[],
 ): string[] => {
 	switch (operator) {
@@ -455,7 +524,7 @@ const handleFilterOperator = (
 		case '$div':
 		case '$mod':
 			return filterOperation(
-				filter as FilterType<typeof operator>,
+				filter as FilterType<typeof operator, T>,
 				operator,
 				parentKey,
 			);
@@ -490,7 +559,7 @@ const handleFilterOperator = (
 		case '$isof':
 		case '$cast':
 			return filterFunction(
-				filter as FilterType<typeof operator>,
+				filter as FilterType<typeof operator, T>,
 				operator,
 				parentKey,
 			);
@@ -526,7 +595,7 @@ const handleFilterOperator = (
 		}
 		// break
 		case '$raw': {
-			const filterx = filter as FilterType<typeof operator>;
+			const filterx = filter as U[typeof operator];
 			if (isString(filterx)) {
 				return addParentKey(`(${filterx})`, parentKey);
 			} else if (!isPrimitive(filterx)) {
@@ -538,7 +607,7 @@ const handleFilterOperator = (
 							`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
 						);
 					}
-					const mappedParams: Dictionary<Filter> = {};
+					const mappedParams: Dictionary<Filter<T>> = {};
 					for (let index = 0; index < params.length; index++) {
 						mappedParams[index + 1] = params[index];
 					}
@@ -550,7 +619,7 @@ const handleFilterOperator = (
 							`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
 						);
 					}
-					const mappedParams: Dictionary<Filter> = {};
+					const mappedParams: Dictionary<Filter<T>> = {};
 					for (const index in filterx) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
@@ -558,7 +627,8 @@ const handleFilterOperator = (
 									`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
 								);
 							}
-							mappedParams[index] = filterx[index] as Filter;
+							mappedParams[index] =
+								filterx[index as `${Letter | Digit}${string}`];
 						}
 					}
 					return applyBinds(filterStr, mappedParams, parentKey);
@@ -570,7 +640,7 @@ const handleFilterOperator = (
 		}
 		// break
 		case '$': {
-			const resource = escapeResource(filter as FilterType<typeof operator>);
+			const resource = escapeResource(filter as FilterType<typeof operator, T>);
 			return addParentKey(resource, parentKey);
 		}
 		case '$count': {
@@ -586,7 +656,7 @@ const handleFilterOperator = (
 				keys.push(
 					handleOptions(
 						'$filter',
-						{ $count: filter as { $filter?: Filter } },
+						{ $count: filter as { $filter?: Filter<T> } },
 						parentKey[parentKey.length - 1],
 					),
 				);
@@ -597,13 +667,13 @@ const handleFilterOperator = (
 			}
 			// Handles the `$filter: a: $count: value` case.
 			deprecated.countWithNestedOperationInFilter();
-			return buildFilter(filter as Filter, keys);
+			return buildFilter(filter as Filter<T>, keys);
 		}
 		// break
 		case '$and':
 		case '$or': {
 			const filterStr = buildFilter(
-				filter as FilterType<typeof operator>,
+				filter as FilterType<typeof operator, T>,
 				undefined,
 				` ${operator.slice(1)} `,
 			);
@@ -611,7 +681,7 @@ const handleFilterOperator = (
 		}
 		// break
 		case '$in': {
-			filter = filter as FilterType<typeof operator>;
+			filter = filter as FilterType<typeof operator, T>;
 			if (isPrimitive(filter)) {
 				const filterStr = escapeValue(filter);
 				return addParentKey(filterStr, parentKey, ' eq ');
@@ -643,16 +713,16 @@ const handleFilterOperator = (
 		// break
 		case '$not': {
 			const filterStr = `not(${buildFilter(
-				filter as FilterType<typeof operator>,
+				filter as FilterType<typeof operator, T>,
 			).join('')})`;
 			return addParentKey(filterStr, parentKey);
 		}
 		// break
 		case '$any':
 		case '$all': {
-			filter = filter as FilterType<typeof operator>;
-			const alias = filter.$alias;
-			const expr = filter.$expr;
+			const filterx = filter as FilterType<typeof operator, T>;
+			const alias = filterx.$alias;
+			const expr = filterx.$expr;
 			if (alias == null) {
 				throw new Error(
 					`Lambda expression (${operator}) has no alias defined.`,
@@ -678,8 +748,8 @@ const handleFilterOperator = (
 	}
 };
 
-const handleFilterObject = (
-	filter: FilterObj,
+const handleFilterObject = <T extends Resource['Read']>(
+	filter: FilterObj<T>,
 	parentKey?: string[],
 ): string[][] => {
 	return mapObj(filter, (value, key) => {
@@ -691,7 +761,7 @@ const handleFilterObject = (
 		if (key[0] === '$') {
 			return handleFilterOperator(
 				value,
-				key as keyof AllFilterOperations,
+				key as keyof AllFilterOperations<T>,
 				parentKey,
 			);
 		} else if (key[0] === '@') {
@@ -705,13 +775,13 @@ const handleFilterObject = (
 				}
 				keys = parentKey.concat(keys);
 			}
-			return buildFilter(value as Filter, keys);
+			return buildFilter(value, keys);
 		}
 	});
 };
 
-const handleFilterArray = (
-	filter: FilterArray,
+const handleFilterArray = <T extends Resource['Read']>(
+	filter: FilterArray<T>,
 	parentKey?: string[],
 	minElements = 2,
 ): string[][] => {
@@ -729,8 +799,8 @@ const handleFilterArray = (
 };
 
 // Turn a filter query object into an OData $filter string
-const buildFilter = (
-	filter: Filter,
+const buildFilter = <T extends Resource['Read']>(
+	filter: Filter<T>,
 	parentKey?: string[],
 	joinStr?: string,
 ): string[] => {
@@ -751,7 +821,9 @@ const buildFilter = (
 	}
 };
 
-const buildOrderBy = (orderby: OrderBy): string => {
+const buildOrderBy = <T extends Resource['Read']>(
+	orderby: OrderBy<T>,
+): string => {
 	if (isString(orderby)) {
 		if (/\/\$count\b/.test(orderby)) {
 			deprecated.countInOrderBy();
@@ -773,6 +845,11 @@ const buildOrderBy = (orderby: OrderBy): string => {
 		const result = mapObj($orderby, (dirOrOptions, key) => {
 			let propertyPath: string = key;
 			let dir = $dir;
+			if (dirOrOptions == null) {
+				throw new Error(
+					`Orderby object values must not be null, got null for ${key}`,
+				);
+			}
 			if (typeof dirOrOptions === 'string') {
 				dir = dirOrOptions;
 			} else {
@@ -814,20 +891,20 @@ const buildOrderBy = (orderby: OrderBy): string => {
 	}
 };
 
-const buildOption = (
+const buildOption = <T extends Resource['Read']>(
 	option: string,
-	value: ODataOptionsWithoutCount[string],
+	value: ODataOptionsWithoutCount<T>[string],
 ): string => {
 	let compiledValue: string = '';
 	switch (option) {
 		case '$filter':
-			compiledValue = buildFilter(value as Filter).join('');
+			compiledValue = buildFilter(value as Filter<T>).join('');
 			break;
 		case '$expand':
-			compiledValue = buildExpand(value as Expand);
+			compiledValue = buildExpand(value as Expand<T>);
 			break;
 		case '$orderby':
-			compiledValue = buildOrderBy(value as OrderBy);
+			compiledValue = buildOrderBy(value as OrderBy<T>);
 			break;
 		case '$top':
 		case '$skip': {
@@ -878,9 +955,9 @@ const buildOption = (
 	return `${option}=${compiledValue}`;
 };
 
-const handleOptions = (
+const handleOptions = <T extends Resource['Read']>(
 	optionOperation: keyof typeof ODataOptionCodeExampleMap,
-	options: ODataOptions,
+	options: ODataOptions<T>,
 	parentKey: string,
 ): string => {
 	if (Object.prototype.hasOwnProperty.call(options, '$count')) {
@@ -939,11 +1016,18 @@ const handleOptions = (
 	optionsStr = escapeResource(parentKey) + optionsStr;
 	return optionsStr;
 };
-const handleExpandObject = (expand: ResourceExpand): string[] => {
+const handleExpandObject = <T extends Resource['Read']>(
+	expand: ResourceExpand<T>,
+): string[] => {
 	const expands = mapObj(expand, (value, key) => {
 		if (key[0] === '$') {
 			throw new Error(
 				'Cannot have expand options without first expanding something!',
+			);
+		}
+		if (value == null) {
+			throw new Error(
+				`Expand object values must not be null, got null for ${key}`,
 			);
 		}
 		if (isPrimitive(value)) {
@@ -965,8 +1049,8 @@ const handleExpandObject = (expand: ResourceExpand): string[] => {
 	return expands;
 };
 
-const handleExpandArray = (
-	expands: ReadonlyArray<string | ResourceExpand>,
+const handleExpandArray = <T extends Resource['Read']>(
+	expands: ReadonlyArray<BaseExpand<T>>,
 ): string[] => {
 	if (expands.length < 1) {
 		throw new Error(
@@ -981,7 +1065,7 @@ const handleExpandArray = (
 	});
 };
 
-const buildExpand = (expand: Expand): string => {
+const buildExpand = <T extends Resource['Read']>(expand: Expand<T>): string => {
 	if (isPrimitive(expand)) {
 		return escapeResource(expand);
 	} else if (isArray(expand)) {
@@ -1019,10 +1103,14 @@ const validParams = [
 	'retry',
 ] as const;
 
-export type PreparedFn<T extends Dictionary<ParameterAlias>, U> = (
+export type PreparedFn<
+	T extends Dictionary<ParameterAlias>,
+	U,
+	TResource extends Resource = AnyResource,
+> = (
 	parameterAliases?: T,
-	body?: Params['body'],
-	passthrough?: Params['passthrough'],
+	body?: Params<TResource>['body'],
+	passthrough?: Params<TResource>['passthrough'],
 ) => U;
 
 export type RetryParametersObj = {
@@ -1043,6 +1131,9 @@ export type RetryParameters = RetryParametersObj | false;
 export abstract class PinejsClientCore<
 	/** @deprecated This was for the purposes of `clone` and we now use `this` for that */
 	PinejsClient = unknown,
+	Model extends { [key in keyof Model]: Resource } = {
+		[key in string]: AnyResource;
+	},
 > {
 	public apiPrefix: string = '/';
 	public passthrough: AnyObject = {};
@@ -1195,25 +1286,125 @@ export abstract class PinejsClientCore<
 		) => this)(cloneParams, cloneBackendParams);
 	}
 
-	public async get(
-		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+	public async get<
+		TResource extends StringKeyOf<Model>,
+		TParams extends Params<Model[TResource]> & {
+			options: {
+				$count: NonNullable<ODataOptions<Model[TResource]['Read']>['$count']>;
+			};
 		},
+	>(
+		params: {
+			resource: TResource;
+		} & TParams,
 	): Promise<number>;
-	public async get(
-		params: Params & { id: NonNullable<Params['id']> },
-	): Promise<AnyObject | undefined>;
-	public async get(params: Omit<Params, 'id'>): Promise<AnyObject[]>;
+	public async get<
+		TResource extends StringKeyOf<Model>,
+		TParams extends Params<Model[TResource]> & {
+			id: NonNullable<Params<Model[TResource]>['id']>;
+			options: NonNullable<
+				Params<Model[TResource]>['options'] &
+					(
+						| {
+								$select: NonNullable<
+									NonNullable<Params<Model[TResource]>['options']>['$select']
+								>;
+						  }
+						| {
+								$expand: NonNullable<
+									NonNullable<Params<Model[TResource]>['options']>['$expand']
+								>;
+						  }
+					)
+			>;
+		},
+	>(
+		params: {
+			resource: TResource;
+		} & TParams,
+	): Promise<
+		| NoInfer<
+				PickDeferred<
+					Model[TResource]['Read'],
+					SelectPropsOf<
+						Model[TResource]['Read'],
+						NonNullable<TParams['options']>
+					>
+				> &
+					PickExpanded<
+						Model[TResource]['Read'],
+						ExpandPropsOf<
+							Model[TResource]['Read'],
+							NonNullable<TParams['options']>
+						>
+					>
+		  >
+		| undefined
+	>;
+	public async get<
+		TResource extends StringKeyOf<Model>,
+		TParams extends Params<Model[TResource]> & {
+			id: NonNullable<Params<Model[TResource]>['id']>;
+			resource: TResource;
+		},
+	>(
+		params: { resource: TResource } & TParams,
+	): Promise<NoInfer<Model[TResource]['Read']> | undefined>;
+	public async get<
+		TResource extends StringKeyOf<Model>,
+		TParams extends Omit<Params<Model[TResource]>, 'id'> & {
+			resource: TResource;
+			options: NonNullable<
+				Params<Model[TResource]>['options'] &
+					(
+						| {
+								$select: NonNullable<
+									NonNullable<Params<Model[TResource]>['options']>['$select']
+								>;
+						  }
+						| {
+								$expand: NonNullable<
+									NonNullable<Params<Model[TResource]>['options']>['$expand']
+								>;
+						  }
+					)
+			>;
+		},
+	>(
+		params: { resource: TResource } & TParams,
+	): Promise<
+		NoInfer<
+			Array<
+				PickDeferred<
+					Model[TResource]['Read'],
+					SelectPropsOf<
+						Model[TResource]['Read'],
+						NonNullable<TParams['options']>
+					>
+				> &
+					PickExpanded<
+						Model[TResource]['Read'],
+						ExpandPropsOf<
+							Model[TResource]['Read'],
+							NonNullable<TParams['options']>
+						>
+					>
+			>
+		>
+	>;
+	public async get<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource } & Omit<Params<Model[TResource]>, 'id'>,
+	): Promise<NoInfer<Array<Model[TResource]['Read']>>>;
 	/**
 	 * @deprecated GETing via `url` is deprecated
 	 */
-	public async get(
+	public get<T extends Resource = AnyResource>(
 		params: {
 			resource?: undefined;
-			url: NonNullable<Params['url']>;
-		} & Params,
+			url: NonNullable<Params<T>['url']>;
+		} & Params<T>,
 	): Promise<PromiseResultTypes>;
-	public async get(params: Params): Promise<PromiseResultTypes> {
+	public async get(params: Params<AnyResource>): Promise<PromiseResultTypes> {
 		if (params.url != null) {
 			deprecated.urlInGet();
 		}
@@ -1222,22 +1413,22 @@ export abstract class PinejsClientCore<
 		return this._transformGetResult(params, result);
 	}
 
-	protected _transformGetResult(
-		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+	protected _transformGetResult<T extends Resource>(
+		params: Params<T> & {
+			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
 		},
 		data: AnyObject,
 	): number;
-	protected _transformGetResult(
-		params: Params & { id: NonNullable<Params['id']> },
+	protected _transformGetResult<T extends Resource>(
+		params: Params<T> & { id: NonNullable<Params<T>['id']> },
 		data: AnyObject,
 	): AnyObject | undefined;
-	protected _transformGetResult(
-		params: Omit<Params, 'id'>,
+	protected _transformGetResult<T extends Resource>(
+		params: Omit<Params<T>, 'id'>,
 		data: AnyObject,
 	): AnyObject[];
-	protected _transformGetResult(
-		params: Params,
+	protected _transformGetResult<T extends Resource>(
+		params: Params<T>,
 		data: AnyObject,
 	): PromiseResultTypes {
 		if (!isObject(data)) {
@@ -1262,35 +1453,45 @@ export abstract class PinejsClientCore<
 
 	// TODO: Change its interface to how _transformGetResult looks in the next major
 	/** @deprecated */
-	protected transformGetResult(
-		params: Params & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+	protected transformGetResult<T extends Resource>(
+		params: Params<T> & {
+			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
 		},
 	): (data: AnyObject) => number;
-	protected transformGetResult(
-		params: Params & { id: NonNullable<Params['id']> },
+	protected transformGetResult<T extends Resource>(
+		params: Params<T> & { id: NonNullable<Params<T>['id']> },
 	): (data: AnyObject) => AnyObject | undefined;
-	protected transformGetResult(
-		params: Omit<Params, 'id'>,
+	protected transformGetResult<T extends Resource>(
+		params: Omit<Params<T>, 'id'>,
 	): (data: AnyObject) => AnyObject[];
-	protected transformGetResult(
-		params: Params,
+	protected transformGetResult<T extends Resource>(
+		params: Params<T>,
 	): (data: AnyObject) => PromiseResultTypes {
 		return (data) => this._transformGetResult(params, data);
 	}
 
-	public subscribe(
-		params: SubscribeParams & {
-			options: { $count: NonNullable<ODataOptions['$count']> };
+	public subscribe<TResource extends StringKeyOf<Model>>(
+		params: SubscribeParams<Model[TResource]> & {
+			resource: TResource;
+			options: {
+				$count: NonNullable<ODataOptions<Model[TResource]['Read']>['$count']>;
+			};
 		},
 	): Poll<number>;
-	public subscribe(
-		params: SubscribeParams & { id: NonNullable<SubscribeParams['id']> },
+	public subscribe<TResource extends StringKeyOf<Model>>(
+		params: SubscribeParams<Model[TResource]> & {
+			resource: TResource;
+			id: NonNullable<SubscribeParams<Model[TResource]>['id']>;
+		},
 	): Poll<AnyObject | undefined>;
-	public subscribe(
-		SubscribeParams: Omit<SubscribeParams, 'id'>,
+	public subscribe<TResource extends StringKeyOf<Model>>(
+		params: Omit<SubscribeParams<Model[TResource]>, 'id'> & {
+			resource: TResource;
+		},
 	): Poll<AnyObject[]>;
-	public subscribe(params: SubscribeParams): Poll<PromiseResultTypes> {
+	public subscribe<TResource extends StringKeyOf<Model>>(
+		params: SubscribeParams<Model[TResource]>,
+	): Poll<PromiseResultTypes> {
 		if (isString(params)) {
 			throw new Error(
 				'`subscribe(url)` is no longer supported, please use `subscribe({ url })` instead.',
@@ -1304,71 +1505,86 @@ export abstract class PinejsClientCore<
 		return new Poll(requestFn, pollInterval);
 	}
 
-	public put(
-		params: { resource: NonNullable<Params['resource']> } & Params,
+	public put<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
 	): Promise<void>;
 	/**
 	 * @deprecated PUTing via `url` is deprecated
 	 */
-	public put(
-		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	public put<T extends Resource = AnyResource>(
+		params: {
+			resource?: undefined;
+			url: NonNullable<Params<T>['url']>;
+		} & Params<T>,
 	): Promise<void>;
-	public put(params: Params): Promise<void> {
+	public put(params: Params<AnyResource>): Promise<void> {
 		if (params.url != null) {
 			deprecated.urlInPut();
 		}
 		return this.request({ ...params, method: 'PUT' });
 	}
 
-	public patch(
-		params: { resource: NonNullable<Params['resource']> } & Params,
+	public patch<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
 	): Promise<void>;
 	/**
 	 * @deprecated PATCHing via `url` is deprecated
 	 */
-	public patch(
-		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	public patch<T extends Resource = AnyResource>(
+		params: {
+			resource?: undefined;
+			url: NonNullable<Params<T>['url']>;
+		} & Params<T>,
 	): Promise<void>;
-	public patch(params: Params): Promise<void> {
+	public patch(params: Params<AnyResource>): Promise<void> {
 		if (params.url != null) {
 			deprecated.urlInPatch();
 		}
 		return this.request({ ...params, method: 'PATCH' });
 	}
 
-	public post(
-		params: { resource: NonNullable<Params['resource']> } & Params,
-	): Promise<AnyObject>;
+	public post<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource } & Params<Model[TResource]>,
+	): Promise<Model[TResource]['Read']>;
 	/**
 	 * @deprecated POSTing via `url` is deprecated
 	 */
-	public post(
-		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	public post<T extends Resource = AnyResource>(
+		params: {
+			resource?: undefined;
+			url: NonNullable<Params<T>['url']>;
+		} & Params<T>,
 	): Promise<AnyObject>;
-	public post(params: Params): Promise<AnyObject> {
+	public post(params: Params<AnyResource>): Promise<AnyObject> {
 		if (params.url != null) {
 			deprecated.urlInPost();
 		}
 		return this.request({ ...params, method: 'POST' });
 	}
 
-	public delete(
-		params: { resource: NonNullable<Params['resource']> } & Params,
+	public delete<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource } & Params<Model[TResource]>,
 	): Promise<void>;
 	/**
 	 * @deprecated DELETEing via `url` is deprecated
 	 */
-	public delete(
-		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	public delete<T extends Resource = AnyResource>(
+		params: {
+			resource?: undefined;
+			url: NonNullable<Params<T>['url']>;
+		} & Params<T>,
 	): Promise<void>;
-	public delete(params: Params): Promise<void> {
+	public delete(params: Params<AnyResource>): Promise<void> {
 		if (params.url != null) {
 			deprecated.urlInDelete();
 		}
+		params.method = 'DELETE';
 		return this.request({ ...params, method: 'DELETE' });
 	}
 
-	public async getOrCreate(params: GetOrCreateParams): Promise<AnyObject> {
+	public async getOrCreate<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource } & GetOrCreateParams<Model[TResource]>,
+	): Promise<AnyObject> {
 		if ('url' in params && params.url != null) {
 			deprecated.urlInGetOrCreate();
 		}
@@ -1406,7 +1622,11 @@ export abstract class PinejsClientCore<
 		});
 	}
 
-	public async upsert(params: UpsertParams): Promise<undefined | AnyObject> {
+	public async upsert<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource; url?: undefined } & UpsertParams<
+			Model[TResource]
+		>,
+	): Promise<undefined | AnyObject> {
 		if ('url' in params && params.url != null) {
 			deprecated.urlInUpsert();
 		}
@@ -1460,34 +1680,108 @@ export abstract class PinejsClientCore<
 		}
 	}
 
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
 			method?: 'GET';
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: {
+				$count: NonNullable<ODataOptions<Model[TResource]['Read']>['$count']>;
+			};
 		},
-	): PreparedFn<T, Promise<number>>;
+	): PreparedFn<T, Promise<number>, Model[TResource]>;
+	// We have duplicates with only the parameter alias dictionary generic to support the case where only that generic typing is passed, since inferring generics is all or nothing in typescript atm
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
-	): PreparedFn<T, Promise<AnyObject | undefined>>;
+		params: Params<AnyResource> & {
+			method?: 'GET';
+			options: {
+				$count: NonNullable<ODataOptions<AnyResource['Read']>['$count']>;
+			};
+		},
+	): PreparedFn<T, Promise<number>, AnyResource>;
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
+			method?: 'GET';
+			id: NonNullable<Params<Model[TResource]>['id']>;
+		},
+	): PreparedFn<T, Promise<AnyObject | undefined>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Omit<Params, 'id'> & { method?: 'GET' },
-	): PreparedFn<T, Promise<AnyObject[]>>;
+		params: Params<AnyResource> & {
+			method?: 'GET';
+			id: NonNullable<Params<AnyResource>['id']>;
+		},
+	): PreparedFn<T, Promise<AnyObject | undefined>, AnyResource>;
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Omit<Params<Model[TResource]>, 'id'> & {
+			resource: TResource;
+			method?: 'GET';
+		},
+	): PreparedFn<T, Promise<AnyObject[]>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & { method?: 'GET' },
-	): PreparedFn<T, Promise<PromiseResultTypes>>;
+		params: Omit<Params<AnyResource>, 'id'> & {
+			method?: 'GET';
+		},
+	): PreparedFn<T, Promise<AnyObject[]>, AnyResource>;
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
+			method?: 'GET';
+		},
+	): PreparedFn<T, Promise<PromiseResultTypes>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
+		params: Params<AnyResource> & {
+			method?: 'GET';
+		},
+	): PreparedFn<T, Promise<PromiseResultTypes>, AnyResource>;
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
-	): PreparedFn<T, Promise<void>>;
+	): PreparedFn<T, Promise<void>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
+		params: Params<AnyResource> & {
+			method: 'PUT' | 'PATCH' | 'DELETE';
+		},
+	): PreparedFn<T, Promise<void>, AnyResource>;
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
 			method: 'POST';
 		},
-	): PreparedFn<T, Promise<AnyObject>>;
+	): PreparedFn<T, Promise<AnyObject>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params,
-	): PreparedFn<T, Promise<PromiseResultTypes | void>> {
+		params: Params<AnyResource> & {
+			method: 'POST';
+		},
+	): PreparedFn<T, Promise<AnyObject>, AnyResource>;
+	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: Params<AnyResource> & {
+			resource?: undefined;
+			method: 'POST';
+		},
+	): PreparedFn<T, Promise<AnyObject>, AnyResource>;
+	public prepare<T extends Dictionary<ParameterAlias>>(
+		params: Params<AnyResource>,
+	): PreparedFn<T, Promise<PromiseResultTypes | void>, AnyResource> {
 		if (isString(params)) {
 			throw new Error(
 				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
@@ -1543,17 +1837,20 @@ export abstract class PinejsClientCore<
 		};
 	}
 
-	public compile(
-		params: { resource: NonNullable<Params['resource']> } & Params,
+	public compile<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource } & Params<Model[TResource]>,
 	): string;
 	/**
 	 * @deprecated Compiling a `url` is deprecated, it's a noop so you can just use the url directly
 	 */
-	public compile(
-		params: { resource?: undefined; url: NonNullable<Params['url']> } & Params,
+	public compile<T extends Resource = AnyResource>(
+		params: {
+			resource?: undefined;
+			url: NonNullable<Params<T>['url']>;
+		} & Params<T>,
 	): string;
-	public compile(params: Params): string;
-	public compile(params: Params): string {
+	public compile(params: Params<AnyResource>): string;
+	public compile(params: Params<AnyResource>): string {
 		if (isString(params)) {
 			throw new Error('Params must be an object not a string');
 		}
@@ -1583,7 +1880,7 @@ export abstract class PinejsClientCore<
 					);
 				}
 				url += '/$count';
-				options = options.$count as ODataOptionsWithoutCount;
+				options = options.$count as ODataOptionsWithoutCount<AnyObject>;
 			}
 
 			if (Object.prototype.hasOwnProperty.call(params, 'id')) {
@@ -1601,7 +1898,7 @@ export abstract class PinejsClientCore<
 							const escapedValue =
 								isObject(v) && '@' in v
 									? escapeParameterAlias(v['@'])
-									: escapeValue(v);
+									: escapeValue(v!);
 							return `${k}=${escapedValue}`;
 						}).join(',');
 					}
@@ -1632,37 +1929,37 @@ export abstract class PinejsClientCore<
 		}
 	}
 
-	public request(
-		params: Params & {
+	public request<T extends Resource>(
+		params: Params<T> & {
 			method?: 'GET';
-			options: { $count: NonNullable<ODataOptions['$count']> };
+			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
 		},
 	): Promise<number>;
-	public request(
-		params: Params & { method?: 'GET'; id: NonNullable<Params['id']> },
+	public request<T extends Resource>(
+		params: Params<T> & { method?: 'GET'; id: NonNullable<Params<T>['id']> },
 	): Promise<AnyObject | undefined>;
-	public request(
-		params: Omit<Params, 'id'> & { method?: 'GET' },
+	public request<T extends Resource>(
+		params: Omit<Params<T>, 'id'> & { method?: 'GET' },
 	): Promise<AnyObject[]>;
-	public request(
-		params: Params & { method?: 'GET' },
+	public request<T extends Resource>(
+		params: Params<T> & { method?: 'GET' },
 	): Promise<PromiseResultTypes>;
-	public request(
-		params: Params & {
+	public request<T extends Resource>(
+		params: Params<T> & {
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
 	): Promise<void>;
-	public request(
-		params: Params & {
+	public request<T extends Resource>(
+		params: Params<T> & {
 			method: 'POST';
 		},
 	): Promise<AnyObject>;
-	public request(
-		params: Params,
+	public request<T extends Resource>(
+		params: Params<T>,
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | void>;
-	public request(
-		params: Params,
+	public request<T extends Resource>(
+		params: Params<T>,
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | void> {
 		if (overrides !== undefined) {
@@ -1722,7 +2019,7 @@ type FilterOperationKey =
 	| '$mul'
 	| '$div'
 	| '$mod';
-type FilterOperationValue = Filter;
+type FilterOperationValue<T extends Resource['Read']> = Filter<T>;
 type FilterFunctionKey =
 	| '$contains'
 	| '$endswith'
@@ -1753,7 +2050,7 @@ type FilterFunctionKey =
 	| '$ceiling'
 	| '$isof'
 	| '$cast';
-type FilterFunctionValue = Filter;
+type FilterFunctionValue<T extends Resource['Read']> = Filter<T>;
 
 type DurationValue = {
 	negative?: boolean;
@@ -1763,112 +2060,145 @@ type DurationValue = {
 	seconds?: number;
 };
 
-type NestedFilterOperations = {
-	$count?: Filter | ODataCountOptions;
+export type NestedFilterOperations<
+	T extends Resource['Read'],
+	NestedKey extends StringKeyOf<T> = ExpandableStringKeyOf<T>,
+> = {
+	$count?: NestedKey extends ExpandableStringKeyOf<T>
+		?
+				| Filter<ExtractExpand<T, NestedKey>>
+				| ODataCountOptions<ExtractExpand<T, NestedKey>>
+		: never;
 
-	$in?: Filter;
+	$in?: Filter<T>;
 
-	$any?: Lambda;
-	$all?: Lambda;
+	$any?: NestedKey extends ExpandableStringKeyOf<T>
+		? Lambda<ExtractExpand<T, NestedKey>>
+		: never;
+	$all?: NestedKey extends ExpandableStringKeyOf<T>
+		? Lambda<ExtractExpand<T, NestedKey>>
+		: never;
 };
 
-type FilterOperations = {
+type FilterOperations<T extends Resource['Read']> = {
 	'@'?: string;
 
-	$raw?: RawFilter;
+	$raw?: RawFilter<T>;
 
 	$?: string | string[];
 
-	$and?: Filter;
-	$or?: Filter;
+	$and?: Filter<T>;
+	$or?: Filter<T>;
 
-	$not?: Filter;
+	$not?: Filter<T>;
 
 	// Filter operations
-	$ne?: FilterOperationValue;
-	$eq?: FilterOperationValue;
-	$gt?: FilterOperationValue;
-	$ge?: FilterOperationValue;
-	$lt?: FilterOperationValue;
-	$le?: FilterOperationValue;
-	$add?: FilterOperationValue;
-	$sub?: FilterOperationValue;
-	$mul?: FilterOperationValue;
-	$div?: FilterOperationValue;
-	$mod?: FilterOperationValue;
+	$ne?: FilterOperationValue<T>;
+	$eq?: FilterOperationValue<T>;
+	$gt?: FilterOperationValue<T>;
+	$ge?: FilterOperationValue<T>;
+	$lt?: FilterOperationValue<T>;
+	$le?: FilterOperationValue<T>;
+	$add?: FilterOperationValue<T>;
+	$sub?: FilterOperationValue<T>;
+	$mul?: FilterOperationValue<T>;
+	$div?: FilterOperationValue<T>;
+	$mod?: FilterOperationValue<T>;
 
 	// Filter functions
-	$contains?: FilterFunctionValue;
-	$endswith?: FilterFunctionValue;
-	$startswith?: FilterFunctionValue;
-	$length?: FilterFunctionValue;
-	$indexof?: FilterFunctionValue;
-	$substring?: FilterFunctionValue;
-	$tolower?: FilterFunctionValue;
-	$toupper?: FilterFunctionValue;
-	$trim?: FilterFunctionValue;
-	$concat?: FilterFunctionValue;
-	$year?: FilterFunctionValue;
-	$month?: FilterFunctionValue;
-	$day?: FilterFunctionValue;
-	$hour?: FilterFunctionValue;
-	$minute?: FilterFunctionValue;
-	$second?: FilterFunctionValue;
-	$fractionalseconds?: FilterFunctionValue;
-	$date?: FilterFunctionValue;
-	$time?: FilterFunctionValue;
-	$totaloffsetminutes?: FilterFunctionValue;
-	$now?: FilterFunctionValue;
+	$contains?: FilterFunctionValue<T>;
+	$endswith?: FilterFunctionValue<T>;
+	$startswith?: FilterFunctionValue<T>;
+	$length?: FilterFunctionValue<T>;
+	$indexof?: FilterFunctionValue<T>;
+	$substring?: FilterFunctionValue<T>;
+	$tolower?: FilterFunctionValue<T>;
+	$toupper?: FilterFunctionValue<T>;
+	$trim?: FilterFunctionValue<T>;
+	$concat?: FilterFunctionValue<T>;
+	$year?: FilterFunctionValue<T>;
+	$month?: FilterFunctionValue<T>;
+	$day?: FilterFunctionValue<T>;
+	$hour?: FilterFunctionValue<T>;
+	$minute?: FilterFunctionValue<T>;
+	$second?: FilterFunctionValue<T>;
+	$fractionalseconds?: FilterFunctionValue<T>;
+	$date?: FilterFunctionValue<T>;
+	$time?: FilterFunctionValue<T>;
+	$totaloffsetminutes?: FilterFunctionValue<T>;
+	$now?: FilterFunctionValue<T>;
 	$duration?: DurationValue;
-	$maxdatetime?: FilterFunctionValue;
-	$mindatetime?: FilterFunctionValue;
-	$totalseconds?: FilterFunctionValue;
-	$round?: FilterFunctionValue;
-	$floor?: FilterFunctionValue;
-	$ceiling?: FilterFunctionValue;
-	$isof?: FilterFunctionValue;
-	$cast?: FilterFunctionValue;
+	$maxdatetime?: FilterFunctionValue<T>;
+	$mindatetime?: FilterFunctionValue<T>;
+	$totalseconds?: FilterFunctionValue<T>;
+	$round?: FilterFunctionValue<T>;
+	$floor?: FilterFunctionValue<T>;
+	$ceiling?: FilterFunctionValue<T>;
+	$isof?: FilterFunctionValue<T>;
+	$cast?: FilterFunctionValue<T>;
 };
 
-type AllFilterOperations = FilterOperations & NestedFilterOperations;
+type AllFilterOperations<T extends Resource['Read']> = FilterOperations<T> &
+	NestedFilterOperations<T>;
 
-export type FilterObj = {
-	[key: StartsWithLetter]: Filter | NestedFilterOperations | undefined;
-} & FilterOperations;
+export type FilterObj<T extends Resource['Read'] = AnyResourceObject> = {
+	[key in StringKeyOf<T>]?:
+		| Filter<T>
+		| NestedFilterOperations<T, key>
+		| undefined;
+} & FilterOperations<T>;
 
-export type FilterArray = readonly Filter[];
+export type FilterArray<T extends Resource['Read'] = AnyResourceObject> =
+	ReadonlyArray<Filter<T>>;
 export type FilterBaseType = string | number | null | boolean | Date;
-export type RawFilter =
+export type RawFilter<T extends Resource['Read'] = AnyResourceObject> =
 	| string
-	| [string, ...Filter[]]
+	| [string, ...Array<Filter<T>>]
 	| {
 			$string: string;
-			[index: string]: Filter;
+			[index: `${Letter | Digit}${string}`]: Filter<T>;
 	  };
-export interface Lambda {
-	$alias: string;
-	$expr: Filter;
+
+export interface Lambda<
+	T extends Resource['Read'] = AnyResourceObject,
+	Alias extends string = string,
+> {
+	// This alias can only be inferred when we are not passing any generic parameters so in
+	// practice it has limited use but if/when typescript supports partial inference of generic
+	// parameters it will become significantly more useful
+	$alias: Alias;
+	$expr: Filter<T & { [a in NoInfer<Alias>]: T }>;
 }
-export type Filter = FilterObj | FilterArray | FilterBaseType;
+export type Filter<T extends Resource['Read'] = AnyResourceObject> =
+	| FilterObj<T>
+	| FilterArray<T>
+	| FilterBaseType;
 
-export type ResourceExpand = Dictionary<ODataOptions>;
+export type ResourceExpand<T extends Resource['Read'] = AnyResourceObject> = {
+	[resource in StringKeyOf<T> as ExtractExpand<T, resource> extends never
+		? never
+		: resource]?: ODataOptions<ExtractExpand<T, resource>>;
+};
 
-export type Expand =
-	| string
-	| ResourceExpand
-	| ReadonlyArray<string | ResourceExpand>;
+export type BaseExpand<T extends Resource['Read'] = AnyResourceObject> =
+	| ExpandableStringKeyOf<T>
+	| ResourceExpand<T>;
+export type Expand<T extends Resource['Read'] = AnyResourceObject> =
+	| BaseExpand<T>
+	| ReadonlyArray<BaseExpand<T>>;
 
+/**
+ * This can interact poorly with generics because `field: 'desc'` would be treated as `field: string` which doesn't match
+ */
 type OrderByDirection = 'asc' | 'desc';
 
-export type OrderBy =
-	| string
-	| readonly OrderBy[]
-	| {
-			[k: StartsWithLetter]: OrderByDirection;
-	  }
+export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
+	| StringKeyOf<T>
+	| ReadonlyArray<OrderBy<T>>
+	| { [k in StringKeyOf<T>]?: OrderByDirection }
 	| ({
-			[k: StartsWithLetter]: {
-				$count: ODataCountOptions;
+			[k in ExpandableStringKeyOf<T>]?: {
+				$count: ODataCountOptions<ExtractExpand<T, k>>;
 			};
 	  } & {
 			$dir: OrderByDirection;
@@ -1877,28 +2207,35 @@ export type OrderBy =
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
 
-export interface ODataOptionsWithoutCount {
-	$filter?: Filter;
-	$expand?: Expand;
-	$orderby?: OrderBy;
+export interface ODataOptionsWithoutCount<
+	T extends Resource['Read'] = AnyResourceObject,
+> {
+	$filter?: Filter<T>;
+	$expand?: Expand<T>;
+	$orderby?: OrderBy<T>;
 	$top?: number;
 	$skip?: number;
-	$select?: string | readonly string[];
+	$select?: StringKeyOf<T> | ReadonlyArray<StringKeyOf<T>>;
 	$format?: string;
 	[index: string]:
 		| undefined
 		| ParameterAlias
 		| string[]
-		| Filter
-		| Expand
-		| OrderBy;
+		| Filter<T>
+		| Expand<T>
+		| OrderBy<T>;
 }
-export type ODataCountOptions = Pick<ODataOptionsWithoutCount, '$filter'>;
-export interface ODataOptions extends ODataOptionsWithoutCount {
-	$count?: ODataCountOptions;
-	[index: string]: ODataOptionsWithoutCount[string] | ODataCountOptions;
+export type ODataCountOptions<T extends Resource['Read'] = AnyResourceObject> =
+	Pick<ODataOptionsWithoutCount<T>, '$filter'>;
+export interface ODataOptions<T extends Resource['Read'] = AnyResourceObject>
+	extends ODataOptionsWithoutCount<NoInfer<T>> {
+	$count?: ODataCountOptions<NoInfer<T>>;
+	[index: string]:
+		| ODataOptionsWithoutCount<NoInfer<T>>[string]
+		| ODataCountOptions<NoInfer<T>>;
 }
-export type OptionsObject = ODataOptions;
+export type OptionsObject<T extends Resource['Read'] = AnyResourceObject> =
+	ODataOptions<T>;
 
 export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -1909,41 +2246,49 @@ type BaseResourceId =
 	| {
 			'@': string;
 	  };
-type ResourceAlternateKey = {
-	[key: string]: BaseResourceId;
+type ResourceAlternateKey<T extends Resource['Read']> = {
+	[key in StringKeyOf<T>]?: BaseResourceId;
 };
-type ResourceId = BaseResourceId | ResourceAlternateKey;
+type ResourceId<T extends Resource['Read']> =
+	| BaseResourceId
+	| ResourceAlternateKey<T>;
 
 export type AnyObject = Dictionary<any>;
 
-export interface Params {
+export interface Params<T extends Resource = AnyResource> {
 	apiPrefix?: string;
 	method?: ODataMethod;
 	resource?: string;
-	id?: ResourceId;
+	id?: ResourceId<T['Read']>;
 	url?: string;
-	body?: AnyObject;
+	body?: Partial<T['Write']>;
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
-	options?: ODataOptions;
+	options?: ODataOptions<T['Read']>;
 	retry?: RetryParameters;
 }
 
-export type ConstructorParams = Pick<Params, (typeof validParams)[number]>;
+export type ConstructorParams = Pick<
+	Params<AnyResource>,
+	(typeof validParams)[number]
+>;
 
-export interface SubscribeParams extends Params {
+export interface SubscribeParams<T extends Resource = AnyResource>
+	extends Params<T> {
 	method?: 'GET';
 	pollInterval?: number;
 }
 
-export interface GetOrCreateParams extends Omit<Params, 'method' | 'url'> {
-	id: ResourceAlternateKey;
+export interface GetOrCreateParams<T extends Resource = AnyResource>
+	extends Omit<Params<T>, 'method' | 'url'> {
+	id: ResourceAlternateKey<T['Read']>;
 	resource: string;
-	body: AnyObject;
+	body: T['Write'];
 }
 
-export interface UpsertParams extends Omit<Params, 'id' | 'method' | 'url'> {
-	id: Dictionary<Primitive>;
+export interface UpsertParams<T extends Resource = AnyResource>
+	extends Omit<Params<T>, 'id' | 'method' | 'url'> {
+	id: { [key in StringKeyOf<T['Write']>]?: Primitive };
 	resource: string;
-	body: AnyObject;
+	body: T['Write'];
 }
