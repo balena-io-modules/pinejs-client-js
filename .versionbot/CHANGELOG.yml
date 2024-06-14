@@ -1,4 +1,25 @@
 - commits:
+    - subject: Add support for using model specific typings
+      hash: 1077e19ef18cc4cede4d6401496a016fef459150
+      body: |
+        This requires passing the model typings when creating the pinejs-client
+        instance and will mean that any usage after that will be type checked
+        to limit to resources/properties that exist on the model. This covers
+        almost all usage but there are some cases we cannot cover as we would
+        need typescript support for partial inference of generics, eg for
+        lambdas, or to make major changes to the querying interface.
+        This work should also be fully backwards compatible such that if you do
+        not provide model typings then all typings should continue to work as
+        previously
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.0
+  title: ""
+  date: 2024-06-14T10:45:40.382Z
+- commits:
     - subject: Deprecate passing `url` to helper functions
       hash: 5ad1d4a417e2631d70acf7192b7132366a77be3b
       body: |
