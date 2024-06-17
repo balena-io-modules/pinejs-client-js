@@ -1,4 +1,18 @@
 - commits:
+    - subject: Correctly type the `POST` result as being fully deferred
+      hash: 1055a00e740dd2cbf3e418408bed6c5f89b8db0f
+      body: |
+        Previously it did not state so the expanded versions were available in
+        the typings even though the result would never actually include them
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.1
+  title: ""
+  date: 2024-06-17T16:15:56.769Z
+- commits:
     - subject: Add support for using model specific typings
       hash: 1077e19ef18cc4cede4d6401496a016fef459150
       body: |
