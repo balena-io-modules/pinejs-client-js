@@ -1545,7 +1545,7 @@ export abstract class PinejsClientCore<
 
 	public post<TResource extends StringKeyOf<Model>>(
 		params: { resource: TResource } & Params<Model[TResource]>,
-	): Promise<Model[TResource]['Read']>;
+	): Promise<PickDeferred<Model[TResource]['Read']>>;
 	/**
 	 * @deprecated POSTing via `url` is deprecated
 	 */
