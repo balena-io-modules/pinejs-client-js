@@ -1,4 +1,16 @@
 - commits:
+    - subject: Improve $orderby typings when not providing a model
+      hash: 00c8ea6b5281f4d928d73cbe4427239a4ab3e6d8
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.2
+  title: ""
+  date: 2024-06-19T11:41:35.544Z
+- commits:
     - subject: Correctly type the `POST` result as being fully deferred
       hash: 1055a00e740dd2cbf3e418408bed6c5f89b8db0f
       body: |
