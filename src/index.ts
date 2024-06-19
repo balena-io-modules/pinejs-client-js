@@ -11,8 +11,10 @@ import type {
 
 export type { Resource };
 
+type ResourceName = `${Letter | Digit}${string}`;
+
 export type AnyResourceObject = {
-	[key: `${Letter | Digit}${string}`]: any;
+	[key: ResourceName]: any;
 };
 export type AnyResource = {
 	Read: AnyObject;
@@ -627,8 +629,7 @@ const handleFilterOperator = <
 									`${operator} param names must contain only [a-zA-Z0-9], got: ${index}`,
 								);
 							}
-							mappedParams[index] =
-								filterx[index as `${Letter | Digit}${string}`];
+							mappedParams[index] = filterx[index as ResourceName];
 						}
 					}
 					return applyBinds(filterStr, mappedParams, parentKey);
@@ -2156,7 +2157,7 @@ export type RawFilter<T extends Resource['Read'] = AnyResourceObject> =
 	| [string, ...Array<Filter<T>>]
 	| {
 			$string: string;
-			[index: `${Letter | Digit}${string}`]: Filter<T>;
+			[index: ResourceName]: Filter<T>;
 	  };
 
 export interface Lambda<
@@ -2197,7 +2198,7 @@ export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
 	| ReadonlyArray<OrderBy<T>>
 	| { [k in StringKeyOf<T>]?: OrderByDirection }
 	| ({
-			[k in ExpandableStringKeyOf<T>]?: {
+			[k in ExpandableStringKeyOf<T> & ResourceName]?: {
 				$count: ODataCountOptions<ExtractExpand<T, k>>;
 			};
 	  } & {
