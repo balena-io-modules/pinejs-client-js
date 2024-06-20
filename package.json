@@ -31,7 +31,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@balena/abstract-sql-to-typescript": "^3.2.1",
+    "@balena/abstract-sql-to-typescript": "^3.2.3",
     "@balena/es-version": "^1.0.3"
   },
   "devDependencies": {

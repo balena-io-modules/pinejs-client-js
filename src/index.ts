@@ -5,7 +5,7 @@ function isArray(value: any): value is readonly unknown[] {
 
 import type {
 	PickDeferred,
-	PickExpanded,
+	Expanded,
 	Resource,
 } from '@balena/abstract-sql-to-typescript';
 
@@ -43,6 +43,31 @@ type ExpandPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
 			? StringKeyOf<U['$expand']>
 			: // If no $expand is provided, no properties are expanded
 				never;
+type ExpandToResponse<T extends Resource['Read'], U extends ODataOptions<T>> =
+	U['$expand'] extends ReadonlyArray<StringKeyOf<T>>
+		? {
+				[P in U['$expand'][number]]-?: Array<
+					PickDeferred<Expanded<T[P]>[number]>
+				>;
+			}
+		: U['$expand'] extends { [key in StringKeyOf<T>]?: any }
+			? {
+					[P in keyof U['$expand']]-?: OptionsToResponse<
+						Expanded<T[P & string]>[number],
+						U['$expand'][P]
+					>;
+				}
+			: // If no $expand is provided, no properties are expanded
+				// eslint-disable-next-line @typescript-eslint/ban-types -- We do want an empty object but `Record<string, never>` doesn't work because things breaks after it's used in a union, needs investigation
+				{};
+type OptionsToResponse<
+	T extends Resource['Read'],
+	U extends ODataOptions<T>,
+> = U extends {
+	$count: ODataOptions<T>['$count'];
+}
+	? number
+	: Array<PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>>;
 
 export interface Dictionary<T> {
 	[index: string]: T;
@@ -1334,12 +1359,9 @@ export abstract class PinejsClientCore<
 						NonNullable<TParams['options']>
 					>
 				> &
-					PickExpanded<
+					ExpandToResponse<
 						Model[TResource]['Read'],
-						ExpandPropsOf<
-							Model[TResource]['Read'],
-							NonNullable<TParams['options']>
-						>
+						NonNullable<TParams['options']>
 					>
 		  >
 		| undefined
@@ -1385,12 +1407,9 @@ export abstract class PinejsClientCore<
 						NonNullable<TParams['options']>
 					>
 				> &
-					PickExpanded<
+					ExpandToResponse<
 						Model[TResource]['Read'],
-						ExpandPropsOf<
-							Model[TResource]['Read'],
-							NonNullable<TParams['options']>
-						>
+						NonNullable<TParams['options']>
 					>
 			>
 		>
