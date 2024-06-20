@@ -1,4 +1,16 @@
 - commits:
+    - subject: Correctly type that all properties are selected with a missing $select
+      hash: 935e630afd429790fa133cdbf7e2012ac491b969
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.3
+  title: ""
+  date: 2024-06-20T10:36:12.898Z
+- commits:
     - subject: Improve $orderby typings when not providing a model
       hash: 00c8ea6b5281f4d928d73cbe4427239a4ab3e6d8
       body: ""
