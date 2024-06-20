@@ -34,13 +34,15 @@ type SelectPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
 		? U['$select'][number]
 		: U['$select'] extends StringKeyOf<T>
 			? U['$select']
-			: never;
+			: // If no $select is provided, all properties are selected
+				StringKeyOf<T>;
 type ExpandPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
 	U['$expand'] extends ReadonlyArray<StringKeyOf<T>>
 		? U['$expand'][number]
 		: U['$expand'] extends { [key in StringKeyOf<T>]?: any }
 			? StringKeyOf<U['$expand']>
-			: never;
+			: // If no $expand is provided, no properties are expanded
+				never;
 
 export interface Dictionary<T> {
 	[index: string]: T;
