@@ -31,22 +31,22 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@balena/abstract-sql-to-typescript": "^3.1.1",
+    "@balena/abstract-sql-to-typescript": "^3.2.1",
     "@balena/es-version": "^1.0.3"
   },
   "devDependencies": {
-    "@balena/lint": "^8.0.1",
-    "@types/chai": "^4.3.14",
-    "@types/lodash": "^4.17.0",
-    "@types/mocha": "^10.0.6",
+    "@balena/lint": "^8.0.2",
+    "@types/chai": "^4.3.16",
+    "@types/lodash": "^4.17.5",
+    "@types/mocha": "^10.0.7",
     "chai": "^4.4.1",
     "husky": "^9.0.11",
-    "lint-staged": "^15.2.2",
+    "lint-staged": "^15.2.7",
     "lodash": "^4.17.21",
-    "mocha": "^10.4.0",
+    "mocha": "^10.5.0",
     "require-npm4-to-publish": "^1.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.2"
   },
   "mocha": {
     "reporter": "spec",

@@ -844,8 +844,8 @@ const buildOrderBy = <T extends Resource['Read']>(
 		});
 		return join(result);
 	} else if (isObject(orderby)) {
-		const { $dir, ...$orderby } = orderby as typeof orderby & { $dir?: string };
-		const result = mapObj($orderby, (dirOrOptions, key) => {
+		const { $dir, ...$orderby } = orderby;
+		const result = mapObj($orderby as typeof orderby, (dirOrOptions, key) => {
 			let propertyPath: string = key;
 			let dir = $dir;
 			if (dirOrOptions == null) {
