@@ -1,4 +1,16 @@
 - commits:
+    - subject: Update dependencies
+      hash: 18d9758ffb6cf0ce16f3870aa64ffe40c6d3ce5d
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.4
+  title: ""
+  date: 2024-06-24T20:52:38.559Z
+- commits:
     - subject: Correctly type that all properties are selected with a missing $select
       hash: 935e630afd429790fa133cdbf7e2012ac491b969
       body: ""
