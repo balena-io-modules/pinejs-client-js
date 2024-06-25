@@ -34,8 +34,8 @@ type SelectPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
 		? U['$select'][number]
 		: U['$select'] extends StringKeyOf<T>
 			? U['$select']
-			: // If no $select is provided, all properties are selected
-				StringKeyOf<T>;
+			: // If no $select is provided, all properties that are not $expanded are selected
+				Exclude<StringKeyOf<T>, ExpandPropsOf<T, U>>;
 type ExpandPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
 	U['$expand'] extends ReadonlyArray<StringKeyOf<T>>
 		? U['$expand'][number]
