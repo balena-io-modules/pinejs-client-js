@@ -1,4 +1,16 @@
 - commits:
+    - subject: Select all non-expanded fields when there is no $select
+      hash: 7abf51ecd4aea620cd9d616d5ec1843c1c4ba5df
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.5
+  title: ""
+  date: 2024-06-25T11:09:05.055Z
+- commits:
     - subject: Update dependencies
       hash: 18d9758ffb6cf0ce16f3870aa64ffe40c6d3ce5d
       body: ""
