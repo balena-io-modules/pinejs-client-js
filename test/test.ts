@@ -1,9 +1,19 @@
 import { expect } from 'chai';
 import * as _ from 'lodash';
+import type { Resource, AnyObject } from '..';
 import { PinejsClientCore } from '..';
 
 // Create a class for tests that extends the exported abstract class
-class PinejsClient extends PinejsClientCore<PinejsClient> {
+export class PinejsClient<
+	M extends {
+		[key in keyof M]: Resource;
+	} = {
+		[key in string]: {
+			Read: AnyObject;
+			Write: AnyObject;
+		};
+	},
+> extends PinejsClientCore<unknown, M> {
 	public async _request(): Promise<any> {
 		return;
 	}
