@@ -1,4 +1,16 @@
 - commits:
+    - subject: Use `OptionsToResponse` to avoid most of the `get` overloads
+      hash: 7562b1aeb69a3ce97362ed0799b4c211948acc7e
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.7
+  title: ""
+  date: 2024-06-27T17:04:08.151Z
+- commits:
     - subject: Add support for nested $expand response types and $count expands
       hash: 8b00172db2e150f8813d2080d0f19b5a2c2c3066
       body: |
