@@ -1317,34 +1317,7 @@ export abstract class PinejsClientCore<
 	public async get<
 		TResource extends StringKeyOf<Model>,
 		TParams extends Params<Model[TResource]> & {
-			options: {
-				$count: NonNullable<ODataOptions<Model[TResource]['Read']>['$count']>;
-			};
-		},
-	>(
-		params: {
-			resource: TResource;
-		} & TParams,
-	): Promise<number>;
-	public async get<
-		TResource extends StringKeyOf<Model>,
-		TParams extends Params<Model[TResource]> & {
 			id: NonNullable<Params<Model[TResource]>['id']>;
-			options: NonNullable<
-				Params<Model[TResource]>['options'] &
-					(
-						| {
-								$select: NonNullable<
-									NonNullable<Params<Model[TResource]>['options']>['$select']
-								>;
-						  }
-						| {
-								$expand: NonNullable<
-									NonNullable<Params<Model[TResource]>['options']>['$expand']
-								>;
-						  }
-					)
-			>;
 		},
 	>(
 		params: {
@@ -1352,71 +1325,31 @@ export abstract class PinejsClientCore<
 		} & TParams,
 	): Promise<
 		| NoInfer<
-				PickDeferred<
-					Model[TResource]['Read'],
-					SelectPropsOf<
+				Extract<
+					OptionsToResponse<
 						Model[TResource]['Read'],
 						NonNullable<TParams['options']>
-					>
-				> &
-					ExpandToResponse<
-						Model[TResource]['Read'],
-						NonNullable<TParams['options']>
-					>
+					>,
+					any[]
+				>[number]
 		  >
 		| undefined
 	>;
 	public async get<
 		TResource extends StringKeyOf<Model>,
-		TParams extends Params<Model[TResource]> & {
-			id: NonNullable<Params<Model[TResource]>['id']>;
-			resource: TResource;
-		},
-	>(
-		params: { resource: TResource } & TParams,
-	): Promise<NoInfer<Model[TResource]['Read']> | undefined>;
-	public async get<
-		TResource extends StringKeyOf<Model>,
 		TParams extends Omit<Params<Model[TResource]>, 'id'> & {
 			resource: TResource;
-			options: NonNullable<
-				Params<Model[TResource]>['options'] &
-					(
-						| {
-								$select: NonNullable<
-									NonNullable<Params<Model[TResource]>['options']>['$select']
-								>;
-						  }
-						| {
-								$expand: NonNullable<
-									NonNullable<Params<Model[TResource]>['options']>['$expand']
-								>;
-						  }
-					)
-			>;
 		},
 	>(
 		params: { resource: TResource } & TParams,
 	): Promise<
 		NoInfer<
-			Array<
-				PickDeferred<
-					Model[TResource]['Read'],
-					SelectPropsOf<
-						Model[TResource]['Read'],
-						NonNullable<TParams['options']>
-					>
-				> &
-					ExpandToResponse<
-						Model[TResource]['Read'],
-						NonNullable<TParams['options']>
-					>
+			OptionsToResponse<
+				Model[TResource]['Read'],
+				NonNullable<TParams['options']>
 			>
 		>
 	>;
-	public async get<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Omit<Params<Model[TResource]>, 'id'>,
-	): Promise<NoInfer<Array<Model[TResource]['Read']>>>;
 	/**
 	 * @deprecated GETing via `url` is deprecated
 	 */
