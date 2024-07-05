@@ -1,4 +1,16 @@
 - commits:
+    - subject: Improve typings of `prepare` when used to `GET`
+      hash: 06f3fbecc514367900f07f83dbd61796e870abcf
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.8
+  title: ""
+  date: 2024-07-05T15:42:56.455Z
+- commits:
     - subject: Use `OptionsToResponse` to avoid most of the `get` overloads
       hash: 7562b1aeb69a3ce97362ed0799b4c211948acc7e
       body: ""
