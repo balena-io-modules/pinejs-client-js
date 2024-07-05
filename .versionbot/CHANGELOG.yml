@@ -1,4 +1,16 @@
 - commits:
+    - subject: Export `ExpandableStringKeyOf` typing
+      hash: 17f1424d31069a882bb288cf418a01e83b60e806
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.9
+  title: ""
+  date: 2024-07-05T16:24:57.847Z
+- commits:
     - subject: Improve typings of `prepare` when used to `GET`
       hash: 06f3fbecc514367900f07f83dbd61796e870abcf
       body: ""
