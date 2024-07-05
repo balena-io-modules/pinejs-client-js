@@ -23,7 +23,7 @@ export type AnyResource = {
 
 type StringKeyOf<T> = keyof T & string;
 
-type ExpandableStringKeyOf<T extends Resource['Read']> = StringKeyOf<
+export type ExpandableStringKeyOf<T extends Resource['Read']> = StringKeyOf<
 	ResourceExpand<T>
 >;
 type ExtractExpand<T extends Resource['Read'], U extends keyof T> = NonNullable<
