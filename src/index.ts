@@ -1638,6 +1638,56 @@ export abstract class PinejsClientCore<
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
+		TParams extends Params<Model[TResource]> & {
+			id: NonNullable<Params<Model[TResource]>['id']>;
+		},
+	>(
+		params: {
+			resource: TResource;
+			method?: 'GET';
+		} & TParams,
+	): PreparedFn<
+		T,
+		Promise<
+			| NoInfer<
+					Extract<
+						OptionsToResponse<
+							Model[TResource]['Read'],
+							NonNullable<TParams['options']>
+						>,
+						any[]
+					>[number]
+			  >
+			| undefined
+		>,
+		Model[TResource]
+	>;
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		TResource extends StringKeyOf<Model>,
+		TParams extends Omit<Params<Model[TResource]>, 'id'> & {
+			resource: TResource;
+		},
+	>(
+		params: {
+			resource: TResource;
+			method?: 'GET';
+		} & TParams,
+	): PreparedFn<
+		T,
+		Promise<
+			NoInfer<
+				OptionsToResponse<
+					Model[TResource]['Read'],
+					NonNullable<TParams['options']>
+				>
+			>
+		>,
+		Model[TResource]
+	>;
+	public prepare<
+		T extends Dictionary<ParameterAlias>,
+		TResource extends StringKeyOf<Model>,
 	>(
 		params: Params<Model[TResource]> & {
 			resource: TResource;
