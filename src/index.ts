@@ -2288,12 +2288,12 @@ export interface GetOrCreateParams<T extends Resource = AnyResource>
 	extends Omit<Params<T>, 'method' | 'url'> {
 	id: ResourceAlternateKey<T['Read']>;
 	resource: string;
-	body: T['Write'];
+	body: Partial<T['Write']>;
 }
 
 export interface UpsertParams<T extends Resource = AnyResource>
 	extends Omit<Params<T>, 'id' | 'method' | 'url'> {
 	id: { [key in StringKeyOf<T['Write']>]?: Primitive };
 	resource: string;
-	body: T['Write'];
+	body: Partial<T['Write']>;
 }
