@@ -1,4 +1,16 @@
 - commits:
+    - subject: Fix `getOrCreate` and `upsert` typing for the `body` property
+      hash: a1ce21a7c55c04f55f3b8025d19076a49541a205
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.10
+  title: ""
+  date: 2024-07-08T16:05:56.800Z
+- commits:
     - subject: Export `ExpandableStringKeyOf` typing
       hash: 17f1424d31069a882bb288cf418a01e83b60e806
       body: ""
