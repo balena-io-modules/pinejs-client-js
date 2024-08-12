@@ -1,4 +1,16 @@
 - commits:
+    - subject: Fix most lint warnings
+      hash: 9562c9df8f231877d06b46ca673fbaeb7e144d2b
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 6.15.11
+  title: ""
+  date: 2024-08-12T22:37:35.394Z
+- commits:
     - subject: Fix `getOrCreate` and `upsert` typing for the `body` property
       hash: a1ce21a7c55c04f55f3b8025d19076a49541a205
       body: ""
