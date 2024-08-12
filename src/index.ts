@@ -786,13 +786,13 @@ const handleFilterObject = <T extends Resource['Read']>(
 				`'${key}' was present on a filter object but undefined, did you mean to use null instead?`,
 			);
 		}
-		if (key[0] === '$') {
+		if (key.startsWith('$')) {
 			return handleFilterOperator(
 				value,
 				key as keyof AllFilterOperations<T>,
 				parentKey,
 			);
-		} else if (key[0] === '@') {
+		} else if (key.startsWith('@')) {
 			const parameterAlias = escapeParameterAlias(value);
 			return addParentKey(parameterAlias, parentKey);
 		} else {
@@ -923,7 +923,7 @@ const buildOption = <T extends Resource['Read']>(
 	option: string,
 	value: ODataOptionsWithoutCount<T>[string],
 ): string => {
-	let compiledValue: string = '';
+	let compiledValue = '';
 	switch (option) {
 		case '$filter':
 			compiledValue = buildFilter(value as Filter<T>).join('');
@@ -961,7 +961,7 @@ const buildOption = <T extends Resource['Read']>(
 		}
 		default:
 			// Escape parameter aliases as primitives
-			if (option[0] === '@') {
+			if (option.startsWith('@')) {
 				if (!isPrimitive(value)) {
 					throw new Error(
 						`Unknown type for parameter alias option '${option}': ${typeof value}`,
@@ -1022,7 +1022,7 @@ const handleOptions = <T extends Resource['Read']>(
 		}
 	}
 	const optionsArray = mapObj(options, (value, key) => {
-		if (key[0] === '$') {
+		if (key.startsWith('$')) {
 			if (!isValidOption(key)) {
 				throw new Error(`Unknown key option '${key}'`);
 			}
@@ -1048,7 +1048,7 @@ const handleExpandObject = <T extends Resource['Read']>(
 	expand: ResourceExpand<T>,
 ): string[] => {
 	const expands = mapObj(expand, (value, key) => {
-		if (key[0] === '$') {
+		if (key.startsWith('$')) {
 			throw new Error(
 				'Cannot have expand options without first expanding something!',
 			);
@@ -1163,7 +1163,7 @@ export abstract class PinejsClientCore<
 		[key in string]: AnyResource;
 	},
 > {
-	public apiPrefix: string = '/';
+	public apiPrefix = '/';
 	public passthrough: AnyObject = {};
 	public passthroughByMethod: AnyObject = {};
 	public backendParams?: AnyObject;
@@ -1202,7 +1202,7 @@ export abstract class PinejsClientCore<
 		}
 
 		const retryDefaultParameters = this.retry || {};
-		const retryParameters = retry || {};
+		const retryParameters = retry ?? {};
 
 		const minDelayMs =
 			retryParameters.minDelayMs ?? retryDefaultParameters.minDelayMs;
@@ -1359,7 +1359,7 @@ export abstract class PinejsClientCore<
 			url: NonNullable<Params<T>['url']>;
 		} & Params<T>,
 	): Promise<PromiseResultTypes>;
-	public async get(params: Params<AnyResource>): Promise<PromiseResultTypes> {
+	public async get(params: Params): Promise<PromiseResultTypes> {
 		if (params.url != null) {
 			deprecated.urlInGet();
 		}
@@ -1472,7 +1472,7 @@ export abstract class PinejsClientCore<
 			url: NonNullable<Params<T>['url']>;
 		} & Params<T>,
 	): Promise<void>;
-	public put(params: Params<AnyResource>): Promise<void> {
+	public put(params: Params): Promise<void> {
 		if (params.url != null) {
 			deprecated.urlInPut();
 		}
@@ -1491,7 +1491,7 @@ export abstract class PinejsClientCore<
 			url: NonNullable<Params<T>['url']>;
 		} & Params<T>,
 	): Promise<void>;
-	public patch(params: Params<AnyResource>): Promise<void> {
+	public patch(params: Params): Promise<void> {
 		if (params.url != null) {
 			deprecated.urlInPatch();
 		}
@@ -1510,7 +1510,7 @@ export abstract class PinejsClientCore<
 			url: NonNullable<Params<T>['url']>;
 		} & Params<T>,
 	): Promise<AnyObject>;
-	public post(params: Params<AnyResource>): Promise<AnyObject> {
+	public post(params: Params): Promise<AnyObject> {
 		if (params.url != null) {
 			deprecated.urlInPost();
 		}
@@ -1529,7 +1529,7 @@ export abstract class PinejsClientCore<
 			url: NonNullable<Params<T>['url']>;
 		} & Params<T>,
 	): Promise<void>;
-	public delete(params: Params<AnyResource>): Promise<void> {
+	public delete(params: Params): Promise<void> {
 		if (params.url != null) {
 			deprecated.urlInDelete();
 		}
@@ -1699,13 +1699,13 @@ export abstract class PinejsClientCore<
 	): PreparedFn<T, Promise<number>, Model[TResource]>;
 	// We have duplicates with only the parameter alias dictionary generic to support the case where only that generic typing is passed, since inferring generics is all or nothing in typescript atm
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params<AnyResource> & {
+		params: Params & {
 			method?: 'GET';
 			options: {
 				$count: NonNullable<ODataOptions<AnyResource['Read']>['$count']>;
 			};
 		},
-	): PreparedFn<T, Promise<number>, AnyResource>;
+	): PreparedFn<T, Promise<number>>;
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1717,11 +1717,11 @@ export abstract class PinejsClientCore<
 		},
 	): PreparedFn<T, Promise<AnyObject | undefined>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params<AnyResource> & {
+		params: Params & {
 			method?: 'GET';
-			id: NonNullable<Params<AnyResource>['id']>;
+			id: NonNullable<Params['id']>;
 		},
-	): PreparedFn<T, Promise<AnyObject | undefined>, AnyResource>;
+	): PreparedFn<T, Promise<AnyObject | undefined>>;
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1732,10 +1732,10 @@ export abstract class PinejsClientCore<
 		},
 	): PreparedFn<T, Promise<AnyObject[]>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Omit<Params<AnyResource>, 'id'> & {
+		params: Omit<Params, 'id'> & {
 			method?: 'GET';
 		},
-	): PreparedFn<T, Promise<AnyObject[]>, AnyResource>;
+	): PreparedFn<T, Promise<AnyObject[]>>;
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1746,10 +1746,10 @@ export abstract class PinejsClientCore<
 		},
 	): PreparedFn<T, Promise<PromiseResultTypes>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params<AnyResource> & {
+		params: Params & {
 			method?: 'GET';
 		},
-	): PreparedFn<T, Promise<PromiseResultTypes>, AnyResource>;
+	): PreparedFn<T, Promise<PromiseResultTypes>>;
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1758,12 +1758,12 @@ export abstract class PinejsClientCore<
 			resource: TResource;
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
-	): PreparedFn<T, Promise<void>, Model[TResource]>;
+	): PreparedFn<T, Promise<undefined>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params<AnyResource> & {
+		params: Params & {
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
-	): PreparedFn<T, Promise<void>, AnyResource>;
+	): PreparedFn<T, Promise<undefined>>;
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1774,19 +1774,19 @@ export abstract class PinejsClientCore<
 		},
 	): PreparedFn<T, Promise<AnyObject>, Model[TResource]>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params<AnyResource> & {
+		params: Params & {
 			method: 'POST';
 		},
-	): PreparedFn<T, Promise<AnyObject>, AnyResource>;
+	): PreparedFn<T, Promise<AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params<AnyResource> & {
+		params: Params & {
 			resource?: undefined;
 			method: 'POST';
 		},
-	): PreparedFn<T, Promise<AnyObject>, AnyResource>;
+	): PreparedFn<T, Promise<AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params<AnyResource>,
-	): PreparedFn<T, Promise<PromiseResultTypes | void>, AnyResource> {
+		params: Params,
+	): PreparedFn<T, Promise<PromiseResultTypes | undefined>> {
 		if (isString(params)) {
 			throw new Error(
 				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
@@ -1794,7 +1794,7 @@ export abstract class PinejsClientCore<
 		}
 		// precompile the URL string to improve performance
 		const compiledUrl = params.url ?? this.compile(params);
-		const urlQueryParamsStr = compiledUrl.indexOf('?') === -1 ? '?' : '&';
+		const urlQueryParamsStr = !compiledUrl.includes('?') ? '?' : '&';
 		if (params.method == null) {
 			params.method = 'GET';
 		} else {
@@ -1854,8 +1854,8 @@ export abstract class PinejsClientCore<
 			url: NonNullable<Params<T>['url']>;
 		} & Params<T>,
 	): string;
-	public compile(params: Params<AnyResource>): string;
-	public compile(params: Params<AnyResource>): string {
+	public compile(params: Params): string;
+	public compile(params: Params): string {
 		if (isString(params)) {
 			throw new Error('Params must be an object not a string');
 		}
@@ -1916,7 +1916,7 @@ export abstract class PinejsClientCore<
 			let queryOptions: string[] = [];
 			if (options != null) {
 				queryOptions = mapObj(options, (value, option) => {
-					if (option[0] === '$' && !isValidOption(option)) {
+					if (option.startsWith('$') && !isValidOption(option)) {
 						throw new Error(`Unknown odata option '${option}'`);
 					}
 					return buildOption(option, value);
@@ -1953,7 +1953,7 @@ export abstract class PinejsClientCore<
 		params: Params<T> & {
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
-	): Promise<void>;
+	): Promise<undefined>;
 	public request<T extends Resource>(
 		params: Params<T> & {
 			method: 'POST';
@@ -1962,11 +1962,11 @@ export abstract class PinejsClientCore<
 	public request<T extends Resource>(
 		params: Params<T>,
 		overrides?: undefined,
-	): Promise<PromiseResultTypes | void>;
+	): Promise<PromiseResultTypes | undefined>;
 	public request<T extends Resource>(
 		params: Params<T>,
 		overrides?: undefined,
-	): Promise<PromiseResultTypes | void> {
+	): Promise<PromiseResultTypes | undefined> {
 		if (overrides !== undefined) {
 			throw new Error(
 				'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
@@ -2273,10 +2273,7 @@ export interface Params<T extends Resource = AnyResource> {
 	retry?: RetryParameters;
 }
 
-export type ConstructorParams = Pick<
-	Params<AnyResource>,
-	(typeof validParams)[number]
->;
+export type ConstructorParams = Pick<Params, (typeof validParams)[number]>;
 
 export interface SubscribeParams<T extends Resource = AnyResource>
 	extends Params<T> {

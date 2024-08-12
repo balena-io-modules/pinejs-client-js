@@ -27,7 +27,7 @@
     "prepare": "node -e \"try { (await import('husky')).default() } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e }\" --input-type module",
     "prepublish": "require-npm4-to-publish",
     "prepack": "npm run build",
-    "prettify": "balena-lint -t tsconfig.dev.json --fix src test"
+    "lint-fix": "balena-lint -t tsconfig.dev.json --fix src test"
   },
   "license": "MIT",
   "dependencies": {
@@ -35,18 +35,18 @@
     "@balena/es-version": "^1.0.3"
   },
   "devDependencies": {
-    "@balena/lint": "^8.0.2",
+    "@balena/lint": "^8.2.7",
     "@types/chai": "^4.3.16",
-    "@types/lodash": "^4.17.5",
+    "@types/lodash": "^4.17.7",
     "@types/mocha": "^10.0.7",
     "chai": "^4.4.1",
-    "husky": "^9.0.11",
+    "husky": "^9.1.1",
     "lint-staged": "^15.2.7",
     "lodash": "^4.17.21",
-    "mocha": "^10.5.0",
+    "mocha": "^10.7.0",
     "require-npm4-to-publish": "^1.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.3"
   },
   "mocha": {
     "reporter": "spec",
