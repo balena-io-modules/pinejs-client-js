@@ -45,19 +45,31 @@ const testOption = <T extends keyof ODataOptions>(
 
 const testOrderBy = (
 	...args: Tail<Parameters<typeof testOption<'$orderby'>>>
-) => testOption('$orderby', ...args);
-const testTop = (...args: Tail<Parameters<typeof testOption<'$top'>>>) =>
+) => {
+	testOption('$orderby', ...args);
+};
+const testTop = (...args: Tail<Parameters<typeof testOption<'$top'>>>) => {
 	testOption('$top', ...args);
-const testSkip = (...args: Tail<Parameters<typeof testOption<'$skip'>>>) =>
+};
+const testSkip = (...args: Tail<Parameters<typeof testOption<'$skip'>>>) => {
 	testOption('$skip', ...args);
-const testFormat = (...args: Tail<Parameters<typeof testOption<'$format'>>>) =>
+};
+const testFormat = (
+	...args: Tail<Parameters<typeof testOption<'$format'>>>
+) => {
 	testOption('$format', ...args);
-const testSelect = (...args: Tail<Parameters<typeof testOption<'$select'>>>) =>
+};
+const testSelect = (
+	...args: Tail<Parameters<typeof testOption<'$select'>>>
+) => {
 	testOption('$select', ...args);
-const testCustom = (...args: Tail<Parameters<typeof testOption<'custom'>>>) =>
+};
+const testCustom = (...args: Tail<Parameters<typeof testOption<'custom'>>>) => {
 	testOption('custom', ...args);
-const testParam = (...args: Tail<Parameters<typeof testOption<'@param'>>>) =>
+};
+const testParam = (...args: Tail<Parameters<typeof testOption<'@param'>>>) => {
 	testOption('@param', ...args);
+};
 
 testId(1, '1');
 testId('Bob', "'Bob'");

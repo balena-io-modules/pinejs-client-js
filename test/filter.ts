@@ -866,11 +866,7 @@ testFilter(
 const testLambda = function (operator: string) {
 	const createFilter = (partialFilter: {
 		$alias?: string;
-		$expr?:
-			| { b: { c: string } }
-			| { b: { c: string } }
-			| { $eq: object }
-			| { $eq: object };
+		$expr?: { b: { c: string } } | { $eq: object };
 	}) => ({
 		[operator]: partialFilter,
 	});
