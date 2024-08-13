@@ -1,4 +1,16 @@
 - commits:
+    - subject: Update @balena/abstract-sql-to-typescript to v4
+      hash: 426e6203633723324d03049df0d7d77b12002cb8
+      body: ""
+      footer:
+        Change-type: major
+        change-type: major
+      author: Josh Bowling
+      nested: []
+  version: 7.0.0
+  title: ""
+  date: 2024-08-13T14:04:06.643Z
+- commits:
     - subject: Fix most lint warnings
       hash: 9562c9df8f231877d06b46ca673fbaeb7e144d2b
       body: ""
