@@ -1,4 +1,18 @@
 - commits:
+    - subject: Change `ExpandPropsOf` and `ExpandToResponse` helpers to check the
+        common case first
+      hash: e5404a23a30d250046c911c397e8562340651324
+      body: |
+        This reduces the amount of work typescript has to do in the common case
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 7.0.1
+  title: ""
+  date: 2024-08-29T17:40:29.011Z
+- commits:
     - subject: Update @balena/abstract-sql-to-typescript to v4
       hash: 426e6203633723324d03049df0d7d77b12002cb8
       body: ""
