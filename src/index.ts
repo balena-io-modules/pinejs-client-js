@@ -52,7 +52,8 @@ type ExpandToResponse<
 	? {
 			[P in keyof U['$expand']]-?: OptionsToResponse<
 				Expanded<T[P & string]>[number],
-				U['$expand'][P]
+				U['$expand'][P],
+				undefined
 			>;
 		}
 	: U['$expand'] extends ReadonlyArray<StringKeyOf<T>>
@@ -64,13 +65,29 @@ type ExpandToResponse<
 		: // If no $expand is provided, no properties are expanded
 			// eslint-disable-next-line @typescript-eslint/ban-types -- We do want an empty object but `Record<string, never>` doesn't work because things breaks after it's used in a union, needs investigation
 			{};
+
+// Check if two types are exactly equal, useful for checking against eg exactly `any`
+type Equals<X, Y> =
+	(<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
+		? true
+		: false;
+
 type OptionsToResponse<
 	T extends Resource['Read'],
 	U extends ODataOptions<T>,
+	ID extends ResourceId<T> | undefined,
 > = U extends {
 	$count: ODataOptions<T>['$count'];
 }
 	? number
+	: Equals<ID, any> extends true
+		?
+				| (PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>)
+				| undefined
+		: ID extends ResourceId<T>
+			?
+					| (PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>)
+					| undefined
 			: Array<PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>>;
 
 export interface Dictionary<T> {
@@ -1321,27 +1338,6 @@ export abstract class PinejsClientCore<
 	public async get<
 		TResource extends StringKeyOf<Model>,
 		TParams extends Params<Model[TResource]> & {
-			id: NonNullable<Params<Model[TResource]>['id']>;
-		},
-	>(
-		params: {
-			resource: TResource;
-		} & TParams,
-	): Promise<
-		| NoInfer<
-				Extract<
-					OptionsToResponse<
-						Model[TResource]['Read'],
-						NonNullable<TParams['options']>
-					>,
-					any[]
-				>[number]
-		  >
-		| undefined
-	>;
-	public async get<
-		TResource extends StringKeyOf<Model>,
-		TParams extends Omit<Params<Model[TResource]>, 'id'> & {
 			resource: TResource;
 		},
 	>(
@@ -1350,7 +1346,8 @@ export abstract class PinejsClientCore<
 		NoInfer<
 			OptionsToResponse<
 				Model[TResource]['Read'],
-				NonNullable<TParams['options']>
+				NonNullable<TParams['options']>,
+				TParams['id']
 			>
 		>
 	>;
@@ -1643,33 +1640,6 @@ export abstract class PinejsClientCore<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
 		TParams extends Params<Model[TResource]> & {
-			id: NonNullable<Params<Model[TResource]>['id']>;
-		},
-	>(
-		params: {
-			resource: TResource;
-			method?: 'GET';
-		} & TParams,
-	): PreparedFn<
-		T,
-		Promise<
-			| NoInfer<
-					Extract<
-						OptionsToResponse<
-							Model[TResource]['Read'],
-							NonNullable<TParams['options']>
-						>,
-						any[]
-					>[number]
-			  >
-			| undefined
-		>,
-		Model[TResource]
-	>;
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-		TParams extends Omit<Params<Model[TResource]>, 'id'> & {
 			resource: TResource;
 		},
 	>(
@@ -1683,7 +1653,8 @@ export abstract class PinejsClientCore<
 			NoInfer<
 				OptionsToResponse<
 					Model[TResource]['Read'],
-					NonNullable<TParams['options']>
+					NonNullable<TParams['options']>,
+					TParams['id']
 				>
 			>
 		>,
