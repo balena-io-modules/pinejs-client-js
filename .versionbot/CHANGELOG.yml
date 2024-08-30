@@ -1,4 +1,16 @@
 - commits:
+    - subject: Reduce overloads for `get` by improving `OptionsToResponse` type helper
+      hash: e4e0c2808fb20166603bad5386ef887cf3296d4a
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 7.0.2
+  title: ""
+  date: 2024-08-30T13:52:19.618Z
+- commits:
     - subject: Change `ExpandPropsOf` and `ExpandToResponse` helpers to check the
         common case first
       hash: e5404a23a30d250046c911c397e8562340651324
