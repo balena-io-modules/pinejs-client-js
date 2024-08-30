@@ -1,4 +1,16 @@
 - commits:
+    - subject: "Fix typings for `request` method when using `method: 'GET'`"
+      hash: 51bf4f2e8651409f856fadd5f37fda2290a53e26
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 7.0.3
+  title: ""
+  date: 2024-08-30T14:37:00.134Z
+- commits:
     - subject: Reduce overloads for `get` by improving `OptionsToResponse` type helper
       hash: e4e0c2808fb20166603bad5386ef887cf3296d4a
       body: ""
