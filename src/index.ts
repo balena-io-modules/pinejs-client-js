@@ -1914,16 +1914,16 @@ export abstract class PinejsClientCore<
 			method?: 'GET';
 			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
 		},
-	): Promise<number>;
+	): Promise<{ d: number }>;
 	public request<T extends Resource>(
 		params: Params<T> & { method?: 'GET'; id: NonNullable<Params<T>['id']> },
-	): Promise<AnyObject | undefined>;
+	): Promise<{ d: AnyObject | undefined }>;
 	public request<T extends Resource>(
 		params: Omit<Params<T>, 'id'> & { method?: 'GET' },
-	): Promise<AnyObject[]>;
+	): Promise<{ d: AnyObject[] }>;
 	public request<T extends Resource>(
 		params: Params<T> & { method?: 'GET' },
-	): Promise<PromiseResultTypes>;
+	): Promise<{ d: PromiseResultTypes }>;
 	public request<T extends Resource>(
 		params: Params<T> & {
 			method: 'PUT' | 'PATCH' | 'DELETE';
