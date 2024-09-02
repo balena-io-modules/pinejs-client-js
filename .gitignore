@@ -1,4 +1,2 @@
 /node_modules
-/es2015
-/es2018
-/index.d.ts
+/dist

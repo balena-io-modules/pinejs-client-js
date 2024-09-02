@@ -3,9 +3,9 @@
   "version": "7.2.0",
   "description": "This module provides the core tools to enable easier interaction with the pinejs API.",
   "type": "commonjs",
-  "browser": "es2015",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "browser": "dist",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git@github.com:balena-io-modules/pinejs-client-js.git"
@@ -21,10 +21,7 @@
     "test": "mocha",
     "posttest": "npm run lint & npx tsc --noEmit --project tsconfig.dev.json",
     "test6": "npm run build && mocha",
-    "build-es2015": "tsc --target es2015 --outDir es2015",
-    "build-es2018": "tsc --target es2018 --outDir es2018",
-    "build-types": "tsc --emitDeclarationOnly --outDir .",
-    "build": "npm run build-es2015 && npm run build-es2018 && npm run build-types",
+    "build": "tsc",
     "prepare": "node -e \"try { (await import('husky')).default() } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e }\" --input-type module",
     "prepublish": "require-npm4-to-publish",
     "prepack": "npm run build",
@@ -32,8 +29,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@balena/abstract-sql-to-typescript": "^4.0.0",
-    "@balena/es-version": "^1.0.3"
+    "@balena/abstract-sql-to-typescript": "^4.0.0"
   },
   "devDependencies": {
     "@balena/lint": "^8.2.7",
