@@ -170,8 +170,6 @@ const deprecated = (() => {
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 		urlInCompile:
 			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
-		urlInGet:
-			'Passing `url` to `get` is deprecated, please use a query object instead or use `request` directly.',
 		urlInPost:
 			'Passing `url` to `post` is deprecated, please use a query object instead or use `request` directly.',
 		urlInPatch:
@@ -1337,7 +1335,7 @@ export abstract class PinejsClientCore<
 			resource: TResource;
 		},
 	>(
-		params: { resource: TResource } & TParams,
+		params: { resource: TResource; url?: undefined } & TParams,
 	): Promise<
 		NoInfer<
 			OptionsToResponse<
@@ -1346,25 +1344,32 @@ export abstract class PinejsClientCore<
 				TParams['id']
 			>
 		>
-	>;
-	/**
-	 * @deprecated GETing via `url` is deprecated
-	 */
-	public get<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<PromiseResultTypes>;
-	public async get(params: Params): Promise<PromiseResultTypes> {
+	> {
 		if (params.url != null) {
-			deprecated.urlInGet();
+			throw new Error(
+				'Passing `url` to `get` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
 
 		const result = await this.request({ ...params, method: 'GET' });
-		return this._transformGetResult(params, result);
+		return this._transformGetResult<TResource, TParams>(params, result);
 	}
 
+	protected _transformGetResult<
+		TResource extends StringKeyOf<Model>,
+		TParams extends Params<Model[TResource]> & {
+			resource: TResource;
+		},
+	>(
+		params: TParams,
+		data: AnyObject,
+	): NoInfer<
+		OptionsToResponse<
+			Model[TResource]['Read'],
+			NonNullable<TParams['options']>,
+			TParams['id']
+		>
+	>;
 	protected _transformGetResult<T extends Resource>(
 		params: Params<T> & {
 			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
