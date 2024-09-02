@@ -1,4 +1,25 @@
 - commits:
+    - subject: Deprecate `prepare` without expected parameter aliases
+      hash: bf7cd7f196e911e2de7cd954b2edaa702b81853c
+      body: |
+        This will allow for removing a lot of overloads
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+    - subject: Add the option to list expected parameter aliases when preparing a query
+      hash: 7a53f56dd3af5ec0b83b5fbf8e399e6e1dc2daa4
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+      nested: []
+  version: 7.1.0
+  title: ""
+  date: 2024-09-02T15:52:18.777Z
+- commits:
     - subject: "Fix typings for `request` method when using `method: 'GET'`"
       hash: 51bf4f2e8651409f856fadd5f37fda2290a53e26
       body: ""
