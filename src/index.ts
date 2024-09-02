@@ -170,8 +170,6 @@ const deprecated = (() => {
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 		urlInCompile:
 			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
-		urlInDelete:
-			'Passing `url` to `delete` is deprecated, please use a query object instead or use `request` directly.',
 	};
 	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
 	for (const key of Object.keys(deprecationMessages) as Array<
@@ -1488,20 +1486,12 @@ export abstract class PinejsClientCore<
 	}
 
 	public delete<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Params<Model[TResource]>,
-	): Promise<void>;
-	/**
-	 * @deprecated DELETEing via `url` is deprecated
-	 */
-	public delete<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<void>;
-	public delete(params: Params): Promise<void> {
+		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
+	): Promise<void> {
 		if (params.url != null) {
-			deprecated.urlInDelete();
+			throw new Error(
+				'Passing `url` to `delete` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
 		params.method = 'DELETE';
 		return this.request({ ...params, method: 'DELETE' });
