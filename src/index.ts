@@ -168,8 +168,6 @@ const deprecated = (() => {
 			"'`$orderby: 'a/$count'` is deprecated, please use `$orderby: { a: { $count: {...} } }` instead.",
 		non$filterOptionIn$expand$count:
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
-		urlInCompile:
-			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
 	};
 	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
 	for (const key of Object.keys(deprecationMessages) as Array<
@@ -1908,16 +1906,7 @@ export abstract class PinejsClientCore<
 	}
 
 	public compile<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Params<Model[TResource]>,
-	): string;
-	/**
-	 * @deprecated Compiling a `url` is deprecated, it's a noop so you can just use the url directly
-	 */
-	public compile<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
+		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
 	): string;
 	public compile(params: Params): string;
 	public compile(params: Params): string {
@@ -1925,11 +1914,12 @@ export abstract class PinejsClientCore<
 			throw new Error('Params must be an object not a string');
 		}
 		if (params.url != null) {
-			deprecated.urlInCompile();
-			return params.url;
+			throw new Error(
+				'Passing `url` to `compile` has been removed, please use a query object or the url directly instead.',
+			);
 		} else {
 			if (params.resource == null) {
-				throw new Error('Either the url or resource must be specified.');
+				throw new Error('The resource must be specified.');
 			}
 			if (params.resource.endsWith('/$count')) {
 				deprecated.countInResource();
