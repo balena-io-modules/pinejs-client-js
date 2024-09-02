@@ -170,8 +170,6 @@ const deprecated = (() => {
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 		urlInCompile:
 			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
-		urlInPut:
-			'Passing `url` to `put` is deprecated, please use a query object instead or use `request` directly.',
 		urlInDelete:
 			'Passing `url` to `delete` is deprecated, please use a query object instead or use `request` directly.',
 	};
@@ -1456,19 +1454,11 @@ export abstract class PinejsClientCore<
 
 	public put<TResource extends StringKeyOf<Model>>(
 		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
-	): Promise<void>;
-	/**
-	 * @deprecated PUTing via `url` is deprecated
-	 */
-	public put<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<void>;
-	public put(params: Params): Promise<void> {
+	): Promise<void> {
 		if (params.url != null) {
-			deprecated.urlInPut();
+			throw new Error(
+				'Passing `url` to `put` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
 		return this.request({ ...params, method: 'PUT' });
 	}
