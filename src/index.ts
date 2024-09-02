@@ -168,8 +168,6 @@ const deprecated = (() => {
 			"'`$orderby: 'a/$count'` is deprecated, please use `$orderby: { a: { $count: {...} } }` instead.",
 		non$filterOptionIn$expand$count:
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
-		urlInGetOrCreate:
-			'Passing `url` to `getOrCreate` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
 		urlInUpsert:
 			'Passing `url` to `upsert` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
 		urlInCompile:
@@ -1540,7 +1538,7 @@ export abstract class PinejsClientCore<
 			resource: TResource;
 		},
 	>(
-		params: { resource: TResource } & TParams,
+		params: { resource: TResource; url?: undefined } & TParams,
 	): Promise<
 		NoInfer<
 			OptionsToResponse<
@@ -1551,7 +1549,9 @@ export abstract class PinejsClientCore<
 		>
 	> {
 		if ('url' in params && params.url != null) {
-			deprecated.urlInGetOrCreate();
+			throw new Error(
+				'Passing `url` to `getOrCreate` has been removed, please use a query object instead.',
+			);
 		}
 		const { id, body, ...restParams } = params;
 
