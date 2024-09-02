@@ -160,8 +160,6 @@ const deprecated = (() => {
 			'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
 		countWithNestedOperationInFilter:
 			"'`$filter: { a: { $count: { $op: number } } }` is deprecated, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.",
-		non$filterOptionIn$expand$count:
-			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 	};
 	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
 	for (const key of Object.keys(deprecationMessages) as Array<
@@ -1007,19 +1005,13 @@ const handleOptions = <T extends Resource['Read']>(
 			Object.keys(options).length >
 			(Object.prototype.hasOwnProperty.call(options, '$filter') ? 1 : 0)
 		) {
-			// TODO: Remove the optionOperation check in the next major,
-			// so that it throws for all operators.
-			if (optionOperation === '$expand') {
-				deprecated.non$filterOptionIn$expand$count();
-			} else {
-				throw new Error(
-					`When using '${
-						ODataOptionCodeExampleMap[optionOperation]
-					}' you can only specify $filter in the $count, got: '${JSON.stringify(
-						Object.keys(options),
-					)}'`,
-				);
-			}
+			throw new Error(
+				`When using '${
+					ODataOptionCodeExampleMap[optionOperation]
+				}' you can only specify $filter in the $count, got: '${JSON.stringify(
+					Object.keys(options),
+				)}'`,
+			);
 		}
 	}
 	const optionsArray = mapObj(options, (value, key) => {
