@@ -170,8 +170,6 @@ const deprecated = (() => {
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 		urlInCompile:
 			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
-		urlInPost:
-			'Passing `url` to `post` is deprecated, please use a query object instead or use `request` directly.',
 		urlInPatch:
 			'Passing `url` to `patch` is deprecated, please use a query object instead or use `request` directly.',
 		urlInPut:
@@ -1497,22 +1495,16 @@ export abstract class PinejsClientCore<
 	}
 
 	public post<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Params<Model[TResource]>,
-	): Promise<PickDeferred<Model[TResource]['Read']>>;
-	/**
-	 * @deprecated POSTing via `url` is deprecated
-	 */
-	public post<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<AnyObject>;
-	public post(params: Params): Promise<AnyObject> {
+		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
+	): Promise<PickDeferred<Model[TResource]['Read']>> {
 		if (params.url != null) {
-			deprecated.urlInPost();
+			throw new Error(
+				'Passing `url` to `post` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
-		return this.request({ ...params, method: 'POST' });
+		return this.request({ ...params, method: 'POST' }) as Promise<
+			PickDeferred<Model[TResource]['Read']>
+		>;
 	}
 
 	public delete<TResource extends StringKeyOf<Model>>(
