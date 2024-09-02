@@ -170,8 +170,6 @@ const deprecated = (() => {
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 		urlInCompile:
 			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
-		urlInPatch:
-			'Passing `url` to `patch` is deprecated, please use a query object instead or use `request` directly.',
 		urlInPut:
 			'Passing `url` to `put` is deprecated, please use a query object instead or use `request` directly.',
 		urlInDelete:
@@ -1477,19 +1475,11 @@ export abstract class PinejsClientCore<
 
 	public patch<TResource extends StringKeyOf<Model>>(
 		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
-	): Promise<void>;
-	/**
-	 * @deprecated PATCHing via `url` is deprecated
-	 */
-	public patch<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<void>;
-	public patch(params: Params): Promise<void> {
+	): Promise<void> {
 		if (params.url != null) {
-			deprecated.urlInPatch();
+			throw new Error(
+				'Passing `url` to `patch` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
 		return this.request({ ...params, method: 'PATCH' });
 	}
