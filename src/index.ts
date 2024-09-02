@@ -1637,6 +1637,36 @@ export abstract class PinejsClientCore<
 	}
 
 	public prepare<
+		TAliases extends Dictionary<
+			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+		>,
+		TResource extends StringKeyOf<Model>,
+		TParams extends Params<Model[TResource]> & {
+			resource: TResource;
+		},
+	>(
+		params: {
+			resource: TResource;
+			method?: 'GET';
+		} & TParams,
+		/**
+		 * If this is passed then all the listed aliases are expected to be used in params and passed to the returned prepared function.
+		 */
+		expectedAliases: TAliases,
+	): PreparedFn<
+		StringDictionaryToDictType<TAliases>,
+		Promise<
+			NoInfer<
+				OptionsToResponse<
+					Model[TResource]['Read'],
+					NonNullable<TParams['options']>,
+					TParams['id']
+				>
+			>
+		>,
+		Model[TResource]
+	>;
+	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
 		TParams extends Params<Model[TResource]> & {
@@ -1726,6 +1756,25 @@ export abstract class PinejsClientCore<
 		},
 	): PreparedFn<T, Promise<PromiseResultTypes>>;
 	public prepare<
+		TAliases extends Dictionary<
+			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+		>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
+			method: 'PUT' | 'PATCH' | 'DELETE';
+		},
+		/**
+		 * If this is passed then all the listed aliases are expected to be used in params and passed to the returned prepared function.
+		 */
+		expectedAliases: TAliases,
+	): PreparedFn<
+		StringDictionaryToDictType<TAliases>,
+		Promise<undefined>,
+		Model[TResource]
+	>;
+	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
 	>(
@@ -1739,6 +1788,25 @@ export abstract class PinejsClientCore<
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
 	): PreparedFn<T, Promise<undefined>>;
+	public prepare<
+		TAliases extends Dictionary<
+			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+		>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
+			method: 'POST';
+		},
+		/**
+		 * If this is passed then all the listed aliases are expected to be used in params and passed to the returned prepared function.
+		 */
+		expectedAliases: TAliases,
+	): PreparedFn<
+		StringDictionaryToDictType<TAliases>,
+		Promise<AnyObject>,
+		Model[TResource]
+	>;
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -2183,6 +2251,24 @@ export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
 	  } & {
 			$dir: OrderByDirection;
 	  });
+
+type StringPrimitiveToType<
+	T extends 'null' | 'string' | 'number' | 'boolean' | 'Date',
+> =
+	| ('null' extends T ? null : never)
+	| ('number' extends T ? number : never)
+	| ('string' extends T ? string : never)
+	| ('boolean' extends T ? boolean : never)
+	| ('Date' extends T ? Date : never);
+type StringDictionaryToDictType<
+	T extends Dictionary<
+		Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+	>,
+> = keyof T extends never
+	? Record<string, never>
+	: {
+			[key in keyof T]: StringPrimitiveToType<T[key][number]>;
+		};
 
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
