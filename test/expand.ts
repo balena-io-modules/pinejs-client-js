@@ -202,7 +202,9 @@ testExpand(
 	{
 		'a/$count': { $filter: { b: 'c' } },
 	},
-	"a/$count($filter=b eq 'c')",
+	new Error(
+		"`$expand: { 'a/$count': {...} }` has been removed, please use `$expand: { a: { $count: {...} } }` instead.",
+	),
 );
 
 testExpand(

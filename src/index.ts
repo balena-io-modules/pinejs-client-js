@@ -158,8 +158,6 @@ const deprecated = (() => {
 	const deprecationMessages = {
 		expandFilter:
 			'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
-		countInExpand:
-			"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
 		countWithNestedOperationInFilter:
 			"'`$filter: { a: { $count: { $op: number } } }` is deprecated, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.",
 		countInOrderBy:
@@ -1073,7 +1071,9 @@ const handleExpandObject = <T extends Resource['Read']>(
 			);
 		}
 		if (key.endsWith('/$count')) {
-			deprecated.countInExpand();
+			throw new Error(
+				"`$expand: { 'a/$count': {...} }` has been removed, please use `$expand: { a: { $count: {...} } }` instead.",
+			);
 		}
 		return handleOptions('$expand', value, key);
 	});
