@@ -168,8 +168,6 @@ const deprecated = (() => {
 			"'`$orderby: 'a/$count'` is deprecated, please use `$orderby: { a: { $count: {...} } }` instead.",
 		non$filterOptionIn$expand$count:
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
-		urlInUpsert:
-			'Passing `url` to `upsert` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
 		urlInCompile:
 			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
 		urlInGet:
@@ -1597,7 +1595,9 @@ export abstract class PinejsClientCore<
 		>,
 	): Promise<undefined | PickDeferred<Model[TResource]['Read']>> {
 		if ('url' in params && params.url != null) {
-			deprecated.urlInUpsert();
+			throw new Error(
+				'Passing `url` to `upsert` has been removed, please use a query object instead.',
+			);
 		}
 		const { id, body, ...restParams } = params;
 
