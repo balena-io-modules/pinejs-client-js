@@ -1147,8 +1147,6 @@ export type RetryParametersObj = {
 export type RetryParameters = RetryParametersObj | false;
 
 export abstract class PinejsClientCore<
-	/** @deprecated This was for the purposes of `clone` and we now use `this` for that */
-	PinejsClient = unknown,
 	Model extends { [key in keyof Model]: Resource } = {
 		[key in string]: AnyResource;
 	},
@@ -1169,9 +1167,7 @@ export abstract class PinejsClientCore<
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					(this[
-						validParam
-					] as PinejsClientCore<PinejsClient>[typeof validParam]) = value;
+					(this[validParam] as PinejsClientCore[typeof validParam]) = value;
 				}
 			}
 		}
@@ -1277,17 +1273,14 @@ export abstract class PinejsClientCore<
 		const cloneParams: typeof params = {};
 		for (const validParam of validParams) {
 			if (this[validParam] != null) {
-				(cloneParams[
-					validParam
-				] as PinejsClientCore<PinejsClient>[typeof validParam]) =
+				(cloneParams[validParam] as PinejsClientCore[typeof validParam]) =
 					this[validParam];
 			}
 
 			const paramValue = params?.[validParam];
 			if (paramValue != null) {
-				(cloneParams[
-					validParam
-				] as PinejsClientCore<PinejsClient>[typeof validParam]) = paramValue;
+				(cloneParams[validParam] as PinejsClientCore[typeof validParam]) =
+					paramValue;
 			}
 		}
 
