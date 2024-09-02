@@ -1332,10 +1332,10 @@ export abstract class PinejsClientCore<
 		}
 
 		const result = await this.request({ ...params, method: 'GET' });
-		return this._transformGetResult<TResource, TParams>(params, result);
+		return this.transformGetResult<TResource, TParams>(params, result);
 	}
 
-	protected _transformGetResult<
+	protected transformGetResult<
 		TResource extends StringKeyOf<Model>,
 		TParams extends Params<Model[TResource]> & {
 			resource: TResource;
@@ -1350,21 +1350,21 @@ export abstract class PinejsClientCore<
 			TParams['id']
 		>
 	>;
-	protected _transformGetResult<T extends Resource>(
+	protected transformGetResult<T extends Resource>(
 		params: Params<T> & {
 			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
 		},
 		data: AnyObject,
 	): number;
-	protected _transformGetResult<T extends Resource>(
+	protected transformGetResult<T extends Resource>(
 		params: Params<T> & { id: NonNullable<Params<T>['id']> },
 		data: AnyObject,
 	): AnyObject | undefined;
-	protected _transformGetResult<T extends Resource>(
+	protected transformGetResult<T extends Resource>(
 		params: Omit<Params<T>, 'id'>,
 		data: AnyObject,
 	): AnyObject[];
-	protected _transformGetResult<T extends Resource>(
+	protected transformGetResult<T extends Resource>(
 		params: Params<T>,
 		data: AnyObject,
 	): PromiseResultTypes {
@@ -1386,25 +1386,6 @@ export abstract class PinejsClientCore<
 			return data.d[0];
 		}
 		return data.d;
-	}
-
-	// TODO: Change its interface to how _transformGetResult looks in the next major
-	/** @deprecated */
-	protected transformGetResult<T extends Resource>(
-		params: Params<T> & {
-			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
-		},
-	): (data: AnyObject) => number;
-	protected transformGetResult<T extends Resource>(
-		params: Params<T> & { id: NonNullable<Params<T>['id']> },
-	): (data: AnyObject) => AnyObject | undefined;
-	protected transformGetResult<T extends Resource>(
-		params: Omit<Params<T>, 'id'>,
-	): (data: AnyObject) => AnyObject[];
-	protected transformGetResult<T extends Resource>(
-		params: Params<T>,
-	): (data: AnyObject) => PromiseResultTypes {
-		return (data) => this._transformGetResult(params, data);
 	}
 
 	public subscribe<
@@ -1889,7 +1870,7 @@ export abstract class PinejsClientCore<
 			}
 			const result = await this.request(params);
 			if (params.method === 'GET') {
-				return this._transformGetResult(params, result as AnyObject);
+				return this.transformGetResult(params, result as AnyObject);
 			}
 			return result;
 		};
