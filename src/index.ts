@@ -158,8 +158,6 @@ const deprecated = (() => {
 	const deprecationMessages = {
 		expandFilter:
 			'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
-		countInResource:
-			"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
 		countInExpand:
 			"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
 		countWithNestedOperationInFilter:
@@ -1922,7 +1920,9 @@ export abstract class PinejsClientCore<
 				throw new Error('The resource must be specified.');
 			}
 			if (params.resource.endsWith('/$count')) {
-				deprecated.countInResource();
+				throw new Error(
+					"`resource: 'a/$count'` has been removed, please use `options: { $count: { ... } }` instead.",
+				);
 			}
 			let url = escapeResource(params.resource);
 			let { options } = params;

@@ -30,12 +30,17 @@ function testFilter(
 		});
 	});
 	$it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
-		test(countOutput, {
-			resource: `${resource}/$count`,
-			options: {
-				$filter: input,
+		test(
+			new Error(
+				"`resource: 'a/$count'` has been removed, please use `options: { $count: { ... } }` instead.",
+			),
+			{
+				resource: `${resource}/$count`,
+				options: {
+					$filter: input,
+				},
 			},
-		});
+		);
 	});
 	$it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
 		test(countOutput, {
