@@ -1637,6 +1637,39 @@ export abstract class PinejsClientCore<
 	}
 
 	public prepare<
+		TAliases extends Dictionary<
+			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+		>,
+		TResource extends StringKeyOf<Model>,
+		TParams extends Params<Model[TResource]> & {
+			resource: TResource;
+		},
+	>(
+		params: {
+			resource: TResource;
+			method?: 'GET';
+		} & TParams,
+		/**
+		 * If this is passed then all the listed aliases are expected to be used in params and passed to the returned prepared function.
+		 */
+		expectedAliases: TAliases,
+	): PreparedFn<
+		StringDictionaryToDictType<TAliases>,
+		Promise<
+			NoInfer<
+				OptionsToResponse<
+					Model[TResource]['Read'],
+					NonNullable<TParams['options']>,
+					TParams['id']
+				>
+			>
+		>,
+		Model[TResource]
+	>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
+	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
 		TParams extends Params<Model[TResource]> & {
@@ -1660,6 +1693,9 @@ export abstract class PinejsClientCore<
 		>,
 		Model[TResource]
 	>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1673,6 +1709,9 @@ export abstract class PinejsClientCore<
 		},
 	): PreparedFn<T, Promise<number>, Model[TResource]>;
 	// We have duplicates with only the parameter alias dictionary generic to support the case where only that generic typing is passed, since inferring generics is all or nothing in typescript atm
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
 			method?: 'GET';
@@ -1681,6 +1720,9 @@ export abstract class PinejsClientCore<
 			};
 		},
 	): PreparedFn<T, Promise<number>>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1691,12 +1733,18 @@ export abstract class PinejsClientCore<
 			id: NonNullable<Params<Model[TResource]>['id']>;
 		},
 	): PreparedFn<T, Promise<AnyObject | undefined>, Model[TResource]>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
 			method?: 'GET';
 			id: NonNullable<Params['id']>;
 		},
 	): PreparedFn<T, Promise<AnyObject | undefined>>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1706,11 +1754,17 @@ export abstract class PinejsClientCore<
 			method?: 'GET';
 		},
 	): PreparedFn<T, Promise<AnyObject[]>, Model[TResource]>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Omit<Params, 'id'> & {
 			method?: 'GET';
 		},
 	): PreparedFn<T, Promise<AnyObject[]>>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1720,11 +1774,36 @@ export abstract class PinejsClientCore<
 			method?: 'GET';
 		},
 	): PreparedFn<T, Promise<PromiseResultTypes>, Model[TResource]>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
 			method?: 'GET';
 		},
 	): PreparedFn<T, Promise<PromiseResultTypes>>;
+	public prepare<
+		TAliases extends Dictionary<
+			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+		>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
+			method: 'PUT' | 'PATCH' | 'DELETE';
+		},
+		/**
+		 * If this is passed then all the listed aliases are expected to be used in params and passed to the returned prepared function.
+		 */
+		expectedAliases: TAliases,
+	): PreparedFn<
+		StringDictionaryToDictType<TAliases>,
+		Promise<undefined>,
+		Model[TResource]
+	>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1734,11 +1813,36 @@ export abstract class PinejsClientCore<
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
 	): PreparedFn<T, Promise<undefined>, Model[TResource]>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
 			method: 'PUT' | 'PATCH' | 'DELETE';
 		},
 	): PreparedFn<T, Promise<undefined>>;
+	public prepare<
+		TAliases extends Dictionary<
+			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+		>,
+		TResource extends StringKeyOf<Model>,
+	>(
+		params: Params<Model[TResource]> & {
+			resource: TResource;
+			method: 'POST';
+		},
+		/**
+		 * If this is passed then all the listed aliases are expected to be used in params and passed to the returned prepared function.
+		 */
+		expectedAliases: TAliases,
+	): PreparedFn<
+		StringDictionaryToDictType<TAliases>,
+		Promise<AnyObject>,
+		Model[TResource]
+	>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<
 		T extends Dictionary<ParameterAlias>,
 		TResource extends StringKeyOf<Model>,
@@ -1748,11 +1852,17 @@ export abstract class PinejsClientCore<
 			method: 'POST';
 		},
 	): PreparedFn<T, Promise<AnyObject>, Model[TResource]>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
 			method: 'POST';
 		},
 	): PreparedFn<T, Promise<AnyObject>>;
+	/**
+	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
+	 */
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params & {
 			resource?: undefined;
@@ -2183,6 +2293,24 @@ export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
 	  } & {
 			$dir: OrderByDirection;
 	  });
+
+type StringPrimitiveToType<
+	T extends 'null' | 'string' | 'number' | 'boolean' | 'Date',
+> =
+	| ('null' extends T ? null : never)
+	| ('number' extends T ? number : never)
+	| ('string' extends T ? string : never)
+	| ('boolean' extends T ? boolean : never)
+	| ('Date' extends T ? Date : never);
+type StringDictionaryToDictType<
+	T extends Dictionary<
+		Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+	>,
+> = keyof T extends never
+	? Record<string, never>
+	: {
+			[key in keyof T]: StringPrimitiveToType<T[key][number]>;
+		};
 
 export type Primitive = null | string | number | boolean | Date;
 export type ParameterAlias = Primitive;
