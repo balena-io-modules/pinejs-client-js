@@ -160,8 +160,6 @@ const deprecated = (() => {
 			'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
 		countWithNestedOperationInFilter:
 			"'`$filter: { a: { $count: { $op: number } } }` is deprecated, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.",
-		countInOrderBy:
-			"'`$orderby: 'a/$count'` is deprecated, please use `$orderby: { a: { $count: {...} } }` instead.",
 		non$filterOptionIn$expand$count:
 			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
 	};
@@ -855,7 +853,9 @@ const buildOrderBy = <T extends Resource['Read']>(
 ): string => {
 	if (isString(orderby)) {
 		if (/\/\$count\b/.test(orderby)) {
-			deprecated.countInOrderBy();
+			throw new Error(
+				"`$orderby: 'a/$count'` has been removed, please use `$orderby: { a: { $count: {...} } }` instead.",
+			);
 		}
 		return orderby;
 	} else if (isArray(orderby)) {
