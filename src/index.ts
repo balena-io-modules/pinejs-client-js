@@ -151,25 +151,8 @@ type UpperLetter =
 type Letter = LowerLetter | UpperLetter;
 type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-const noop = (): void => {
-	// noop
-};
-const deprecated = (() => {
-	const deprecationMessages = {
-		expandFilter:
-			'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
-	};
-	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
-	for (const key of Object.keys(deprecationMessages) as Array<
-		keyof typeof deprecationMessages
-	>) {
-		result[key] = () => {
-			console.warn('pinejs-client deprecated:', deprecationMessages[key]);
-			result[key] = noop;
-		};
-	}
-	return result;
-})();
+// This allowsdisabling the expandFilter error when inside a lambda expr because we need to allow `alias: field: ...`
+let disableExpandFilterError = false;
 
 const mapObj = <T extends Dictionary<any>, R>(
 	obj: T,
@@ -751,13 +734,13 @@ const handleFilterOperator = <
 			if (expr == null) {
 				throw new Error(`Lambda expression (${operator}) has no expr defined.`);
 			}
-			// Disable the expandFilter deprecation notice when inside a lambda expr
-			const deprecatedFn = (deprecated.expandFilter = noop);
 			let filterStr;
 			try {
+				// Disable the expandFilter error when inside a lambda expr because we need to allow `alias: field: ...`
+				disableExpandFilterError = true;
 				filterStr = buildFilter(expr).join('');
 			} finally {
-				deprecated.expandFilter = deprecatedFn;
+				disableExpandFilterError = false;
 			}
 			filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
 			return addParentKey(filterStr, parentKey, '/');
@@ -790,8 +773,10 @@ const handleFilterObject = <T extends Resource['Read']>(
 		} else {
 			let keys: string[] = [key];
 			if (parentKey != null) {
-				if (parentKey.length > 0) {
-					deprecated.expandFilter();
+				if (disableExpandFilterError === false && parentKey.length > 0) {
+					throw new Error(
+						'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+					);
 				}
 				keys = parentKey.concat(keys);
 			}
