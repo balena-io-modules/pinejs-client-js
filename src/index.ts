@@ -158,8 +158,6 @@ const deprecated = (() => {
 	const deprecationMessages = {
 		expandFilter:
 			'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
-		countWithNestedOperationInFilter:
-			"'`$filter: { a: { $count: { $op: number } } }` is deprecated, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.",
 	};
 	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
 	for (const key of Object.keys(deprecationMessages) as Array<
@@ -687,12 +685,9 @@ const handleFilterOperator = <
 				);
 				return [keys.join('/')];
 			}
-			if (parentKey != null) {
-				keys = parentKey.concat(keys);
-			}
-			// Handles the `$filter: a: $count: value` case.
-			deprecated.countWithNestedOperationInFilter();
-			return buildFilter(filter as Filter<T>, keys);
+			throw new Error(
+				'`$filter: { a: { $count: { $op: number } } }` has been removed, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.',
+			);
 		}
 		// break
 		case '$and':

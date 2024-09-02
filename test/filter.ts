@@ -806,7 +806,12 @@ testFilter(
 	'a/$count eq 1',
 );
 
-testFilter({ a: { $count: 1 } }, 'a/$count eq 1');
+testFilter(
+	{ a: { $count: 1 } },
+	new Error(
+		'`$filter: { a: { $count: { $op: number } } }` has been removed, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.',
+	),
+);
 
 testFilter(
 	{
