@@ -319,7 +319,7 @@ class Poll<T extends PromiseResultTypes> {
 		}
 	}
 
-	public on(name: 'data', fn: (response: Promise<T>) => void): PollOnObj;
+	public on(name: 'data', fn: (response: T) => void): PollOnObj;
 	public on(name: 'error', fn: (err: any) => void): PollOnObj;
 	public on(
 		name: keyof Poll<T>['subscribers'],
