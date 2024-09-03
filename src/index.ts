@@ -1791,18 +1791,10 @@ export abstract class PinejsClientCore<
 	): Promise<AnyObject>;
 	public request<T extends Resource>(
 		params: Params<T>,
-		overrides?: undefined,
 	): Promise<PromiseResultTypes | undefined>;
 	public request<T extends Resource>(
 		params: Params<T>,
-		overrides?: undefined,
 	): Promise<PromiseResultTypes | undefined> {
-		if (overrides !== undefined) {
-			throw new Error(
-				'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
-			);
-		}
-
 		if (!isObject(params)) {
 			throw new Error('Params must be an object.');
 		}
