@@ -1426,28 +1426,24 @@ export abstract class PinejsClientCore<
 		return (data) => this._transformGetResult(params, data);
 	}
 
-	public subscribe<TResource extends StringKeyOf<Model>>(
-		params: SubscribeParams<Model[TResource]> & {
-			resource: TResource;
-			options: {
-				$count: NonNullable<ODataOptions<Model[TResource]['Read']>['$count']>;
-			};
-		},
-	): Poll<number>;
-	public subscribe<TResource extends StringKeyOf<Model>>(
-		params: SubscribeParams<Model[TResource]> & {
-			resource: TResource;
-			id: NonNullable<SubscribeParams<Model[TResource]>['id']>;
-		},
-	): Poll<AnyObject | undefined>;
-	public subscribe<TResource extends StringKeyOf<Model>>(
-		params: Omit<SubscribeParams<Model[TResource]>, 'id'> & {
+	public subscribe<
+		TResource extends StringKeyOf<Model>,
+		TParams extends SubscribeParams<Model[TResource]> & {
 			resource: TResource;
 		},
-	): Poll<AnyObject[]>;
-	public subscribe<TResource extends StringKeyOf<Model>>(
-		params: SubscribeParams<Model[TResource]>,
-	): Poll<PromiseResultTypes> {
+	>(
+		params: TParams & {
+			resource: TResource;
+		},
+	): Poll<
+		NoInfer<
+			OptionsToResponse<
+				Model[TResource]['Read'],
+				NonNullable<TParams['options']>,
+				TParams['id']
+			>
+		>
+	> {
 		if (isString(params)) {
 			throw new Error(
 				'`subscribe(url)` is no longer supported, please use `subscribe({ url })` instead.',
