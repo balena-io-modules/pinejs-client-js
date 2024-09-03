@@ -1288,7 +1288,7 @@ export abstract class PinejsClientCore<
 			resource: TResource;
 		},
 	>(
-		params: { resource: TResource; url?: undefined } & TParams,
+		params: { resource: TResource } & TParams,
 	): Promise<
 		NoInfer<
 			OptionsToResponse<
@@ -1298,7 +1298,7 @@ export abstract class PinejsClientCore<
 			>
 		>
 	> {
-		if (params.url != null) {
+		if ('url' in params && params.url != null) {
 			throw new Error(
 				'Passing `url` to `get` has been removed, please use a query object instead or use `request` directly.',
 			);
@@ -1393,9 +1393,9 @@ export abstract class PinejsClientCore<
 	}
 
 	public put<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
+		params: { resource: TResource } & Params<Model[TResource]>,
 	): Promise<void> {
-		if (params.url != null) {
+		if ('url' in params && params.url != null) {
 			throw new Error(
 				'Passing `url` to `put` has been removed, please use a query object instead or use `request` directly.',
 			);
@@ -1404,9 +1404,9 @@ export abstract class PinejsClientCore<
 	}
 
 	public patch<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
+		params: { resource: TResource } & Params<Model[TResource]>,
 	): Promise<void> {
-		if (params.url != null) {
+		if ('url' in params && params.url != null) {
 			throw new Error(
 				'Passing `url` to `patch` has been removed, please use a query object instead or use `request` directly.',
 			);
@@ -1415,9 +1415,9 @@ export abstract class PinejsClientCore<
 	}
 
 	public post<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
+		params: { resource: TResource } & Params<Model[TResource]>,
 	): Promise<PickDeferred<Model[TResource]['Read']>> {
-		if (params.url != null) {
+		if ('url' in params && params.url != null) {
 			throw new Error(
 				'Passing `url` to `post` has been removed, please use a query object instead or use `request` directly.',
 			);
@@ -1428,9 +1428,9 @@ export abstract class PinejsClientCore<
 	}
 
 	public delete<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
+		params: { resource: TResource } & Params<Model[TResource]>,
 	): Promise<void> {
-		if (params.url != null) {
+		if ('url' in params && params.url != null) {
 			throw new Error(
 				'Passing `url` to `delete` has been removed, please use a query object instead or use `request` directly.',
 			);
@@ -1445,7 +1445,7 @@ export abstract class PinejsClientCore<
 			resource: TResource;
 		},
 	>(
-		params: { resource: TResource; url?: undefined } & TParams,
+		params: { resource: TResource } & TParams,
 	): Promise<
 		NoInfer<
 			OptionsToResponse<
@@ -1499,9 +1499,7 @@ export abstract class PinejsClientCore<
 	}
 
 	public async upsert<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & UpsertParams<
-			Model[TResource]
-		>,
+		params: { resource: TResource } & UpsertParams<Model[TResource]>,
 	): Promise<undefined | PickDeferred<Model[TResource]['Read']>> {
 		if ('url' in params && params.url != null) {
 			throw new Error(
@@ -1627,7 +1625,7 @@ export abstract class PinejsClientCore<
 		Model[TResource]
 	>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params,
+		params: Params & { url?: string },
 	): PreparedFn<T, Promise<PromiseResultTypes | undefined>> {
 		if (isString(params)) {
 			throw new Error(
@@ -1685,14 +1683,14 @@ export abstract class PinejsClientCore<
 	}
 
 	public compile<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
+		params: { resource: TResource } & Params<Model[TResource]>,
 	): string;
 	public compile(params: Params): string;
 	public compile(params: Params): string {
 		if (isString(params)) {
 			throw new Error('Params must be an object not a string');
 		}
-		if (params.url != null) {
+		if ('url' in params && params.url != null) {
 			throw new Error(
 				'Passing `url` to `compile` has been removed, please use a query object or the url directly instead.',
 			);
@@ -1800,7 +1798,11 @@ export abstract class PinejsClientCore<
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | undefined>;
 	public request<T extends Resource>(
-		params: Params<T>,
+		params: Omit<Params<T>, 'resource'> & { url: string },
+		overrides?: undefined,
+	): Promise<PromiseResultTypes | undefined>;
+	public request<T extends Resource>(
+		params: Params<T> | (Omit<Params<T>, 'resource'> & { url: string }),
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | undefined> {
 		if (overrides !== undefined) {
@@ -1818,7 +1820,8 @@ export abstract class PinejsClientCore<
 		const { body, passthrough = {}, retry } = params;
 
 		apiPrefix = apiPrefix ?? this.apiPrefix;
-		const url = apiPrefix + (params.url ?? this.compile(params));
+		const url =
+			apiPrefix + ('url' in params ? params.url : this.compile(params));
 
 		method = method ?? 'GET';
 		method = method.toUpperCase() as typeof method;
@@ -2117,9 +2120,8 @@ export type AnyObject = Dictionary<any>;
 export interface Params<T extends Resource = AnyResource> {
 	apiPrefix?: string;
 	method?: ODataMethod;
-	resource?: string;
+	resource: string;
 	id?: ResourceId<T['Read']>;
-	url?: string;
 	body?: Partial<T['Write']>;
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
