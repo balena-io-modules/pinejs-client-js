@@ -1387,7 +1387,7 @@ export abstract class PinejsClientCore<
 
 		const { pollInterval } = params;
 
-		const requestFn = this.prepare(params);
+		const requestFn = this.prepare(params, {});
 
 		return new Poll(requestFn, pollInterval);
 	}
@@ -1588,122 +1588,6 @@ export abstract class PinejsClientCore<
 		>,
 		Model[TResource]
 	>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-		TParams extends Params<Model[TResource]> & {
-			resource: TResource;
-		},
-	>(
-		params: {
-			resource: TResource;
-			method?: 'GET';
-		} & TParams,
-	): PreparedFn<
-		T,
-		Promise<
-			NoInfer<
-				OptionsToResponse<
-					Model[TResource]['Read'],
-					NonNullable<TParams['options']>,
-					TParams['id']
-				>
-			>
-		>,
-		Model[TResource]
-	>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method?: 'GET';
-			options: {
-				$count: NonNullable<ODataOptions<Model[TResource]['Read']>['$count']>;
-			};
-		},
-	): PreparedFn<T, Promise<number>, Model[TResource]>;
-	// We have duplicates with only the parameter alias dictionary generic to support the case where only that generic typing is passed, since inferring generics is all or nothing in typescript atm
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method?: 'GET';
-			options: {
-				$count: NonNullable<ODataOptions<AnyResource['Read']>['$count']>;
-			};
-		},
-	): PreparedFn<T, Promise<number>>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method?: 'GET';
-			id: NonNullable<Params<Model[TResource]>['id']>;
-		},
-	): PreparedFn<T, Promise<AnyObject | undefined>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method?: 'GET';
-			id: NonNullable<Params['id']>;
-		},
-	): PreparedFn<T, Promise<AnyObject | undefined>>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Omit<Params<Model[TResource]>, 'id'> & {
-			resource: TResource;
-			method?: 'GET';
-		},
-	): PreparedFn<T, Promise<AnyObject[]>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Omit<Params, 'id'> & {
-			method?: 'GET';
-		},
-	): PreparedFn<T, Promise<AnyObject[]>>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method?: 'GET';
-		},
-	): PreparedFn<T, Promise<PromiseResultTypes>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method?: 'GET';
-		},
-	): PreparedFn<T, Promise<PromiseResultTypes>>;
 	public prepare<
 		TAliases extends Dictionary<
 			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
@@ -1723,26 +1607,6 @@ export abstract class PinejsClientCore<
 		Promise<undefined>,
 		Model[TResource]
 	>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method: 'PUT' | 'PATCH' | 'DELETE';
-		},
-	): PreparedFn<T, Promise<undefined>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method: 'PUT' | 'PATCH' | 'DELETE';
-		},
-	): PreparedFn<T, Promise<undefined>>;
 	public prepare<
 		TAliases extends Dictionary<
 			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
@@ -1762,35 +1626,6 @@ export abstract class PinejsClientCore<
 		Promise<AnyObject>,
 		Model[TResource]
 	>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method: 'POST';
-		},
-	): PreparedFn<T, Promise<AnyObject>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method: 'POST';
-		},
-	): PreparedFn<T, Promise<AnyObject>>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			resource?: undefined;
-			method: 'POST';
-		},
-	): PreparedFn<T, Promise<AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params,
 	): PreparedFn<T, Promise<PromiseResultTypes | undefined>> {
