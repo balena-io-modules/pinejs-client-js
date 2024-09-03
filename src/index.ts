@@ -1379,10 +1379,8 @@ export abstract class PinejsClientCore<
 			>
 		>
 	> {
-		if (isString(params)) {
-			throw new Error(
-				'`subscribe(url)` is no longer supported, please use `subscribe({ url })` instead.',
-			);
+		if (!isObject(params)) {
+			throw new Error('Params must be an object.');
 		}
 
 		const { pollInterval } = params;
@@ -1625,12 +1623,10 @@ export abstract class PinejsClientCore<
 		Model[TResource]
 	>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & { url?: string },
+		params: Params,
 	): PreparedFn<T, Promise<PromiseResultTypes | undefined>> {
-		if (isString(params)) {
-			throw new Error(
-				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
-			);
+		if (!isObject(params)) {
+			throw new Error('Params must be an object.');
 		}
 		// precompile the URL string to improve performance
 		const compiledUrl = params.url ?? this.compile(params);
@@ -1687,10 +1683,10 @@ export abstract class PinejsClientCore<
 	): string;
 	public compile(params: Params): string;
 	public compile(params: Params): string {
-		if (isString(params)) {
-			throw new Error('Params must be an object not a string');
+		if (!isObject(params)) {
+			throw new Error('Params must be an object.');
 		}
-		if ('url' in params && params.url != null) {
+		if (params.url != null) {
 			throw new Error(
 				'Passing `url` to `compile` has been removed, please use a query object or the url directly instead.',
 			);
@@ -1798,11 +1794,7 @@ export abstract class PinejsClientCore<
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | undefined>;
 	public request<T extends Resource>(
-		params: Omit<Params<T>, 'resource'> & { url: string },
-		overrides?: undefined,
-	): Promise<PromiseResultTypes | undefined>;
-	public request<T extends Resource>(
-		params: Params<T> | (Omit<Params<T>, 'resource'> & { url: string }),
+		params: Params<T>,
 		overrides?: undefined,
 	): Promise<PromiseResultTypes | undefined> {
 		if (overrides !== undefined) {
@@ -1811,17 +1803,14 @@ export abstract class PinejsClientCore<
 			);
 		}
 
-		if (isString(params)) {
-			throw new Error(
-				'`request(url)` is no longer supported, please use `request({ url })` instead.',
-			);
+		if (!isObject(params)) {
+			throw new Error('Params must be an object.');
 		}
 		let { method, apiPrefix } = params;
 		const { body, passthrough = {}, retry } = params;
 
 		apiPrefix = apiPrefix ?? this.apiPrefix;
-		const url =
-			apiPrefix + ('url' in params ? params.url : this.compile(params));
+		const url = apiPrefix + (params.url ?? this.compile(params));
 
 		method = method ?? 'GET';
 		method = method.toUpperCase() as typeof method;
@@ -2120,8 +2109,9 @@ export type AnyObject = Dictionary<any>;
 export interface Params<T extends Resource = AnyResource> {
 	apiPrefix?: string;
 	method?: ODataMethod;
-	resource: string;
+	resource?: string;
 	id?: ResourceId<T['Read']>;
+	url?: string;
 	body?: Partial<T['Write']>;
 	passthrough?: AnyObject;
 	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
