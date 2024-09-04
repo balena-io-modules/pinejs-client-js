@@ -1,4 +1,24 @@
 - commits:
+    - subject: Improve typings for `subscribe` function
+      hash: cd9acce6e18846cefe717634db1da1c88d6dd17b
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+    - subject: Fix typing for subscribe `on('data')` method
+      hash: 384156969e4d16a3aa7188cb364d6cba109e3421
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 7.1.1
+  title: ""
+  date: 2024-09-04T09:08:38.523Z
+- commits:
     - subject: Deprecate `prepare` without expected parameter aliases
       hash: bf7cd7f196e911e2de7cd954b2edaa702b81853c
       body: |
