@@ -1,4 +1,16 @@
 - commits:
+    - subject: Improve `upsert` typings
+      hash: 33512bfad45a77bb7390f2d98cf450d39b2f3d7f
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 7.1.3
+  title: ""
+  date: 2024-09-05T16:35:32.010Z
+- commits:
     - subject: Improve `getOrCreate` typings
       hash: edbf05ae07a15a060b0d7ea4d7e536dc55f6ff17
       body: ""
