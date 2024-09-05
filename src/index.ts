@@ -1534,9 +1534,22 @@ export abstract class PinejsClientCore<
 		return this.request({ ...params, method: 'DELETE' });
 	}
 
-	public async getOrCreate<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & GetOrCreateParams<Model[TResource]>,
-	): Promise<AnyObject> {
+	public async getOrCreate<
+		TResource extends StringKeyOf<Model>,
+		TParams extends GetOrCreateParams<Model[TResource]> & {
+			resource: TResource;
+		},
+	>(
+		params: { resource: TResource } & TParams,
+	): Promise<
+		NoInfer<
+			OptionsToResponse<
+				Model[TResource]['Read'],
+				NonNullable<TParams['options']>,
+				TParams['id']
+			>
+		>
+	> {
 		if ('url' in params && params.url != null) {
 			deprecated.urlInGetOrCreate();
 		}
@@ -1556,22 +1569,26 @@ export abstract class PinejsClientCore<
 			);
 		}
 
-		const result = await this.get({
+		const result = await this.get<TResource, Omit<TParams, 'body'>>({
 			...restParams,
 			id,
-		});
+		} as Omit<TParams, 'body'>);
 
 		if (result != null) {
 			return result;
 		}
 
-		return await this.post({
+		return (await this.post({
 			...restParams,
 			body: {
 				...id,
 				...body,
 			},
-		});
+		})) as OptionsToResponse<
+			Model[TResource]['Read'],
+			NonNullable<TParams['options']>,
+			TParams['id']
+		>;
 	}
 
 	public async upsert<TResource extends StringKeyOf<Model>>(
