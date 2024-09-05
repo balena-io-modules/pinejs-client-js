@@ -1595,7 +1595,7 @@ export abstract class PinejsClientCore<
 		params: { resource: TResource; url?: undefined } & UpsertParams<
 			Model[TResource]
 		>,
-	): Promise<undefined | AnyObject> {
+	): Promise<undefined | PickDeferred<Model[TResource]['Read']>> {
 		if ('url' in params && params.url != null) {
 			deprecated.urlInUpsert();
 		}
