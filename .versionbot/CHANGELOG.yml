@@ -1,4 +1,16 @@
 - commits:
+    - subject: Improve `getOrCreate` typings
+      hash: edbf05ae07a15a060b0d7ea4d7e536dc55f6ff17
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 7.1.2
+  title: ""
+  date: 2024-09-05T13:47:03.150Z
+- commits:
     - subject: Improve typings for `subscribe` function
       hash: cd9acce6e18846cefe717634db1da1c88d6dd17b
       body: ""
