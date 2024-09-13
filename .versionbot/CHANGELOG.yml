@@ -1,4 +1,16 @@
 - commits:
+    - subject: Fix multiple lambdas triggering the expand filter error
+      hash: 5635318a432ba97f5eb701abf0b64e3ba85bd686
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.0.1
+  title: ""
+  date: 2024-09-13T16:21:23.657Z
+- commits:
     - subject: Remove error check if passing too many arguments to `request`
       hash: 2e4bd33bae9c39ed6e448932deb891cfc29e5509
       body: ""
