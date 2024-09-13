@@ -1,4 +1,16 @@
 - commits:
+    - subject: Switch tsconfig module resolution to Node16
+      hash: 2c6b45dd7d8d64ae74b9f9efff50de12614780e4
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 7.1.5
+  title: ""
+  date: 2024-09-13T12:13:12.995Z
+- commits:
     - subject: Update TypeScript to 5.6.2
       hash: b85e599b860e9d79a9c86c5d290380fe9733467b
       body: ""
