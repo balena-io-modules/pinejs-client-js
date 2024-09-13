@@ -202,7 +202,9 @@ testExpand(
 	{
 		'a/$count': { $filter: { b: 'c' } },
 	},
-	"a/$count($filter=b eq 'c')",
+	new Error(
+		"`$expand: { 'a/$count': {...} }` has been removed, please use `$expand: { a: { $count: {...} } }` instead.",
+	),
 );
 
 testExpand(
@@ -212,8 +214,6 @@ testExpand(
 	"a/$count($filter=b eq 'c')",
 );
 
-// TODO: Replace the expected result with the commented error in the next major
-// since anything other $filter inside a $count doesn't make sense.
 testExpand(
 	{
 		a: {
@@ -224,8 +224,9 @@ testExpand(
 			},
 		},
 	} satisfies Expand as Expand,
-	"a/$count($select=a;$filter=b eq 'c')",
-	// new Error(`'When using '$expand: a: $count: ...' you can only specify $filter in the $count, got: '["$select","$filter"]'''`)
+	new Error(
+		`When using '$expand: a: $count: ...' you can only specify $filter in the $count, got: '["$select","$filter"]'`,
+	),
 );
 
 testExpand(

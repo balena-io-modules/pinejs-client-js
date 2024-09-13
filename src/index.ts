@@ -151,51 +151,8 @@ type UpperLetter =
 type Letter = LowerLetter | UpperLetter;
 type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-const noop = (): void => {
-	// noop
-};
-const deprecated = (() => {
-	const deprecationMessages = {
-		expandFilter:
-			'`$filter: a: b: ...` is deprecated, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
-		countInResource:
-			"'`resource: 'a/$count'` is deprecated, please use `options: { $count: { ... } }` instead.",
-		countInExpand:
-			"'`$expand: { 'a/$count': {...} }` is deprecated, please use `$expand: { a: { $count: {...} } }` instead.",
-		countWithNestedOperationInFilter:
-			"'`$filter: { a: { $count: { $op: number } } }` is deprecated, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.",
-		countInOrderBy:
-			"'`$orderby: 'a/$count'` is deprecated, please use `$orderby: { a: { $count: {...} } }` instead.",
-		non$filterOptionIn$expand$count:
-			'using OData options other than $filter in a `$expand: { a: { $count: {...} } }` is deprecated, please remove them.',
-		urlInGetOrCreate:
-			'Passing `url` to `getOrCreate` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
-		urlInUpsert:
-			'Passing `url` to `upsert` is deprecated as it is unsupported and may have adverse effects, please use a query object instead.',
-		urlInCompile:
-			'Passing `url` to `compile` is deprecated, please use a query object instead or use `request` directly.',
-		urlInGet:
-			'Passing `url` to `get` is deprecated, please use a query object instead or use `request` directly.',
-		urlInPost:
-			'Passing `url` to `post` is deprecated, please use a query object instead or use `request` directly.',
-		urlInPatch:
-			'Passing `url` to `patch` is deprecated, please use a query object instead or use `request` directly.',
-		urlInPut:
-			'Passing `url` to `put` is deprecated, please use a query object instead or use `request` directly.',
-		urlInDelete:
-			'Passing `url` to `delete` is deprecated, please use a query object instead or use `request` directly.',
-	};
-	const result = {} as Record<keyof typeof deprecationMessages, () => void>;
-	for (const key of Object.keys(deprecationMessages) as Array<
-		keyof typeof deprecationMessages
-	>) {
-		result[key] = () => {
-			console.warn('pinejs-client deprecated:', deprecationMessages[key]);
-			result[key] = noop;
-		};
-	}
-	return result;
-})();
+// This allowsdisabling the expandFilter error when inside a lambda expr because we need to allow `alias: field: ...`
+let disableExpandFilterError = false;
 
 const mapObj = <T extends Dictionary<any>, R>(
 	obj: T,
@@ -711,12 +668,9 @@ const handleFilterOperator = <
 				);
 				return [keys.join('/')];
 			}
-			if (parentKey != null) {
-				keys = parentKey.concat(keys);
-			}
-			// Handles the `$filter: a: $count: value` case.
-			deprecated.countWithNestedOperationInFilter();
-			return buildFilter(filter as Filter<T>, keys);
+			throw new Error(
+				'`$filter: { a: { $count: { $op: number } } }` has been removed, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.',
+			);
 		}
 		// break
 		case '$and':
@@ -780,13 +734,13 @@ const handleFilterOperator = <
 			if (expr == null) {
 				throw new Error(`Lambda expression (${operator}) has no expr defined.`);
 			}
-			// Disable the expandFilter deprecation notice when inside a lambda expr
-			const deprecatedFn = (deprecated.expandFilter = noop);
 			let filterStr;
 			try {
+				// Disable the expandFilter error when inside a lambda expr because we need to allow `alias: field: ...`
+				disableExpandFilterError = true;
 				filterStr = buildFilter(expr).join('');
 			} finally {
-				deprecated.expandFilter = deprecatedFn;
+				disableExpandFilterError = false;
 			}
 			filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
 			return addParentKey(filterStr, parentKey, '/');
@@ -819,8 +773,10 @@ const handleFilterObject = <T extends Resource['Read']>(
 		} else {
 			let keys: string[] = [key];
 			if (parentKey != null) {
-				if (parentKey.length > 0) {
-					deprecated.expandFilter();
+				if (disableExpandFilterError === false && parentKey.length > 0) {
+					throw new Error(
+						'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+					);
 				}
 				keys = parentKey.concat(keys);
 			}
@@ -875,7 +831,9 @@ const buildOrderBy = <T extends Resource['Read']>(
 ): string => {
 	if (isString(orderby)) {
 		if (/\/\$count\b/.test(orderby)) {
-			deprecated.countInOrderBy();
+			throw new Error(
+				"`$orderby: 'a/$count'` has been removed, please use `$orderby: { a: { $count: {...} } }` instead.",
+			);
 		}
 		return orderby;
 	} else if (isArray(orderby)) {
@@ -1027,19 +985,13 @@ const handleOptions = <T extends Resource['Read']>(
 			Object.keys(options).length >
 			(Object.prototype.hasOwnProperty.call(options, '$filter') ? 1 : 0)
 		) {
-			// TODO: Remove the optionOperation check in the next major,
-			// so that it throws for all operators.
-			if (optionOperation === '$expand') {
-				deprecated.non$filterOptionIn$expand$count();
-			} else {
-				throw new Error(
-					`When using '${
-						ODataOptionCodeExampleMap[optionOperation]
-					}' you can only specify $filter in the $count, got: '${JSON.stringify(
-						Object.keys(options),
-					)}'`,
-				);
-			}
+			throw new Error(
+				`When using '${
+					ODataOptionCodeExampleMap[optionOperation]
+				}' you can only specify $filter in the $count, got: '${JSON.stringify(
+					Object.keys(options),
+				)}'`,
+			);
 		}
 	}
 	const optionsArray = mapObj(options, (value, key) => {
@@ -1091,7 +1043,9 @@ const handleExpandObject = <T extends Resource['Read']>(
 			);
 		}
 		if (key.endsWith('/$count')) {
-			deprecated.countInExpand();
+			throw new Error(
+				"`$expand: { 'a/$count': {...} }` has been removed, please use `$expand: { a: { $count: {...} } }` instead.",
+			);
 		}
 		return handleOptions('$expand', value, key);
 	});
@@ -1178,8 +1132,6 @@ export type RetryParametersObj = {
 export type RetryParameters = RetryParametersObj | false;
 
 export abstract class PinejsClientCore<
-	/** @deprecated This was for the purposes of `clone` and we now use `this` for that */
-	PinejsClient = unknown,
 	Model extends { [key in keyof Model]: Resource } = {
 		[key in string]: AnyResource;
 	},
@@ -1200,9 +1152,7 @@ export abstract class PinejsClientCore<
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					(this[
-						validParam
-					] as PinejsClientCore<PinejsClient>[typeof validParam]) = value;
+					(this[validParam] as PinejsClientCore[typeof validParam]) = value;
 				}
 			}
 		}
@@ -1308,17 +1258,14 @@ export abstract class PinejsClientCore<
 		const cloneParams: typeof params = {};
 		for (const validParam of validParams) {
 			if (this[validParam] != null) {
-				(cloneParams[
-					validParam
-				] as PinejsClientCore<PinejsClient>[typeof validParam]) =
+				(cloneParams[validParam] as PinejsClientCore[typeof validParam]) =
 					this[validParam];
 			}
 
 			const paramValue = params?.[validParam];
 			if (paramValue != null) {
-				(cloneParams[
-					validParam
-				] as PinejsClientCore<PinejsClient>[typeof validParam]) = paramValue;
+				(cloneParams[validParam] as PinejsClientCore[typeof validParam]) =
+					paramValue;
 			}
 		}
 
@@ -1350,40 +1297,47 @@ export abstract class PinejsClientCore<
 				TParams['id']
 			>
 		>
-	>;
-	/**
-	 * @deprecated GETing via `url` is deprecated
-	 */
-	public get<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<PromiseResultTypes>;
-	public async get(params: Params): Promise<PromiseResultTypes> {
-		if (params.url != null) {
-			deprecated.urlInGet();
+	> {
+		if ('url' in params && params.url != null) {
+			throw new Error(
+				'Passing `url` to `get` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
 
 		const result = await this.request({ ...params, method: 'GET' });
-		return this._transformGetResult(params, result);
+		return this.transformGetResult<TResource, TParams>(params, result);
 	}
 
-	protected _transformGetResult<T extends Resource>(
+	protected transformGetResult<
+		TResource extends StringKeyOf<Model>,
+		TParams extends Params<Model[TResource]> & {
+			resource: TResource;
+		},
+	>(
+		params: TParams,
+		data: AnyObject,
+	): NoInfer<
+		OptionsToResponse<
+			Model[TResource]['Read'],
+			NonNullable<TParams['options']>,
+			TParams['id']
+		>
+	>;
+	protected transformGetResult<T extends Resource>(
 		params: Params<T> & {
 			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
 		},
 		data: AnyObject,
 	): number;
-	protected _transformGetResult<T extends Resource>(
+	protected transformGetResult<T extends Resource>(
 		params: Params<T> & { id: NonNullable<Params<T>['id']> },
 		data: AnyObject,
 	): AnyObject | undefined;
-	protected _transformGetResult<T extends Resource>(
+	protected transformGetResult<T extends Resource>(
 		params: Omit<Params<T>, 'id'>,
 		data: AnyObject,
 	): AnyObject[];
-	protected _transformGetResult<T extends Resource>(
+	protected transformGetResult<T extends Resource>(
 		params: Params<T>,
 		data: AnyObject,
 	): PromiseResultTypes {
@@ -1407,25 +1361,6 @@ export abstract class PinejsClientCore<
 		return data.d;
 	}
 
-	// TODO: Change its interface to how _transformGetResult looks in the next major
-	/** @deprecated */
-	protected transformGetResult<T extends Resource>(
-		params: Params<T> & {
-			options: { $count: NonNullable<ODataOptions<T['Read']>['$count']> };
-		},
-	): (data: AnyObject) => number;
-	protected transformGetResult<T extends Resource>(
-		params: Params<T> & { id: NonNullable<Params<T>['id']> },
-	): (data: AnyObject) => AnyObject | undefined;
-	protected transformGetResult<T extends Resource>(
-		params: Omit<Params<T>, 'id'>,
-	): (data: AnyObject) => AnyObject[];
-	protected transformGetResult<T extends Resource>(
-		params: Params<T>,
-	): (data: AnyObject) => PromiseResultTypes {
-		return (data) => this._transformGetResult(params, data);
-	}
-
 	public subscribe<
 		TResource extends StringKeyOf<Model>,
 		TParams extends SubscribeParams<Model[TResource]> & {
@@ -1444,91 +1379,59 @@ export abstract class PinejsClientCore<
 			>
 		>
 	> {
-		if (isString(params)) {
-			throw new Error(
-				'`subscribe(url)` is no longer supported, please use `subscribe({ url })` instead.',
-			);
+		if (!isObject(params)) {
+			throw new Error('Params must be an object.');
 		}
 
 		const { pollInterval } = params;
 
-		const requestFn = this.prepare(params);
+		const requestFn = this.prepare(params, {});
 
 		return new Poll(requestFn, pollInterval);
 	}
 
 	public put<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
-	): Promise<void>;
-	/**
-	 * @deprecated PUTing via `url` is deprecated
-	 */
-	public put<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<void>;
-	public put(params: Params): Promise<void> {
-		if (params.url != null) {
-			deprecated.urlInPut();
+		params: { resource: TResource } & Params<Model[TResource]>,
+	): Promise<void> {
+		if ('url' in params && params.url != null) {
+			throw new Error(
+				'Passing `url` to `put` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
 		return this.request({ ...params, method: 'PUT' });
 	}
 
 	public patch<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & Params<Model[TResource]>,
-	): Promise<void>;
-	/**
-	 * @deprecated PATCHing via `url` is deprecated
-	 */
-	public patch<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<void>;
-	public patch(params: Params): Promise<void> {
-		if (params.url != null) {
-			deprecated.urlInPatch();
+		params: { resource: TResource } & Params<Model[TResource]>,
+	): Promise<void> {
+		if ('url' in params && params.url != null) {
+			throw new Error(
+				'Passing `url` to `patch` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
 		return this.request({ ...params, method: 'PATCH' });
 	}
 
 	public post<TResource extends StringKeyOf<Model>>(
 		params: { resource: TResource } & Params<Model[TResource]>,
-	): Promise<PickDeferred<Model[TResource]['Read']>>;
-	/**
-	 * @deprecated POSTing via `url` is deprecated
-	 */
-	public post<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<AnyObject>;
-	public post(params: Params): Promise<AnyObject> {
-		if (params.url != null) {
-			deprecated.urlInPost();
+	): Promise<PickDeferred<Model[TResource]['Read']>> {
+		if ('url' in params && params.url != null) {
+			throw new Error(
+				'Passing `url` to `post` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
-		return this.request({ ...params, method: 'POST' });
+		return this.request({ ...params, method: 'POST' }) as Promise<
+			PickDeferred<Model[TResource]['Read']>
+		>;
 	}
 
 	public delete<TResource extends StringKeyOf<Model>>(
 		params: { resource: TResource } & Params<Model[TResource]>,
-	): Promise<void>;
-	/**
-	 * @deprecated DELETEing via `url` is deprecated
-	 */
-	public delete<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): Promise<void>;
-	public delete(params: Params): Promise<void> {
-		if (params.url != null) {
-			deprecated.urlInDelete();
+	): Promise<void> {
+		if ('url' in params && params.url != null) {
+			throw new Error(
+				'Passing `url` to `delete` has been removed, please use a query object instead or use `request` directly.',
+			);
 		}
 		params.method = 'DELETE';
 		return this.request({ ...params, method: 'DELETE' });
@@ -1551,7 +1454,9 @@ export abstract class PinejsClientCore<
 		>
 	> {
 		if ('url' in params && params.url != null) {
-			deprecated.urlInGetOrCreate();
+			throw new Error(
+				'Passing `url` to `getOrCreate` has been removed, please use a query object instead.',
+			);
 		}
 		const { id, body, ...restParams } = params;
 
@@ -1592,12 +1497,12 @@ export abstract class PinejsClientCore<
 	}
 
 	public async upsert<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource; url?: undefined } & UpsertParams<
-			Model[TResource]
-		>,
+		params: { resource: TResource } & UpsertParams<Model[TResource]>,
 	): Promise<undefined | PickDeferred<Model[TResource]['Read']>> {
 		if ('url' in params && params.url != null) {
-			deprecated.urlInUpsert();
+			throw new Error(
+				'Passing `url` to `upsert` has been removed, please use a query object instead.',
+			);
 		}
 		const { id, body, ...restParams } = params;
 
@@ -1679,122 +1584,6 @@ export abstract class PinejsClientCore<
 		>,
 		Model[TResource]
 	>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-		TParams extends Params<Model[TResource]> & {
-			resource: TResource;
-		},
-	>(
-		params: {
-			resource: TResource;
-			method?: 'GET';
-		} & TParams,
-	): PreparedFn<
-		T,
-		Promise<
-			NoInfer<
-				OptionsToResponse<
-					Model[TResource]['Read'],
-					NonNullable<TParams['options']>,
-					TParams['id']
-				>
-			>
-		>,
-		Model[TResource]
-	>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method?: 'GET';
-			options: {
-				$count: NonNullable<ODataOptions<Model[TResource]['Read']>['$count']>;
-			};
-		},
-	): PreparedFn<T, Promise<number>, Model[TResource]>;
-	// We have duplicates with only the parameter alias dictionary generic to support the case where only that generic typing is passed, since inferring generics is all or nothing in typescript atm
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method?: 'GET';
-			options: {
-				$count: NonNullable<ODataOptions<AnyResource['Read']>['$count']>;
-			};
-		},
-	): PreparedFn<T, Promise<number>>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method?: 'GET';
-			id: NonNullable<Params<Model[TResource]>['id']>;
-		},
-	): PreparedFn<T, Promise<AnyObject | undefined>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method?: 'GET';
-			id: NonNullable<Params['id']>;
-		},
-	): PreparedFn<T, Promise<AnyObject | undefined>>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Omit<Params<Model[TResource]>, 'id'> & {
-			resource: TResource;
-			method?: 'GET';
-		},
-	): PreparedFn<T, Promise<AnyObject[]>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Omit<Params, 'id'> & {
-			method?: 'GET';
-		},
-	): PreparedFn<T, Promise<AnyObject[]>>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method?: 'GET';
-		},
-	): PreparedFn<T, Promise<PromiseResultTypes>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method?: 'GET';
-		},
-	): PreparedFn<T, Promise<PromiseResultTypes>>;
 	public prepare<
 		TAliases extends Dictionary<
 			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
@@ -1814,26 +1603,6 @@ export abstract class PinejsClientCore<
 		Promise<undefined>,
 		Model[TResource]
 	>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method: 'PUT' | 'PATCH' | 'DELETE';
-		},
-	): PreparedFn<T, Promise<undefined>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method: 'PUT' | 'PATCH' | 'DELETE';
-		},
-	): PreparedFn<T, Promise<undefined>>;
 	public prepare<
 		TAliases extends Dictionary<
 			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
@@ -1853,42 +1622,11 @@ export abstract class PinejsClientCore<
 		Promise<AnyObject>,
 		Model[TResource]
 	>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<
-		T extends Dictionary<ParameterAlias>,
-		TResource extends StringKeyOf<Model>,
-	>(
-		params: Params<Model[TResource]> & {
-			resource: TResource;
-			method: 'POST';
-		},
-	): PreparedFn<T, Promise<AnyObject>, Model[TResource]>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			method: 'POST';
-		},
-	): PreparedFn<T, Promise<AnyObject>>;
-	/**
-	 * @deprecated Please pass the parameter aliases as a parameter to `prepare` instead to allow for inference and future runtime checks
-	 */
-	public prepare<T extends Dictionary<ParameterAlias>>(
-		params: Params & {
-			resource?: undefined;
-			method: 'POST';
-		},
-	): PreparedFn<T, Promise<AnyObject>>;
 	public prepare<T extends Dictionary<ParameterAlias>>(
 		params: Params,
 	): PreparedFn<T, Promise<PromiseResultTypes | undefined>> {
-		if (isString(params)) {
-			throw new Error(
-				'`prepare(url)` is no longer supported, please use `prepare({ url })` instead.',
-			);
+		if (!isObject(params)) {
+			throw new Error('Params must be an object.');
 		}
 		// precompile the URL string to improve performance
 		const compiledUrl = params.url ?? this.compile(params);
@@ -1934,7 +1672,7 @@ export abstract class PinejsClientCore<
 			}
 			const result = await this.request(params);
 			if (params.method === 'GET') {
-				return this._transformGetResult(params, result as AnyObject);
+				return this.transformGetResult(params, result as AnyObject);
 			}
 			return result;
 		};
@@ -1943,29 +1681,23 @@ export abstract class PinejsClientCore<
 	public compile<TResource extends StringKeyOf<Model>>(
 		params: { resource: TResource } & Params<Model[TResource]>,
 	): string;
-	/**
-	 * @deprecated Compiling a `url` is deprecated, it's a noop so you can just use the url directly
-	 */
-	public compile<T extends Resource = AnyResource>(
-		params: {
-			resource?: undefined;
-			url: NonNullable<Params<T>['url']>;
-		} & Params<T>,
-	): string;
 	public compile(params: Params): string;
 	public compile(params: Params): string {
-		if (isString(params)) {
-			throw new Error('Params must be an object not a string');
+		if (!isObject(params)) {
+			throw new Error('Params must be an object.');
 		}
 		if (params.url != null) {
-			deprecated.urlInCompile();
-			return params.url;
+			throw new Error(
+				'Passing `url` to `compile` has been removed, please use a query object or the url directly instead.',
+			);
 		} else {
 			if (params.resource == null) {
-				throw new Error('Either the url or resource must be specified.');
+				throw new Error('The resource must be specified.');
 			}
 			if (params.resource.endsWith('/$count')) {
-				deprecated.countInResource();
+				throw new Error(
+					"`resource: 'a/$count'` has been removed, please use `options: { $count: { ... } }` instead.",
+				);
 			}
 			let url = escapeResource(params.resource);
 			let { options } = params;
@@ -2059,22 +1791,12 @@ export abstract class PinejsClientCore<
 	): Promise<AnyObject>;
 	public request<T extends Resource>(
 		params: Params<T>,
-		overrides?: undefined,
 	): Promise<PromiseResultTypes | undefined>;
 	public request<T extends Resource>(
 		params: Params<T>,
-		overrides?: undefined,
 	): Promise<PromiseResultTypes | undefined> {
-		if (overrides !== undefined) {
-			throw new Error(
-				'request(params, overrides)` is unsupported, please use `request({ ...params, ...overrides })` instead.',
-			);
-		}
-
-		if (isString(params)) {
-			throw new Error(
-				'`request(url)` is no longer supported, please use `request({ url })` instead.',
-			);
+		if (!isObject(params)) {
+			throw new Error('Params must be an object.');
 		}
 		let { method, apiPrefix } = params;
 		const { body, passthrough = {}, retry } = params;

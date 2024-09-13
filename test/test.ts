@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { PinejsClientCore } from '..';
 
 // Create a class for tests that extends the exported abstract class
-class PinejsClient extends PinejsClientCore<PinejsClient> {
+class PinejsClient extends PinejsClientCore {
 	public async _request(): Promise<any> {
 		return;
 	}

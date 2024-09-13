@@ -30,12 +30,17 @@ function testFilter(
 		});
 	});
 	$it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
-		test(countOutput, {
-			resource: `${resource}/$count`,
-			options: {
-				$filter: input,
+		test(
+			new Error(
+				"`resource: 'a/$count'` has been removed, please use `options: { $count: { ... } }` instead.",
+			),
+			{
+				resource: `${resource}/$count`,
+				options: {
+					$filter: input,
+				},
 			},
-		});
+		);
 	});
 	$it(`should compile ${JSON.stringify(input)} to ${countOutput}`, () => {
 		test(countOutput, {
@@ -348,7 +353,9 @@ testFilter(
 			b: 'c',
 		},
 	},
-	"a/b eq 'c'",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -358,7 +365,9 @@ testFilter(
 			d: 'e',
 		},
 	},
-	"(a/b eq 'c') and (a/d eq 'e')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -381,7 +390,9 @@ testFilter(
 			b: ['c', 'd'],
 		},
 	},
-	"a/b eq ('c' or 'd')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -398,7 +409,9 @@ testFilter(
 			$eq: 'd',
 		},
 	},
-	"(a/b eq 'c') and (a eq 'd')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -425,7 +438,9 @@ testFilter(
 			b: [{ $raw: 'c ge d' }, { $raw: 'd le e' }],
 		},
 	},
-	'a/b eq ((c ge d) or (d le e))',
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -436,7 +451,9 @@ testFilter(
 			},
 		},
 	},
-	'a/b eq ((c ge d) and (e le f))',
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 // Test raw arrays
@@ -569,7 +586,9 @@ testFilter(
 			},
 		},
 	},
-	"a/b eq ('c' and 'd')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -580,7 +599,9 @@ testFilter(
 			},
 		},
 	},
-	"a/b eq ((c eq 'd') and (e eq 'f'))",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 // Test $or
@@ -592,7 +613,9 @@ testFilter(
 			},
 		},
 	},
-	"a/b eq ('c' or 'd')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -603,7 +626,9 @@ testFilter(
 			},
 		},
 	},
-	"a/b eq ((c eq 'd') or (e eq 'f'))",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 // Test $in
@@ -615,7 +640,9 @@ testFilter(
 			},
 		},
 	},
-	"a/b in ('c')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -626,7 +653,9 @@ testFilter(
 			},
 		},
 	},
-	"a/b in ('c', 'd')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -637,7 +666,9 @@ testFilter(
 			},
 		},
 	},
-	"(a/b/c eq 'd') or (a/b/e eq 'f')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -650,7 +681,9 @@ testFilter(
 			},
 		},
 	},
-	"a/b/c eq 'd'",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -664,7 +697,9 @@ testFilter(
 			},
 		},
 	},
-	"(a/b/c eq 'd') or (a/b/e eq 'f')",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -675,7 +710,9 @@ testFilter(
 			},
 		},
 	},
-	"a/b eq 'c'",
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 // Test $not
@@ -779,7 +816,9 @@ testFilter(
 			},
 		},
 	},
-	'a/b eq c',
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 testFilter(
@@ -790,7 +829,9 @@ testFilter(
 			},
 		},
 	},
-	'a/b eq c/d',
+	new Error(
+		'`$filter: a: b: ...` has been removed, please use `$filter: a: $any: { $alias: "x", $expr: x: b: ... }` instead.',
+	),
 );
 
 // test $count
@@ -801,7 +842,12 @@ testFilter(
 	'a/$count eq 1',
 );
 
-testFilter({ a: { $count: 1 } }, 'a/$count eq 1');
+testFilter(
+	{ a: { $count: 1 } },
+	new Error(
+		'`$filter: { a: { $count: { $op: number } } }` has been removed, please use `$filter: { $eq: [ { a: { $count: {} } }, number ] }` instead.',
+	),
+);
 
 testFilter(
 	{
