@@ -1,4 +1,16 @@
 - commits:
+    - subject: Export `OptionsToResponse` type helper
+      hash: ae97930264fb22bc8d441bec282c29a90cabbb23
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+      nested: []
+  version: 7.2.0
+  title: ""
+  date: 2024-09-13T12:26:09.581Z
+- commits:
     - subject: Switch tsconfig module resolution to Node16
       hash: 2c6b45dd7d8d64ae74b9f9efff50de12614780e4
       body: ""
