@@ -735,12 +735,13 @@ const handleFilterOperator = <
 				throw new Error(`Lambda expression (${operator}) has no expr defined.`);
 			}
 			let filterStr;
+			const prevDisableExpandFilterError = disableExpandFilterError;
 			try {
 				// Disable the expandFilter error when inside a lambda expr because we need to allow `alias: field: ...`
 				disableExpandFilterError = true;
 				filterStr = buildFilter(expr).join('');
 			} finally {
-				disableExpandFilterError = false;
+				disableExpandFilterError = prevDisableExpandFilterError;
 			}
 			filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
 			return addParentKey(filterStr, parentKey, '/');

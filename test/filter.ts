@@ -912,10 +912,12 @@ testFilter(
 const testLambda = function (operator: string) {
 	const createFilter = (partialFilter: {
 		$alias?: string;
-		$expr?: { b: { c: string } } | { $eq: object };
+		$expr?: Filter;
 	}) => ({
 		[operator]: partialFilter,
 	});
+
+	const op = operator.slice(1);
 
 	testFilter(
 		{
@@ -926,7 +928,7 @@ const testLambda = function (operator: string) {
 				},
 			}),
 		},
-		`a/${operator.slice(1)}(b:b/c eq 'd')`,
+		`a/${op}(b:b/c eq 'd')`,
 	);
 
 	testFilter(
@@ -956,7 +958,7 @@ const testLambda = function (operator: string) {
 				$expr: { $eq: [{ al: { b: { $count: {} } } }, 1] },
 			}),
 		},
-		`a/${operator.slice(1)}(al:al/b/$count eq 1)`,
+		`a/${op}(al:al/b/$count eq 1)`,
 	);
 
 	testFilter(
@@ -966,7 +968,37 @@ const testLambda = function (operator: string) {
 				$expr: { $eq: [{ al: { b: { $count: { $filter: { c: 'd' } } } } }, 1] },
 			}),
 		},
-		`a/${operator.slice(1)}(al:al/b/$count($filter=c eq 'd') eq 1)`,
+		`a/${op}(al:al/b/$count($filter=c eq 'd') eq 1)`,
+	);
+
+	testFilter(
+		{
+			a: createFilter({
+				$alias: 'x',
+				$expr: {
+					// Filter on the default (aka non-ESR) balenaOS hostApp
+					x: {
+						b: createFilter({
+							$alias: 'y',
+							$expr: {
+								y: {
+									c: 'd',
+								},
+							},
+						}),
+						e: createFilter({
+							$alias: 'z',
+							$expr: {
+								z: {
+									f: 'g',
+								},
+							},
+						}),
+					},
+				},
+			}),
+		},
+		`a/${op}(x:(x/b/${op}(y:y/c eq 'd')) and (x/e/${op}(z:z/f eq 'g')))`,
 	);
 };
 
