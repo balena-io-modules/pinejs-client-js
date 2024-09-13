@@ -72,7 +72,7 @@ type Equals<X, Y> =
 		? true
 		: false;
 
-type OptionsToResponse<
+export type OptionsToResponse<
 	T extends Resource['Read'],
 	U extends ODataOptions<T>,
 	ID extends ResourceId<T> | undefined,
