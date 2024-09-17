@@ -746,7 +746,32 @@ const handleFilterOperator = <
 			filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
 			return addParentKey(filterStr, parentKey, '/');
 		}
-		// break
+
+		// TODO: if $canAccess the immediate parentKey will have '/canAccess()' appended to it
+		case '$canAccess': {
+			if (!parentKey || parentKey.length === 0) {
+				throw new Error('Parent key is required for $canAccess operation');
+			}
+
+			// TODO: well we actually need to check if the value of $canAccess is true
+			// before actually doing it (and not if it is just in there)
+			// Maybe a different possibility is doing
+			// {
+			//    resource: '$canAccess'
+			// }
+			// But I am not sure if I like that
+
+			// Append '/canAccess()' to the last part of the parentKey
+			const accessKey = `${parentKey[parentKey.length - 1]}/canAccess()`;
+			const updatedParentKey = [...parentKey.slice(0, -1), accessKey];
+
+			if (filter) {
+				// Handle the filter as needed
+				return addParentKey('', updatedParentKey, '');
+			}
+
+			return updatedParentKey;
+		}
 		default:
 			throw new Error(`Unrecognised operator: '${operator}'`);
 	}
@@ -1765,6 +1790,37 @@ export abstract class PinejsClientCore<
 		}
 	}
 
+	public compileAuth<TResource extends StringKeyOf<Model>>(
+		authParams: { resource: TResource } & AuthParams<Model[TResource]>,
+	): string {
+		if (!isObject(authParams)) {
+			throw new Error('authParams must be an object.');
+		}
+
+		const { resource, modelName, access, options } = authParams;
+
+		if (resource == null) {
+			throw new Error('The resource must be specified.');
+		}
+
+		if (modelName == null) {
+			throw new Error('The modelName must be specified.');
+		}
+
+		if (!['read', 'create', 'update', 'delete', 'all'].includes(access)) {
+			throw new Error(
+				`The access property must be one of 'read', 'create', 'update', or 'delete'.`,
+			);
+		}
+
+		// TOOD: maybe do not escape instead of escaping just to unescape?
+		const filter =
+			options != null
+				? `?${decodeURIComponent(buildFilter(options.$filter).join(''))}`
+				: '';
+		return `${modelName}.${resource}.${access}${filter}`;
+	}
+
 	public request<T extends Resource>(
 		params: Params<T> & {
 			method?: 'GET';
@@ -1962,6 +2018,8 @@ type FilterOperations<T extends Resource['Read']> = {
 	$ceiling?: FilterFunctionValue<T>;
 	$isof?: FilterFunctionValue<T>;
 	$cast?: FilterFunctionValue<T>;
+
+	$canAccess?: boolean;
 };
 
 type AllFilterOperations<T extends Resource['Read']> = FilterOperations<T> &
@@ -2110,6 +2168,15 @@ export interface Params<T extends Resource = AnyResource> {
 	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
 	options?: ODataOptions<T['Read']>;
 	retry?: RetryParameters;
+}
+
+export interface AuthParams<T extends Resource> {
+	modelName: string;
+	resource: string;
+	access: string;
+	options?: {
+		$filter: Filter<T['Read']>;
+	};
 }
 
 export type ConstructorParams = Pick<Params, (typeof validParams)[number]>;
