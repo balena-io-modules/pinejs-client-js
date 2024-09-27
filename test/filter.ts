@@ -1007,3 +1007,39 @@ testLambda('$any');
 
 // Test $all
 testLambda('$all');
+
+// $canAccess
+testFilter(
+	{
+		a: {
+			$canAccess: true,
+		},
+	},
+	'a/Auth.canAccess()',
+);
+
+testFilter(
+	{
+		$or: {
+			o: {
+				$canAccess: true,
+			},
+			$and: {
+				a: true,
+				b: {
+					$any: {
+						$alias: 'c',
+						$expr: {
+							c: {
+								d: {
+									$canAccess: true,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+	'(o/Auth.canAccess()) or ((a eq true) and (b/any(c:c/d/Auth.canAccess())))',
+);

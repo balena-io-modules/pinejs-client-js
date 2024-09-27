@@ -94,6 +94,8 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
+const canAccessPattern = 'Auth.canAccess()';
+
 type LowerLetter =
 	| 'a'
 	| 'b'
@@ -332,10 +334,19 @@ const isPrimitive = (value?: unknown): value is Primitive => {
 
 // Escape a resource name (string), or resource path (array)
 const escapeResource = (resource: string | string[]): string => {
-	if (isString(resource)) {
-		resource = encodeURIComponent(resource);
-	} else if (isArray(resource)) {
-		resource = resource.map(encodeURIComponent).join('/');
+	const encodePart = (part: string): string => {
+		if (part.includes(canAccessPattern)) {
+			const [beforeAuth, afterAuth] = part.split('/' + canAccessPattern);
+			const encodedBeforeAuth = encodeURIComponent(beforeAuth);
+			return `${encodedBeforeAuth}/${canAccessPattern}${afterAuth}`;
+		}
+		return encodeURIComponent(part);
+	};
+
+	if (typeof resource === 'string') {
+		resource = encodePart(resource);
+	} else if (Array.isArray(resource)) {
+		resource = resource.map(encodePart).join('/');
 	} else {
 		throw new Error('Not a valid resource: ' + typeof resource);
 	}
@@ -746,6 +757,21 @@ const handleFilterOperator = <
 			filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
 			return addParentKey(filterStr, parentKey, '/');
 		}
+		case '$canAccess': {
+			if (!parentKey || parentKey.length === 0) {
+				throw new Error('Parent key is required for $canAccess operation');
+			}
+
+			const accessKey = `${parentKey[parentKey.length - 1]}/${canAccessPattern}`;
+			const updatedParentKey = [...parentKey.slice(0, -1), accessKey];
+
+			if (filter) {
+				// Handle the filter as needed
+				return addParentKey('', updatedParentKey, '');
+			}
+
+			return updatedParentKey;
+		}
 		// break
 		default:
 			throw new Error(`Unrecognised operator: '${operator}'`);
@@ -906,13 +932,13 @@ const buildOption = <T extends Resource['Read']>(
 	let compiledValue = '';
 	switch (option) {
 		case '$filter':
-			compiledValue = buildFilter(value as Filter<T>).join('');
+			compiledValue = buildFilter(value).join('');
 			break;
 		case '$expand':
-			compiledValue = buildExpand(value as Expand<T>);
+			compiledValue = buildExpand(value);
 			break;
 		case '$orderby':
-			compiledValue = buildOrderBy(value as OrderBy<T>);
+			compiledValue = buildOrderBy(value);
 			break;
 		case '$top':
 		case '$skip': {
@@ -1153,7 +1179,7 @@ export abstract class PinejsClientCore<
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					(this[validParam] as PinejsClientCore[typeof validParam]) = value;
+					this[validParam] = value;
 				}
 			}
 		}
@@ -1734,7 +1760,7 @@ export abstract class PinejsClientCore<
 							const escapedValue =
 								isObject(v) && '@' in v
 									? escapeParameterAlias(v['@'])
-									: escapeValue(v!);
+									: escapeValue(v);
 							return `${k}=${escapedValue}`;
 						}).join(',');
 					}
@@ -1962,6 +1988,8 @@ type FilterOperations<T extends Resource['Read']> = {
 	$ceiling?: FilterFunctionValue<T>;
 	$isof?: FilterFunctionValue<T>;
 	$cast?: FilterFunctionValue<T>;
+
+	$canAccess?: true;
 };
 
 type AllFilterOperations<T extends Resource['Read']> = FilterOperations<T> &
