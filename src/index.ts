@@ -746,6 +746,27 @@ const handleFilterOperator = <
 			filterStr = `${operator.slice(1)}(${alias}:${filterStr})`;
 			return addParentKey(filterStr, parentKey, '/');
 		}
+		case '$fn': {
+			const filterx = filter as FilterType<typeof operator, T>;
+			if (typeof filterx.$scope !== 'string') {
+				throw new Error(
+					`Function expression (${operator}) $scope must be a string.`,
+				);
+			}
+			const scope = escapeResource(filterx.$scope);
+
+			if (typeof filterx.$method !== 'string') {
+				throw new Error(
+					`Function expression (${operator}) $method must be a string.`,
+				);
+			}
+			const method = escapeResource(filterx.$method);
+
+			const args = filterx.$args?.map((v) => `${escapeValue(v)}`) ?? [];
+
+			const filterStr = `${scope}.${method}(` + args.join(',') + ')';
+			return addParentKey(filterStr, parentKey, '/');
+		}
 		// break
 		default:
 			throw new Error(`Unrecognised operator: '${operator}'`);
@@ -1962,6 +1983,11 @@ type FilterOperations<T extends Resource['Read']> = {
 	$ceiling?: FilterFunctionValue<T>;
 	$isof?: FilterFunctionValue<T>;
 	$cast?: FilterFunctionValue<T>;
+	$fn?: {
+		$scope: string;
+		$method: string;
+		$args?: Primitive[];
+	};
 };
 
 type AllFilterOperations<T extends Resource['Read']> = FilterOperations<T> &
