@@ -1007,3 +1007,106 @@ testLambda('$any');
 
 // Test $all
 testLambda('$all');
+
+// Test $fn calls
+testFilter(
+	{
+		a: {
+			$fn: {
+				$scope: 'E',
+				$method: 'f',
+			},
+		},
+	},
+	'a/E.f()',
+);
+
+testFilter(
+	{
+		a: {
+			$fn: {
+				$scope: '$E',
+				$method: '$f',
+			},
+		},
+	},
+	'a/%24E.%24f()',
+);
+
+testFilter(
+	{
+		a: {
+			$fn: {
+				$scope: 'E',
+				$method: 'f',
+				$args: [null, 'arg1'],
+			},
+		},
+	},
+	`a/E.f(null,'arg1')`,
+);
+
+testFilter(
+	{
+		$or: {
+			o: {
+				$fn: {
+					$scope: 'E',
+					$method: 'f',
+				},
+			},
+			$and: {
+				a: true,
+				b: {
+					$any: {
+						$alias: 'c',
+						$expr: {
+							c: {
+								d: {
+									$fn: {
+										$scope: 'E',
+										$method: 'f',
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+	'(o/E.f()) or ((a eq true) and (b/any(c:c/d/E.f())))',
+);
+
+testFilter(
+	{
+		$or: {
+			o: {
+				$fn: {
+					$scope: 'E',
+					$method: 'f',
+				},
+			},
+			$and: {
+				a: true,
+				b: {
+					$any: {
+						$alias: 'c',
+						$expr: {
+							c: {
+								d: {
+									$fn: {
+										$scope: 'B',
+										$method: 'k',
+										$args: ['arg1', 'arg2'],
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+	`(o/E.f()) or ((a eq true) and (b/any(c:c/d/B.k('arg1','arg2'))))`,
+);
