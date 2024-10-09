@@ -1,4 +1,16 @@
 - commits:
+    - subject: Add support for calling odata fns
+      hash: befd5b25dc3c8f2d663c138255c68e4108abf8c9
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Otavio Jacobi
+      nested: []
+  version: 8.1.0
+  title: ""
+  date: 2024-10-09T13:01:51.754Z
+- commits:
     - subject: Fix multiple lambdas triggering the expand filter error
       hash: 5635318a432ba97f5eb701abf0b64e3ba85bd686
       body: ""
