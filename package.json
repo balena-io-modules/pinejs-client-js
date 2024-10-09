@@ -29,7 +29,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@balena/abstract-sql-to-typescript": "^4.0.0"
+    "@balena/abstract-sql-to-typescript": "^5.0.0"
   },
   "devDependencies": {
     "@balena/lint": "^8.2.7",
