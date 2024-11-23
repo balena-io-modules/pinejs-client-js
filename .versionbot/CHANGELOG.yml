@@ -1,4 +1,16 @@
 - commits:
+    - subject: Update TypeScript to 5.7.2
+      hash: 47d950eeb4b2f1fbed1b3c0b72a5cc985410af97
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+      nested: []
+  version: 8.1.2
+  title: ""
+  date: 2024-11-23T06:09:36.244Z
+- commits:
     - subject: Update @balena/abstract-sql-to-typescript to 5.0.0
       hash: cdea88ba8c8ce13513b3e4400a8035c1957c8307
       body: |
