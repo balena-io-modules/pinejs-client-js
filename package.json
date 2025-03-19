@@ -32,7 +32,7 @@
     "@balena/abstract-sql-to-typescript": "^5.0.0"
   },
   "devDependencies": {
-    "@balena/lint": "^8.2.7",
+    "@balena/lint": "^9.0.0",
     "@types/chai": "^4.3.16",
     "@types/lodash": "^4.17.7",
     "@types/mocha": "^10.0.7",
