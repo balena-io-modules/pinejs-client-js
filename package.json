@@ -40,7 +40,7 @@
     "husky": "^9.1.1",
     "lint-staged": "^15.2.7",
     "lodash": "^4.17.21",
-    "mocha": "^10.7.0",
+    "mocha": "^11.0.0",
     "require-npm4-to-publish": "^1.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
