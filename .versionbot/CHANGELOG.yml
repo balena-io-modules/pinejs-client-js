@@ -1,4 +1,17 @@
 - commits:
+    - subject: Update dependency @balena/lint to v9
+      hash: 80ad49f9351dc1546aec43eb9a838a3d12e88afa
+      body: |
+        Update @balena/lint from 8.2.8 to 9.1.4
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: balena-renovate[bot]
+      nested: []
+  version: 8.1.3
+  title: ""
+  date: 2025-03-25T17:15:51.568Z
+- commits:
     - subject: Update TypeScript to 5.7.2
       hash: 47d950eeb4b2f1fbed1b3c0b72a5cc985410af97
       body: ""
