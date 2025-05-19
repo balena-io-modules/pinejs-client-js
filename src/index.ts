@@ -1438,16 +1438,40 @@ export abstract class PinejsClientCore<
 		return this.request({ ...params, method: 'PATCH' });
 	}
 
+	public post<
+		TResource extends StringKeyOf<Model>,
+		ResponseBody = unknown,
+		RequestBody = unknown,
+	>(
+		params: {
+			resource: TResource;
+			action: NonNullable<Params<Model[TResource]>['action']>;
+		} & ActionParams<Model[TResource], RequestBody>,
+	): Promise<ResponseBody>;
+
 	public post<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Params<Model[TResource]>,
-	): Promise<PickDeferred<Model[TResource]['Read']>> {
+		params: { resource: TResource; action?: undefined } & Params<
+			Model[TResource]
+		>,
+	): Promise<PickDeferred<Model[TResource]['Read']>>;
+
+	public post<
+		TResource extends StringKeyOf<Model>,
+		ResponseBody = unknown,
+		RequestBody = unknown,
+	>(
+		params: {
+			resource: TResource;
+			body?: Params<Model[TResource]>['body'] | RequestBody;
+		} & Params<Model[TResource]>,
+	): Promise<PickDeferred<Model[TResource]['Read']> | Promise<ResponseBody>> {
 		if ('url' in params && params.url != null) {
 			throw new Error(
 				'Passing `url` to `post` has been removed, please use a query object instead or use `request` directly.',
 			);
 		}
 		return this.request({ ...params, method: 'POST' }) as Promise<
-			PickDeferred<Model[TResource]['Read']>
+			PickDeferred<Model[TResource]['Read']> | Promise<ResponseBody>
 		>;
 	}
 
@@ -1767,6 +1791,10 @@ export abstract class PinejsClientCore<
 					value = '' + escapeValue(id);
 				}
 				url += `(${value})`;
+			}
+
+			if (Object.prototype.hasOwnProperty.call(params, 'action')) {
+				url += `/${params.action}`;
 			}
 
 			let queryOptions: string[] = [];
@@ -2132,6 +2160,7 @@ export type AnyObject = Dictionary<any>;
 export interface Params<T extends Resource = AnyResource> {
 	apiPrefix?: string;
 	method?: ODataMethod;
+	action?: string;
 	resource?: string;
 	id?: ResourceId<T['Read']>;
 	url?: string;
@@ -2144,21 +2173,32 @@ export interface Params<T extends Resource = AnyResource> {
 
 export type ConstructorParams = Pick<Params, (typeof validParams)[number]>;
 
+export interface ActionParams<
+	T extends Resource = AnyResource,
+	RequestBody = unknown,
+> extends Pick<
+		Params<T>,
+		'apiPrefix' | 'resource' | 'id' | 'passthrough' | 'retry'
+	> {
+	action: NonNullable<Params<T>['action']>;
+	body?: RequestBody;
+}
+
 export interface SubscribeParams<T extends Resource = AnyResource>
-	extends Params<T> {
+	extends Omit<Params<T>, 'action'> {
 	method?: 'GET';
 	pollInterval?: number;
 }
 
 export interface GetOrCreateParams<T extends Resource = AnyResource>
-	extends Omit<Params<T>, 'method' | 'url'> {
+	extends Omit<Params<T>, 'method' | 'url' | 'action'> {
 	id: ResourceAlternateKey<T['Read']>;
 	resource: string;
 	body: Partial<T['Write']>;
 }
 
 export interface UpsertParams<T extends Resource = AnyResource>
-	extends Omit<Params<T>, 'id' | 'method' | 'url'> {
+	extends Omit<Params<T>, 'id' | 'method' | 'url' | 'action'> {
 	id: { [key in StringKeyOf<T['Write']>]?: Primitive };
 	resource: string;
 	body: Partial<T['Write']>;
