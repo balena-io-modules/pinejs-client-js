@@ -63,7 +63,7 @@ type ExpandToResponse<
 				>;
 			}
 		: // If no $expand is provided, no properties are expanded
-			// eslint-disable-next-line @typescript-eslint/ban-types -- We do want an empty object but `Record<string, never>` doesn't work because things breaks after it's used in a union, needs investigation
+			// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- We do want an empty object but `Record<string, never>` doesn't work because things breaks after it's used in a union, needs investigation
 			{};
 
 // Check if two types are exactly equal, useful for checking against eg exactly `any`
@@ -160,7 +160,7 @@ const mapObj = <T extends Dictionary<any>, R>(
 ): R[] => Object.keys(obj).map((key: StringKeyOf<T>) => fn(obj[key], key));
 
 const NumberIsFinite: (v: any) => v is number =
-	(Number as any).isFinite || ((v) => typeof v === 'number' && isFinite(v));
+	(Number as any).isFinite ?? ((v) => typeof v === 'number' && isFinite(v));
 
 const isString = (v: any): v is string => typeof v === 'string';
 
@@ -286,7 +286,9 @@ class Poll<T extends PromiseResultTypes> {
 		const index = subscribers.push(fn) - 1;
 
 		return {
-			unsubscribe: () => delete this.subscribers[name][index],
+			unsubscribe: () => {
+				this.subscribers[name].splice(index, 1);
+			},
 		};
 	}
 
@@ -627,7 +629,7 @@ const handleFilterOperator = <
 						);
 					}
 					const mappedParams: Dictionary<Filter<T>> = {};
-					for (const index in filterx) {
+					for (const index of Object.keys(filterx)) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
 								throw new Error(
@@ -1174,7 +1176,8 @@ export abstract class PinejsClientCore<
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					(this[validParam] as PinejsClientCore[typeof validParam]) = value;
+					(this[validParam] satisfies PinejsClientCore[typeof validParam]) =
+						value;
 				}
 			}
 		}
@@ -1239,7 +1242,6 @@ export abstract class PinejsClientCore<
 			retryDefaultParameters.canRetry ??
 			this.canRetryDefaultHandler;
 
-		// eslint-disable-next-line no-constant-condition -- we handle retry logic/delaying within the loop
 		while (true) {
 			try {
 				return await fnCall();
@@ -1434,16 +1436,40 @@ export abstract class PinejsClientCore<
 		return this.request({ ...params, method: 'PATCH' });
 	}
 
+	public post<
+		TResource extends StringKeyOf<Model>,
+		ResponseBody = unknown,
+		RequestBody = unknown,
+	>(
+		params: {
+			resource: TResource;
+			action: NonNullable<Params<Model[TResource]>['action']>;
+		} & ActionParams<Model[TResource], RequestBody>,
+	): Promise<ResponseBody>;
+
 	public post<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Params<Model[TResource]>,
-	): Promise<PickDeferred<Model[TResource]['Read']>> {
+		params: { resource: TResource; action?: undefined } & Params<
+			Model[TResource]
+		>,
+	): Promise<PickDeferred<Model[TResource]['Read']>>;
+
+	public post<
+		TResource extends StringKeyOf<Model>,
+		ResponseBody = unknown,
+		RequestBody = unknown,
+	>(
+		params: {
+			resource: TResource;
+			body?: Params<Model[TResource]>['body'] | RequestBody;
+		} & Params<Model[TResource]>,
+	): Promise<PickDeferred<Model[TResource]['Read']> | Promise<ResponseBody>> {
 		if ('url' in params && params.url != null) {
 			throw new Error(
 				'Passing `url` to `post` has been removed, please use a query object instead or use `request` directly.',
 			);
 		}
 		return this.request({ ...params, method: 'POST' }) as Promise<
-			PickDeferred<Model[TResource]['Read']>
+			PickDeferred<Model[TResource]['Read']> | Promise<ResponseBody>
 		>;
 	}
 
@@ -1574,6 +1600,19 @@ export abstract class PinejsClientCore<
 			};
 			await this.patch(patchParams);
 		}
+	}
+
+	public async runAction<
+		TResource extends StringKeyOf<Model>,
+		ResponseBody = unknown,
+		RequestBody = unknown,
+	>(
+		params: { resource: TResource } & ActionParams<
+			Model[TResource],
+			RequestBody
+		>,
+	) {
+		return await this.post<TResource, ResponseBody, RequestBody>(params);
 	}
 
 	public prepare<
@@ -1763,6 +1802,10 @@ export abstract class PinejsClientCore<
 					value = '' + escapeValue(id);
 				}
 				url += `(${value})`;
+			}
+
+			if (Object.prototype.hasOwnProperty.call(params, 'action')) {
+				url += `/${params.action}`;
 			}
 
 			let queryOptions: string[] = [];
@@ -2128,6 +2171,7 @@ export type AnyObject = Dictionary<any>;
 export interface Params<T extends Resource = AnyResource> {
 	apiPrefix?: string;
 	method?: ODataMethod;
+	action?: string;
 	resource?: string;
 	id?: ResourceId<T['Read']>;
 	url?: string;
@@ -2140,21 +2184,32 @@ export interface Params<T extends Resource = AnyResource> {
 
 export type ConstructorParams = Pick<Params, (typeof validParams)[number]>;
 
+export interface ActionParams<
+	T extends Resource = AnyResource,
+	RequestBody = unknown,
+> extends Pick<
+		Params<T>,
+		'apiPrefix' | 'resource' | 'id' | 'passthrough' | 'retry'
+	> {
+	action: NonNullable<Params<T>['action']>;
+	body?: RequestBody;
+}
+
 export interface SubscribeParams<T extends Resource = AnyResource>
-	extends Params<T> {
+	extends Omit<Params<T>, 'action'> {
 	method?: 'GET';
 	pollInterval?: number;
 }
 
 export interface GetOrCreateParams<T extends Resource = AnyResource>
-	extends Omit<Params<T>, 'method' | 'url'> {
+	extends Omit<Params<T>, 'method' | 'url' | 'action'> {
 	id: ResourceAlternateKey<T['Read']>;
 	resource: string;
 	body: Partial<T['Write']>;
 }
 
 export interface UpsertParams<T extends Resource = AnyResource>
-	extends Omit<Params<T>, 'id' | 'method' | 'url'> {
+	extends Omit<Params<T>, 'id' | 'method' | 'url' | 'action'> {
 	id: { [key in StringKeyOf<T['Write']>]?: Primitive };
 	resource: string;
 	body: Partial<T['Write']>;
