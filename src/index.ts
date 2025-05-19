@@ -1443,7 +1443,25 @@ export abstract class PinejsClientCore<
 	}
 
 	public post<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Params<Model[TResource]>,
+		params: {
+			resource: TResource;
+			action: string;
+			body?: unknown;
+		} & Omit<Params<Model[TResource]>, 'method' | 'url'>,
+	): Promise<unknown>;
+
+	public post<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource; action?: undefined } & Params<
+			Model[TResource]
+		>,
+	): Promise<PickDeferred<Model[TResource]['Read']>>;
+
+	public post<TResource extends StringKeyOf<Model>>(
+		params: {
+			resource: TResource;
+			action?: string;
+			body?: Params<Model[TResource]>['body'];
+		} & Params<Model[TResource]>,
 	): Promise<PickDeferred<Model[TResource]['Read']>> {
 		if ('url' in params && params.url != null) {
 			throw new Error(
@@ -1713,10 +1731,10 @@ export abstract class PinejsClientCore<
 	}
 
 	public compile<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Params<Model[TResource]>,
+		params: { resource: TResource; action?: string } & Params<Model[TResource]>,
 	): string;
-	public compile(params: Params): string;
-	public compile(params: Params): string {
+	public compile(params: Params & { action?: string }): string;
+	public compile(params: Params & { action?: string }): string {
 		if (!isObject(params)) {
 			throw new Error('Params must be an object.');
 		}
@@ -1775,6 +1793,10 @@ export abstract class PinejsClientCore<
 					value = '' + escapeValue(id);
 				}
 				url += `(${value})`;
+			}
+
+			if (Object.prototype.hasOwnProperty.call(params, 'action')) {
+				url += `/${params.action}`;
 			}
 
 			let queryOptions: string[] = [];
