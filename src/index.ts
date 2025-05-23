@@ -63,7 +63,7 @@ type ExpandToResponse<
 				>;
 			}
 		: // If no $expand is provided, no properties are expanded
-			// eslint-disable-next-line @typescript-eslint/ban-types -- We do want an empty object but `Record<string, never>` doesn't work because things breaks after it's used in a union, needs investigation
+			// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- We do want an empty object but `Record<string, never>` doesn't work because things breaks after it's used in a union, needs investigation
 			{};
 
 // Check if two types are exactly equal, useful for checking against eg exactly `any`
@@ -160,7 +160,7 @@ const mapObj = <T extends Dictionary<any>, R>(
 ): R[] => Object.keys(obj).map((key: StringKeyOf<T>) => fn(obj[key], key));
 
 const NumberIsFinite: (v: any) => v is number =
-	(Number as any).isFinite || ((v) => typeof v === 'number' && isFinite(v));
+	(Number as any).isFinite ?? ((v) => typeof v === 'number' && isFinite(v));
 
 const isString = (v: any): v is string => typeof v === 'string';
 
@@ -286,6 +286,10 @@ class Poll<T extends PromiseResultTypes> {
 		const index = subscribers.push(fn) - 1;
 
 		return {
+			// we use the index of the subscriber as a key to unsubscribe
+			// we can't use splice as this would change the index of the other subscribers
+			// so currently it creates a hole in the array ([undefined]) where once a subscriber was
+			// eslint-disable-next-line @typescript-eslint/no-array-delete
 			unsubscribe: () => delete this.subscribers[name][index],
 		};
 	}
@@ -627,7 +631,7 @@ const handleFilterOperator = <
 						);
 					}
 					const mappedParams: Dictionary<Filter<T>> = {};
-					for (const index in filterx) {
+					for (const index of Object.keys(filterx)) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
 								throw new Error(
@@ -1174,7 +1178,8 @@ export abstract class PinejsClientCore<
 			for (const validParam of validParams) {
 				const value = params[validParam];
 				if (value != null) {
-					(this[validParam] as PinejsClientCore[typeof validParam]) = value;
+					(this[validParam] satisfies PinejsClientCore[typeof validParam]) =
+						value;
 				}
 			}
 		}
@@ -1239,7 +1244,6 @@ export abstract class PinejsClientCore<
 			retryDefaultParameters.canRetry ??
 			this.canRetryDefaultHandler;
 
-		// eslint-disable-next-line no-constant-condition -- we handle retry logic/delaying within the loop
 		while (true) {
 			try {
 				return await fnCall();
