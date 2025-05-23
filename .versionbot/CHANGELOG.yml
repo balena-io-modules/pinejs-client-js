@@ -1,4 +1,16 @@
 - commits:
+    - subject: Fix linting
+      hash: 29627add4a7c5701c9e4f032ea1f15a0523e2877
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Otavio Jacobi
+      nested: []
+  version: 8.1.5
+  title: ""
+  date: 2025-05-23T11:24:08.969Z
+- commits:
     - subject: Update dependency mocha to v11
       hash: 85c2c2a779ba2cc94da6d35504e4f5ffb0263dcc
       body: |
