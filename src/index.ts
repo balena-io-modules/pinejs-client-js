@@ -29,7 +29,10 @@ export type ExpandableStringKeyOf<T extends Resource['Read']> = StringKeyOf<
 type ExtractExpand<T extends Resource['Read'], U extends keyof T> = NonNullable<
 	Extract<T[U], ReadonlyArray<Resource['Read']>>[number]
 >;
-type SelectPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
+type SelectPropsOf<
+	T extends Resource['Read'],
+	U extends ODataOptions<T> | StrictODataOptions<T>,
+> =
 	U['$select'] extends ReadonlyArray<StringKeyOf<T>>
 		? U['$select'][number]
 		: U['$select'] extends StringKeyOf<T>
@@ -38,7 +41,7 @@ type SelectPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
 				Exclude<StringKeyOf<T>, ExpandPropsOf<T, U>>;
 type ExpandPropsOf<
 	T extends Resource['Read'],
-	U extends ODataOptions<T>,
+	U extends ODataOptions<T> | StrictODataOptions<T>,
 > = U['$expand'] extends { [key in StringKeyOf<T>]?: any }
 	? StringKeyOf<U['$expand']>
 	: U['$expand'] extends ReadonlyArray<StringKeyOf<T>>
@@ -47,7 +50,7 @@ type ExpandPropsOf<
 			never;
 type ExpandToResponse<
 	T extends Resource['Read'],
-	U extends ODataOptions<T>,
+	U extends ODataOptions<T> | StrictODataOptions<T>,
 > = U['$expand'] extends { [key in StringKeyOf<T>]?: any }
 	? {
 			[P in keyof U['$expand']]-?: OptionsToResponse<
@@ -74,7 +77,7 @@ type Equals<X, Y> =
 
 export type OptionsToResponse<
 	T extends Resource['Read'],
-	U extends ODataOptions<T>,
+	U extends ODataOptions<T> | StrictODataOptions<T>,
 	ID extends ResourceId<T> | undefined,
 > = U extends {
 	$count: ODataOptions<T>['$count'];
@@ -2039,6 +2042,7 @@ export type ResourceExpand<T extends Resource['Read'] = AnyResourceObject> = {
 export type BaseExpand<T extends Resource['Read'] = AnyResourceObject> =
 	| ExpandableStringKeyOf<T>
 	| ResourceExpand<T>;
+
 export type Expand<T extends Resource['Read'] = AnyResourceObject> =
 	| BaseExpand<T>
 	| ReadonlyArray<BaseExpand<T>>;
@@ -2163,3 +2167,70 @@ export interface UpsertParams<T extends Resource = AnyResource>
 	resource: string;
 	body: Partial<T['Write']>;
 }
+
+export type StrictODataOptions<T extends Resource['Read'] = AnyResourceObject> =
+	Omit<ODataOptions<T>, '$select' | '$expand'> & {
+		$expand?: StrictExpand<T>;
+	} & (
+			| {
+					$count: NonNullable<ODataOptions<T>['$count']>;
+					// TODO: Maybe never is the better type here?
+					// TODO: Ask Page if it makes any sense to have $count & $select together
+					$select?: ODataOptions<T>['$select'];
+			  }
+			| {
+					// TODO: Maybe never is the better type here?
+					$count?: undefined;
+					$select: NonNullable<ODataOptions<T>['$select']>;
+			  }
+		);
+
+type StrictResourceExpand<T extends Resource['Read']> = {
+	[K in StringKeyOf<T> as ExtractExpand<T, K> extends never
+		? never
+		: K]?: ExtractExpand<T, K> extends Resource['Read']
+		? StrictODataOptions<ExtractExpand<T, K>>
+		: ODataOptions<ExtractExpand<T, K>>;
+};
+
+// StrictExpand does not allow to $expand with a string or list of string (resources)
+// instead, it enforces a resource expand with $select
+type StrictExpand<T extends Resource['Read']> =
+	| StrictResourceExpand<T>
+	| ReadonlyArray<StrictResourceExpand<T>>;
+
+type StrictParams<T extends Resource = AnyResource> = Omit<
+	Params<T>,
+	'options'
+> & {
+	options: StrictODataOptions<T['Read']>;
+};
+
+// Forces a $select to exist for get, subscribe and prepare
+export type Strict<
+	TClient extends PinejsClientCore<Model>,
+	Model extends { [key in keyof Model]: Resource } = {
+		[key in string]: AnyResource;
+	},
+> = Omit<TClient, 'get' | 'clone'> & {
+	get<
+		TResource extends StringKeyOf<Model>,
+		TParams extends StrictParams<Model[TResource]> & {
+			resource: TResource;
+		},
+	>(
+		params: { resource: TResource } & TParams,
+	): Promise<
+		NoInfer<
+			OptionsToResponse<
+				Model[TResource]['Read'],
+				NonNullable<TParams['options']>,
+				TParams['id']
+			>
+		>
+	>;
+	clone(
+		params: string | ConstructorParams,
+		backendParams?: AnyObject,
+	): Strict<TClient, Model>;
+};
