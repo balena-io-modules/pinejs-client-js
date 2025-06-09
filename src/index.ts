@@ -2113,17 +2113,17 @@ export type OptionsObject<T extends Resource['Read'] = AnyResourceObject> =
 
 export type ODataMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-type BaseResourceId =
+export type BaseResourceId =
 	| string
 	| number
 	| Date
 	| {
 			'@': string;
 	  };
-type ResourceAlternateKey<T extends Resource['Read']> = {
+export type ResourceAlternateKey<T extends Resource['Read']> = {
 	[key in StringKeyOf<T>]?: BaseResourceId;
 };
-type ResourceId<T extends Resource['Read']> =
+export type ResourceId<T extends Resource['Read']> =
 	| BaseResourceId
 	| ResourceAlternateKey<T>;
 
