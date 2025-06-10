@@ -1,4 +1,16 @@
 - commits:
+    - subject: Expose ResourceID typings
+      hash: bfbecf13bbcf330c7da20f339be39f0e4cdf74e3
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Otavio Jacobi
+      nested: []
+  version: 8.2.0
+  title: ""
+  date: 2025-06-10T07:20:27.502Z
+- commits:
     - subject: Fix linting
       hash: 29627add4a7c5701c9e4f032ea1f15a0523e2877
       body: ""
