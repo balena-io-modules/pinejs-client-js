@@ -29,7 +29,10 @@ export type ExpandableStringKeyOf<T extends Resource['Read']> = StringKeyOf<
 type ExtractExpand<T extends Resource['Read'], U extends keyof T> = NonNullable<
 	Extract<T[U], ReadonlyArray<Resource['Read']>>[number]
 >;
-type SelectPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
+export type SelectPropsOf<
+	T extends Resource['Read'],
+	U extends ODataOptions<T>,
+> =
 	U['$select'] extends ReadonlyArray<StringKeyOf<T>>
 		? U['$select'][number]
 		: U['$select'] extends StringKeyOf<T>
