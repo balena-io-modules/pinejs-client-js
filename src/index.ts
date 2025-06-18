@@ -94,6 +94,10 @@ export interface Dictionary<T> {
 	[index: string]: T;
 }
 
+type SingleKeyOf<T> = {
+	[K in keyof T]: { [P in K]: T[K] } & Record<Exclude<keyof T, K>, never>;
+}[keyof T];
+
 type LowerLetter =
 	| 'a'
 	| 'b'
@@ -1437,6 +1441,34 @@ export abstract class PinejsClientCore<
 		}
 		return this.request({ ...params, method: 'PATCH' });
 	}
+
+	public post<
+		TResource extends StringKeyOf<Model>,
+		K extends StringKeyOf<Model[TResource]['Write']>,
+		RequestBody extends SingleKeyOf<{
+			[P in K]: {
+				chunk_size?: number;
+				filename: string;
+				content_type: string;
+				size: number;
+			};
+		}>,
+		ResponseBody extends {
+			[P in keyof RequestBody]: {
+				uuid: string;
+				uploadParts: Array<{
+					url: string;
+					chunkSize: number;
+					partNumber: number;
+				}>;
+			};
+		},
+	>(
+		params: {
+			resource: TResource;
+			action: 'beginUpload';
+		} & ActionParams<Model[TResource], RequestBody>,
+	): Promise<ResponseBody>;
 
 	public post<
 		TResource extends StringKeyOf<Model>,
