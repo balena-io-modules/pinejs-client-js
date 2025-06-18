@@ -7,6 +7,7 @@ import type {
 	PickDeferred,
 	Expanded,
 	Resource,
+	Types,
 } from '@balena/abstract-sql-to-typescript';
 
 export type { Resource };
@@ -22,6 +23,25 @@ export type AnyResource = {
 };
 
 type StringKeyOf<T> = keyof T & string;
+
+type ResourcesWithWebResourceField<M extends { [key: string]: Resource }> = {
+	[R in StringKeyOf<M>]: {
+		[K in StringKeyOf<
+			M[R]['Write']
+		>]: M[R]['Write'][K] extends Types['WebResource']['Write'] ? K : never;
+	}[StringKeyOf<M[R]['Write']>] extends never
+		? never
+		: R;
+}[StringKeyOf<M>];
+
+type KeysOfType<
+	M extends { [key: string]: Resource },
+	R extends string & keyof M,
+> = {
+	[K in StringKeyOf<
+		M[R]['Write']
+	>]: M[R]['Write'][K] extends Types['WebResource']['Write'] ? K : never;
+}[StringKeyOf<M[R]['Write']>];
 
 export type ExpandableStringKeyOf<T extends Resource['Read']> = StringKeyOf<
 	ResourceExpand<T>
@@ -1443,8 +1463,8 @@ export abstract class PinejsClientCore<
 	}
 
 	public post<
-		TResource extends StringKeyOf<Model>,
-		K extends StringKeyOf<Model[TResource]['Write']>,
+		TResource extends ResourcesWithWebResourceField<Model>,
+		K extends KeysOfType<Model, TResource>,
 		RequestBody extends SingleKeyOf<{
 			[P in K]: {
 				chunk_size?: number;
@@ -1467,7 +1487,7 @@ export abstract class PinejsClientCore<
 		params: {
 			resource: TResource;
 			action: 'beginUpload';
-		} & ActionParams<Model[TResource], RequestBody>,
+		} & Omit<ActionParams<Model[TResource]>, 'body'> & { body: RequestBody },
 	): Promise<ResponseBody>;
 
 	public post<
