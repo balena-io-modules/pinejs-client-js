@@ -66,6 +66,10 @@ type ExpandToResponse<
 			// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- We do want an empty object but `Record<string, never>` doesn't work because things breaks after it's used in a union, needs investigation
 			{};
 
+type MaybeGetKey<T extends object, K extends string> = K extends keyof T
+	? T[K]
+	: undefined;
+
 // Check if two types are exactly equal, useful for checking against eg exactly `any`
 type Equals<X, Y> =
 	(<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
@@ -1320,7 +1324,7 @@ export abstract class PinejsClientCore<
 			OptionsToResponse<
 				Model[TResource]['Read'],
 				NonNullable<TParams['options']>,
-				TParams['id']
+				MaybeGetKey<TParams, 'id'>
 			>
 		>
 	> {
@@ -1346,7 +1350,7 @@ export abstract class PinejsClientCore<
 		OptionsToResponse<
 			Model[TResource]['Read'],
 			NonNullable<TParams['options']>,
-			TParams['id']
+			MaybeGetKey<TParams, 'id'>
 		>
 	>;
 	protected transformGetResult<T extends Resource>(
@@ -1401,7 +1405,7 @@ export abstract class PinejsClientCore<
 			OptionsToResponse<
 				Model[TResource]['Read'],
 				NonNullable<TParams['options']>,
-				TParams['id']
+				MaybeGetKey<TParams, 'id'>
 			>
 		>
 	> {
@@ -1506,7 +1510,11 @@ export abstract class PinejsClientCore<
 		} as Omit<TParams, 'body'>);
 
 		if (result != null) {
-			return result;
+			return result as OptionsToResponse<
+				Model[TResource]['Read'],
+				NonNullable<TParams['options']>,
+				TParams['id']
+			>;
 		}
 
 		return (await this.post({
@@ -1604,7 +1612,7 @@ export abstract class PinejsClientCore<
 				OptionsToResponse<
 					Model[TResource]['Read'],
 					NonNullable<TParams['options']>,
-					TParams['id']
+					MaybeGetKey<TParams, 'id'>
 				>
 			>
 		>,
