@@ -1,4 +1,21 @@
 - commits:
+    - subject: Safely access 'id' of Params to avoid `unknown` propagation
+      hash: 2ce99460c2385b3cd98935a6b5cbb1a876242e6b
+      body: >
+        When resolving the typings of a query, if the id is not present and we
+        try to access it anyway
+
+        typescript will infer `unknown`, which caused `OptionsToResponse` to
+        satisfy as if ID was present (thus, turning it into a query with `id`)
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Otavio Jacobi
+      nested: []
+  version: 8.2.1
+  title: ""
+  date: 2025-07-04T16:23:19.320Z
+- commits:
     - subject: Expose ResourceID typings
       hash: bfbecf13bbcf330c7da20f339be39f0e4cdf74e3
       body: ""
