@@ -1443,7 +1443,18 @@ export abstract class PinejsClientCore<
 	}
 
 	public post<TResource extends StringKeyOf<Model>>(
+		params: {
+			resource: TResource;
+		} & ActionParams &
+			Omit<Params<Model[TResource]>, 'method' | 'url' | 'body'>,
+	): Promise<unknown>;
+
+	public post<TResource extends StringKeyOf<Model>>(
 		params: { resource: TResource } & Params<Model[TResource]>,
+	): Promise<PickDeferred<Model[TResource]['Read']>>;
+
+	public post<TResource extends StringKeyOf<Model>>(
+		params: { resource: TResource } & ActionParams & Params<Model[TResource]>,
 	): Promise<PickDeferred<Model[TResource]['Read']>> {
 		if ('url' in params && params.url != null) {
 			throw new Error(
@@ -1713,10 +1724,11 @@ export abstract class PinejsClientCore<
 	}
 
 	public compile<TResource extends StringKeyOf<Model>>(
-		params: { resource: TResource } & Params<Model[TResource]>,
+		params: { resource: TResource } & Partial<ActionParams> &
+			Params<Model[TResource]>,
 	): string;
-	public compile(params: Params): string;
-	public compile(params: Params): string {
+	public compile(params: Params & Partial<ActionParams>): string;
+	public compile(params: Params & Partial<ActionParams>): string {
 		if (!isObject(params)) {
 			throw new Error('Params must be an object.');
 		}
@@ -1775,6 +1787,10 @@ export abstract class PinejsClientCore<
 					value = '' + escapeValue(id);
 				}
 				url += `(${value})`;
+			}
+
+			if (Object.prototype.hasOwnProperty.call(params, 'action')) {
+				url += `/${params.action}`;
 			}
 
 			let queryOptions: string[] = [];
@@ -2136,6 +2152,11 @@ export type ResourceId<T extends Resource['Read']> =
 	| ResourceAlternateKey<T>;
 
 export type AnyObject = Dictionary<any>;
+
+export interface ActionParams {
+	action: string;
+	body?: unknown;
+}
 
 export interface Params<T extends Resource = AnyResource> {
 	apiPrefix?: string;
