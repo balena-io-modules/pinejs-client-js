@@ -1,4 +1,16 @@
 - commits:
+    - subject: Add support to odata-actions
+      hash: 2bbb89d841a0122a069f1b89aac3503b38880ee5
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Otavio Jacobi
+      nested: []
+  version: 8.3.0
+  title: ""
+  date: 2025-07-17T14:02:58.283Z
+- commits:
     - subject: Safely access 'id' of Params to avoid `unknown` propagation
       hash: 2ce99460c2385b3cd98935a6b5cbb1a876242e6b
       body: >
