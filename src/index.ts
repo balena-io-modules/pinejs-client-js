@@ -7,7 +7,7 @@ import type {
 	PickDeferred,
 	Expanded,
 	Resource,
-} from '@balena/abstract-sql-to-typescript';
+} from '@balena/abstract-sql-to-typescript' with { 'resolution-mode': 'import' };
 
 export type { Resource };
 
