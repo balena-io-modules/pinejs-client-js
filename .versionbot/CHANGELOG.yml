@@ -1,4 +1,16 @@
 - commits:
+    - subject: Update dependencies
+      hash: 8836413c5bf77bb637e61e65fc54f73affeed69f
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.3.1
+  title: ""
+  date: 2025-08-01T14:12:31.816Z
+- commits:
     - subject: Add support to odata-actions
       hash: 2bbb89d841a0122a069f1b89aac3503b38880ee5
       body: ""
