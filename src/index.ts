@@ -1960,7 +1960,7 @@ type FilterOperations<T extends Resource['Read']> = {
 
 	$raw?: RawFilter<T>;
 
-	$?: string | string[];
+	$?: StringKeyOf<T> | string[];
 
 	$and?: Filter<T>;
 	$or?: Filter<T>;
