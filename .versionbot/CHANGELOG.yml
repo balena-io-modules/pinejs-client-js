@@ -1,4 +1,16 @@
 - commits:
+    - subject: "Improve typing of the `$: 'prop_name'` case"
+      hash: adf6dbc6225ee22a72512e2416470556594fb566
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.3.2
+  title: ""
+  date: 2025-09-03T14:40:29.282Z
+- commits:
     - subject: Update dependencies
       hash: 8836413c5bf77bb637e61e65fc54f73affeed69f
       body: ""
