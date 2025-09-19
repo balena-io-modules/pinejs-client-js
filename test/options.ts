@@ -29,6 +29,10 @@ const testOption = <T extends keyof ODataOptions>(
 	output: string | Error,
 	$it: Mocha.TestFunction = it,
 ) => {
+	if (!_.isError(output) && Array.isArray(input)) {
+		// Automatically do an equivalent test for `Set`s, unless we're expecting an error as the message will be different
+		testOption(option, new Set(input), output, $it);
+	}
 	const resource = 'test';
 	if (!_.isError(output)) {
 		output = `${resource}?${option}=${output}`;
@@ -65,14 +69,6 @@ const testFormat = (
 const testSelect = (
 	...args: Tail<Parameters<typeof testOption<'$select'>>>
 ) => {
-	if (!_.isError(args[1]) && Array.isArray(args[0])) {
-		// Automatically do an equivalent test for `Set`s, unless we're expecting an error as the message will be different
-		testOption(
-			'$select',
-			new Set(args[0]),
-			...(args.slice(1) as Tail<typeof args>),
-		);
-	}
 	testOption('$select', ...args);
 };
 const testCustom = (...args: Tail<Parameters<typeof testOption<'custom'>>>) => {

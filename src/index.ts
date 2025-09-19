@@ -879,9 +879,17 @@ const buildOrderBy = <T extends Resource['Read']>(
 			if (isArray(value)) {
 				throw new Error(`'$orderby' cannot have nested arrays`);
 			}
+			if (isSet(value)) {
+				throw new Error(`'$orderby' cannot have nested sets`);
+			}
 			return buildOrderBy(value);
 		});
 		return join(result);
+	} else if (isSet(orderby)) {
+		if (orderby.size === 0) {
+			throw new Error(`'$orderby' sets have to have at least 1 element`);
+		}
+		return buildOrderBy(Array.from(orderby));
 	} else if (isObject(orderby)) {
 		const { $dir, ...$orderby } = orderby;
 		const result = mapObj($orderby as typeof orderby, (dirOrOptions, key) => {
@@ -2085,6 +2093,7 @@ type OrderByDirection = 'asc' | 'desc';
 export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
 	| StringKeyOf<T>
 	| ReadonlyArray<OrderBy<T>>
+	| ReadonlySet<OrderBy<T>>
 	| { [k in StringKeyOf<T>]?: OrderByDirection }
 	| ({
 			[k in ExpandableStringKeyOf<T> & ResourceName]?: {
