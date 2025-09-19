@@ -30,8 +30,8 @@ type ExtractExpand<T extends Resource['Read'], U extends keyof T> = NonNullable<
 	Extract<T[U], ReadonlyArray<Resource['Read']>>[number]
 >;
 type SelectPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
-	U['$select'] extends ReadonlyArray<StringKeyOf<T>>
-		? U['$select'][number]
+	U['$select'] extends ReadonlyArray<infer X extends StringKeyOf<T>>
+		? X
 		: U['$select'] extends StringKeyOf<T>
 			? U['$select']
 			: // If no $select is provided, all properties that are not $expanded are selected
@@ -41,26 +41,24 @@ type ExpandPropsOf<
 	U extends ODataOptions<T>,
 > = U['$expand'] extends { [key in StringKeyOf<T>]?: any }
 	? StringKeyOf<U['$expand']>
-	: U['$expand'] extends ReadonlyArray<StringKeyOf<T>>
-		? U['$expand'][number]
+	: U['$expand'] extends ReadonlyArray<infer X extends StringKeyOf<T>>
+		? X
 		: // If no $expand is provided, no properties are expanded
 			never;
 type ExpandToResponse<
 	T extends Resource['Read'],
 	U extends ODataOptions<T>,
-> = U['$expand'] extends { [key in StringKeyOf<T>]?: any }
+> = U['$expand'] extends { [key in infer X extends StringKeyOf<T>]?: any }
 	? {
-			[P in keyof U['$expand']]-?: OptionsToResponse<
+			[P in X]-?: OptionsToResponse<
 				Expanded<T[P & string]>[number],
 				U['$expand'][P],
 				undefined
 			>;
 		}
-	: U['$expand'] extends ReadonlyArray<StringKeyOf<T>>
+	: U['$expand'] extends ReadonlyArray<infer X extends StringKeyOf<T>>
 		? {
-				[P in U['$expand'][number]]-?: Array<
-					PickDeferred<Expanded<T[P]>[number]>
-				>;
+				[P in X]-?: Array<PickDeferred<Expanded<T[P]>[number]>>;
 			}
 		: // If no $expand is provided, no properties are expanded
 			// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- We do want an empty object but `Record<string, never>` doesn't work because things breaks after it's used in a union, needs investigation
