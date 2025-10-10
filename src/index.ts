@@ -205,6 +205,18 @@ const durationTimepartFlagEntries = [
 	['seconds', 'S'],
 ] as const;
 
+/**
+ * It is expected that errors thrown by `_request` will be instances of this class/a subclass of it.
+ */
+export class StatusError extends Error {
+	constructor(
+		message: string,
+		public statusCode: number,
+	) {
+		super(message);
+	}
+}
+
 interface PollOnObj {
 	unsubscribe: () => void;
 }
@@ -1188,8 +1200,22 @@ export abstract class PinejsClientCore<
 	}
 
 	private canRetryDefaultHandler(err: any) {
-		const code = err?.statusCode;
-		return code == null || code === 429 || (code >= 500 && code < 600);
+		let statusCode: number | undefined;
+		if (err instanceof StatusError) {
+			statusCode = err.statusCode;
+		} else if (
+			isObject(err) &&
+			'statusCode' in err &&
+			NumberIsFinite(err.statusCode)
+		) {
+			// TODO-MAJOR: enforce throwing a subclass of StatusError
+			statusCode = err.statusCode;
+		}
+		return (
+			statusCode == null ||
+			statusCode === 429 ||
+			(statusCode >= 500 && statusCode < 600)
+		);
 	}
 
 	protected async callWithRetry<T>(
