@@ -1,4 +1,18 @@
 - commits:
+    - subject: Add a `StatusError` class that downstream is expected to use for errors
+      hash: 5c589f1ddb12ffac87c13d3daed2bda09d386378
+      body: |
+        This isn't enforced currently but it will help to standardize errors
+        across implementations and make it easier to switch between them
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+      nested: []
+  version: 8.4.0
+  title: ""
+  date: 2025-10-10T16:59:39.572Z
+- commits:
     - subject: "Types: make use of inference for some simplification"
       hash: 9622554854b58352a581300d7a6cf97b156d2a9a
       body: ""
