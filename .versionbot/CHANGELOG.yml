@@ -1,4 +1,26 @@
 - commits:
+    - subject: Stop adding white space after comma in $in expressions
+      hash: a0530b427983bab8b826a0e3d313531fa15aa377
+      body: >
+        inExpr = RWS "in" RWS ( listExpr / commonExpr )
+
+        listExpr  = OPEN BWS primitiveLiteral BWS *( COMMA BWS primitiveLiteral
+        BWS ) CLOSE
+
+        COMMA  = "," / "%2C"
+
+        BWS =  f( SP / HTAB / "%20" / "%09" )  ; "bad" whitespace
+      footer:
+        Change-type: patch
+        change-type: patch
+        See: https://docs.oasis-open.org/odata/odata/v4.01/os/abnf/odata-abnf-construction-rules.txt
+        see: https://docs.oasis-open.org/odata/odata/v4.01/os/abnf/odata-abnf-construction-rules.txt
+      author: Thodoris Greasidis
+      nested: []
+  version: 8.4.1
+  title: ""
+  date: 2025-11-10T17:12:36.457Z
+- commits:
     - subject: Add a `StatusError` class that downstream is expected to use for errors
       hash: 5c589f1ddb12ffac87c13d3daed2bda09d386378
       body: |
