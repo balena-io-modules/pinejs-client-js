@@ -709,7 +709,7 @@ const handleFilterOperator = <
 			} else if (isArray(filter)) {
 				if (filter.every(isPrimitive)) {
 					const filterStr = handleFilterArray(filter, undefined, 1);
-					const inStr = bracketJoin(filterStr, ', ').join('');
+					const inStr = bracketJoin(filterStr, ',').join('');
 					return addParentKey(`(${inStr})`, parentKey, ' in ');
 				} else {
 					const filterStr = handleFilterArray(filter, parentKey, 1);
