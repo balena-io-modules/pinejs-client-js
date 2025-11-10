@@ -29,18 +29,25 @@ const testOption = <T extends keyof ODataOptions>(
 	output: string | Error,
 	$it: Mocha.TestFunction = it,
 ) => {
+	if (!_.isError(output) && Array.isArray(input)) {
+		// Automatically do an equivalent test for `Set`s, unless we're expecting an error as the message will be different
+		testOption(option, new Set(input), output, $it);
+	}
 	const resource = 'test';
 	if (!_.isError(output)) {
 		output = `${resource}?${option}=${output}`;
 	}
-	$it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
-		test(output, {
-			resource,
-			options: {
-				[option]: input,
-			},
-		});
-	});
+	$it(
+		`should compile ${input instanceof Set ? `Set(${JSON.stringify(Array.from(input))})` : JSON.stringify(input)} to ${output}`,
+		() => {
+			test(output, {
+				resource,
+				options: {
+					[option]: input,
+				},
+			});
+		},
+	);
 };
 
 const testOrderBy = (
@@ -200,6 +207,11 @@ testSelect('a', 'a');
 testSelect(['a', 'b'], 'a,b');
 
 testSelect([], new Error(`'$select' arrays have to have at least 1 element`));
+
+testSelect(
+	new Set([]),
+	new Error(`'$select' sets have to have at least 1 element`),
+);
 
 // @ts-expect-error Testing intentionally invalid type
 testSelect(1, new Error("'$select' option has to be either a string or array"));

@@ -2,6 +2,9 @@ function isArray(value: any): value is readonly unknown[] {
 	// See: https://github.com/microsoft/TypeScript/issues/17002
 	return Array.isArray(value);
 }
+function isSet(value: any): value is ReadonlySet<unknown> {
+	return value instanceof Set;
+}
 
 import type {
 	PickDeferred,
@@ -29,13 +32,17 @@ export type ExpandableStringKeyOf<T extends Resource['Read']> = StringKeyOf<
 type ExtractExpand<T extends Resource['Read'], U extends keyof T> = NonNullable<
 	Extract<T[U], ReadonlyArray<Resource['Read']>>[number]
 >;
-type SelectPropsOf<T extends Resource['Read'], U extends ODataOptions<T>> =
-	U['$select'] extends ReadonlyArray<infer X extends StringKeyOf<T>>
-		? X
-		: U['$select'] extends StringKeyOf<T>
-			? U['$select']
-			: // If no $select is provided, all properties that are not $expanded are selected
-				Exclude<StringKeyOf<T>, ExpandPropsOf<T, U>>;
+type SelectPropsOf<
+	T extends Resource['Read'],
+	U extends ODataOptions<T>,
+> = U['$select'] extends
+	| ReadonlyArray<infer X extends StringKeyOf<T>>
+	| ReadonlySet<infer X extends StringKeyOf<T>>
+	? X
+	: U['$select'] extends StringKeyOf<T>
+		? U['$select']
+		: // If no $select is provided, all properties that are not $expanded are selected
+			Exclude<StringKeyOf<T>, ExpandPropsOf<T, U>>;
 type ExpandPropsOf<
 	T extends Resource['Read'],
 	U extends ODataOptions<T>,
@@ -884,9 +891,17 @@ const buildOrderBy = <T extends Resource['Read']>(
 			if (isArray(value)) {
 				throw new Error(`'$orderby' cannot have nested arrays`);
 			}
+			if (isSet(value)) {
+				throw new Error(`'$orderby' cannot have nested sets`);
+			}
 			return buildOrderBy(value);
 		});
 		return join(result);
+	} else if (isSet(orderby)) {
+		if (orderby.size === 0) {
+			throw new Error(`'$orderby' sets have to have at least 1 element`);
+		}
+		return buildOrderBy(Array.from(orderby));
 	} else if (isObject(orderby)) {
 		const { $dir, ...$orderby } = orderby;
 		const result = mapObj($orderby as typeof orderby, (dirOrOptions, key) => {
@@ -971,6 +986,11 @@ const buildOption = <T extends Resource['Read']>(
 					throw new Error(`'${option}' arrays have to have at least 1 element`);
 				}
 				compiledValue = join(select as string[]);
+			} else if (isSet(select)) {
+				if (select.size === 0) {
+					throw new Error(`'${option}' sets have to have at least 1 element`);
+				}
+				compiledValue = join(Array.from(select) as string[]);
 			} else {
 				throw new Error(
 					`'${option}' option has to be either a string or array`,
@@ -2099,6 +2119,7 @@ type OrderByDirection = 'asc' | 'desc';
 export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
 	| StringKeyOf<T>
 	| ReadonlyArray<OrderBy<T>>
+	| ReadonlySet<OrderBy<T>>
 	| { [k in StringKeyOf<T>]?: OrderByDirection }
 	| ({
 			[k in ExpandableStringKeyOf<T> & ResourceName]?: {
@@ -2137,7 +2158,10 @@ export interface ODataOptionsWithoutCount<
 	$orderby?: OrderBy<T>;
 	$top?: number;
 	$skip?: number;
-	$select?: StringKeyOf<T> | ReadonlyArray<StringKeyOf<T>>;
+	$select?:
+		| StringKeyOf<T>
+		| ReadonlyArray<StringKeyOf<T>>
+		| ReadonlySet<StringKeyOf<T>>;
 	$format?: string;
 	[index: string]:
 		| undefined
@@ -2145,7 +2169,8 @@ export interface ODataOptionsWithoutCount<
 		| string[]
 		| Filter<T>
 		| Expand<T>
-		| OrderBy<T>;
+		| OrderBy<T>
+		| ReadonlySet<StringKeyOf<T>>;
 }
 export type ODataCountOptions<T extends Resource['Read'] = AnyResourceObject> =
 	Pick<ODataOptionsWithoutCount<T>, '$filter'>;
