@@ -1,4 +1,16 @@
 - commits:
+    - subject: Add support for `Set` in place of arrays in `$select`
+      hash: 57f481ca5ff0cb2d71497d05c24d782b2f36a6dd
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.0
+  title: ""
+  date: 2025-11-18T12:15:34.892Z
+- commits:
     - subject: Stop adding white space after comma in $in expressions
       hash: a0530b427983bab8b826a0e3d313531fa15aa377
       body: >

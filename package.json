@@ -1,6 +1,6 @@
 {
   "name": "pinejs-client-core",
-  "version": "8.4.1",
+  "version": "8.5.0",
   "description": "This module provides the core tools to enable easier interaction with the pinejs API.",
   "type": "commonjs",
   "browser": "dist",
@@ -52,6 +52,6 @@
     "_": "test/*.ts"
   },
   "versionist": {
-    "publishedAt": "2025-11-10T17:12:36.599Z"
+    "publishedAt": "2025-11-18T12:15:35.043Z"
   }
 }
