@@ -1,4 +1,18 @@
 - commits:
+    - subject: "Add id-token: write permission for NPM OIDC publishing"
+      hash: dd74259a43309107c0c42b3749233f829b9cfbb0
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Kyle Harding <kyle@balena.io>
+        signed-off-by: Kyle Harding <kyle@balena.io>
+      author: Kyle Harding
+      nested: []
+  version: 8.5.1
+  title: ""
+  date: 2026-02-19T01:46:49.865Z
+- commits:
     - subject: Add support for `Set` in place of arrays in `$select`
       hash: 57f481ca5ff0cb2d71497d05c24d782b2f36a6dd
       body: ""
