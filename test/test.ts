@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import * as _ from 'lodash';
 import { PinejsClientCore } from '..';
 
 // Create a class for tests that extends the exported abstract class
@@ -19,7 +18,7 @@ export function test(
 	expected: string | Error,
 	params: Parameters<PinejsClientCore['compile']>[0],
 ): void {
-	if (_.isError(expected)) {
+	if (expected instanceof Error) {
 		expect(() => core.compile(params)).to.throw(
 			expected.constructor,
 			expected.message,

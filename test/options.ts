@@ -1,6 +1,5 @@
 import type { ODataOptions, Params } from '..';
 import { test } from './test';
-import * as _ from 'lodash';
 
 type Tail<T extends readonly any[]> = T extends readonly [any, ...infer U]
 	? U
@@ -12,7 +11,7 @@ const testId = (
 	$it: Mocha.TestFunction = it,
 ) => {
 	const resource = 'test';
-	if (!_.isError(output)) {
+	if (!(output instanceof Error)) {
 		output = `${resource}(${output})`;
 	}
 	$it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
@@ -30,7 +29,7 @@ const testOption = <T extends keyof ODataOptions>(
 	$it: Mocha.TestFunction = it,
 ) => {
 	const resource = 'test';
-	if (!_.isError(output)) {
+	if (!(output instanceof Error)) {
 		output = `${resource}?${option}=${output}`;
 	}
 	$it(
@@ -65,7 +64,7 @@ const testFormat = (
 const testSelect = (
 	...args: Tail<Parameters<typeof testOption<'$select'>>>
 ) => {
-	if (!_.isError(args[1]) && Array.isArray(args[0])) {
+	if (!(args[1] instanceof Error) && Array.isArray(args[0])) {
 		// Automatically do an equivalent test for `Set`s, unless we're expecting an error as the message will be different
 		testOption(
 			'$select',
