@@ -10,7 +10,9 @@ import type {
 	PickDeferred,
 	Expanded,
 	Resource,
-} from '@balena/abstract-sql-to-typescript' with { 'resolution-mode': 'import' };
+} from '@balena/abstract-sql-to-typescript' with {
+	'resolution-mode': 'import',
+};
 
 export type { Resource };
 
@@ -2165,8 +2167,9 @@ export interface ODataOptionsWithoutCount<
 }
 export type ODataCountOptions<T extends Resource['Read'] = AnyResourceObject> =
 	Pick<ODataOptionsWithoutCount<T>, '$filter'>;
-export interface ODataOptions<T extends Resource['Read'] = AnyResourceObject>
-	extends ODataOptionsWithoutCount<NoInfer<T>> {
+export interface ODataOptions<
+	T extends Resource['Read'] = AnyResourceObject,
+> extends ODataOptionsWithoutCount<NoInfer<T>> {
 	$count?: ODataCountOptions<NoInfer<T>>;
 	[index: string]:
 		| ODataOptionsWithoutCount<NoInfer<T>>[string]
@@ -2213,21 +2216,25 @@ export interface Params<T extends Resource = AnyResource> {
 
 export type ConstructorParams = Pick<Params, (typeof validParams)[number]>;
 
-export interface SubscribeParams<T extends Resource = AnyResource>
-	extends Params<T> {
+export interface SubscribeParams<
+	T extends Resource = AnyResource,
+> extends Params<T> {
 	method?: 'GET';
 	pollInterval?: number;
 }
 
-export interface GetOrCreateParams<T extends Resource = AnyResource>
-	extends Omit<Params<T>, 'method' | 'url'> {
+export interface GetOrCreateParams<
+	T extends Resource = AnyResource,
+> extends Omit<Params<T>, 'method' | 'url'> {
 	id: ResourceAlternateKey<T['Read']>;
 	resource: string;
 	body: Partial<T['Write']>;
 }
 
-export interface UpsertParams<T extends Resource = AnyResource>
-	extends Omit<Params<T>, 'id' | 'method' | 'url'> {
+export interface UpsertParams<T extends Resource = AnyResource> extends Omit<
+	Params<T>,
+	'id' | 'method' | 'url'
+> {
 	id: { [key in StringKeyOf<T['Write']>]?: Primitive };
 	resource: string;
 	body: Partial<T['Write']>;
