@@ -1,6 +1,5 @@
 import type { Filter, FilterObj } from '..';
 import { test } from './test';
-import * as _ from 'lodash';
 
 function testFilter(
 	input: Filter,
@@ -15,7 +14,7 @@ function testFilter(
 ): void {
 	let countOutput: string | Error;
 	const resource = 'test';
-	if (!_.isError(output)) {
+	if (!(output instanceof Error)) {
 		countOutput = resource + '/$count?$filter=' + output;
 		output = resource + '?$filter=' + output;
 	} else {

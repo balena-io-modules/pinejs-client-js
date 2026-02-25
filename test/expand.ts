@@ -1,12 +1,11 @@
 import type { Expand } from '..';
 import { test } from './test';
-import * as _ from 'lodash';
 
 function testExpand(input: Expand, output: string | Error): void;
 function testExpand(input: any, output: Error): void;
 function testExpand(input: Expand, output: string | Error): void {
 	const resource = 'test';
-	if (!_.isError(output)) {
+	if (!(output instanceof Error)) {
 		output = `${resource}?$expand=${output}`;
 	}
 	it(`should compile ${JSON.stringify(input)} to ${output}`, () => {
