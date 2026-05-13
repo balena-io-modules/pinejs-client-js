@@ -1,4 +1,17 @@
 - commits:
+    - subject: Rename .lintstagedrc to .lintstagedrc.json
+      hash: d3e589c185426bfbe2cc9794c0f893797b5521ec
+      body: |
+        In preparation for lint-staged v17 which recommends this rename
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: joshbwlng
+      nested: []
+  version: 8.5.19
+  title: ""
+  date: 2026-05-13T01:06:34.466Z
+- commits:
     - subject: Revert flowzone pinning to master
       hash: 775abf61c5285ee8f508564f8bbc603448913429
       body: ""
