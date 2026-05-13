@@ -302,9 +302,12 @@ class Poll<T extends PromiseResultTypes> {
 	public on(name: 'data', fn: (response: T) => void): PollOnObj;
 	public on(name: 'error', fn: (err: any) => void): PollOnObj;
 	public on(
-		name: keyof Poll<T>['subscribers'],
+		name: 'data' | 'error',
 		fn: (value: any) => void,
 	): PollOnObj {
+		if (name !== 'data' && name !== 'error') {
+			throw new TypeError(`Invalid subscriber type: ${String(name)}`);
+		}
 		const subscribers = this.subscribers[name] as Array<(value: any) => void>;
 		const index = subscribers.push(fn) - 1;
 
