@@ -35,13 +35,13 @@
     "@balena/lint": "^9.3.13",
     "@types/chai": "^4.3.20",
     "@types/mocha": "^10.0.10",
-    "chai": "^4.5.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
-    "mocha": "^11.7.5",
-    "require-npm4-to-publish": "^1.0.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "chai": "4.3.20",
+    "husky": "9.1.7",
+    "lint-staged": "16.4.0",
+    "mocha": "10.0.10",
+    "require-npm4-to-publish": "1.0.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3"
   },
   "mocha": {
     "reporter": "spec",
