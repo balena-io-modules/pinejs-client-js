@@ -711,7 +711,6 @@ const handleFilterOperator = <
 		}
 		// break
 		case '$in': {
-			filter = filter as FilterType<typeof operator, T>;
 			if (isPrimitive(filter)) {
 				const filterStr = escapeValue(filter);
 				return addParentKey(filterStr, parentKey, ' eq ');
@@ -984,7 +983,7 @@ const buildOption = <T extends Resource['Read']>(
 				if (select.size === 0) {
 					throw new Error(`'${option}' sets have to have at least 1 element`);
 				}
-				compiledValue = join(Array.from(select) as string[]);
+				compiledValue = join(Array.from(select));
 			} else {
 				throw new Error(
 					`'${option}' option has to be either a string or array`,
