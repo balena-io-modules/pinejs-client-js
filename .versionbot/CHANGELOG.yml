@@ -1,4 +1,16 @@
 - commits:
+    - subject: Resolve lint errors
+      hash: 2e8a6f76e8bce7735cfcf9114c59ff27a7c1e70e
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: joshbwlng
+      nested: []
+  version: 8.5.23
+  title: ""
+  date: 2026-06-15T09:05:01.572Z
+- commits:
     - subject: Update dependency lint-staged to v17
       hash: 85be2ffb02aced80e158df0706df95996703813e
       body: |
