@@ -101,9 +101,8 @@ export type OptionsToResponse<
 					| undefined
 			: Array<PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>>;
 
-export interface Dictionary<T> {
-	[index: string]: T;
-}
+// TODO-Major: remove this export
+export type Dictionary<T> = Record<string, T>;
 
 type LowerLetter =
 	| 'a'
@@ -165,7 +164,7 @@ type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 // This allowsdisabling the expandFilter error when inside a lambda expr because we need to allow `alias: field: ...`
 let disableExpandFilterError = false;
 
-const mapObj = <T extends Dictionary<any>, R>(
+const mapObj = <T extends Record<string, any>, R>(
 	obj: T,
 	fn: (value: T[StringKeyOf<T>], key: StringKeyOf<T>) => R,
 ): R[] => Object.keys(obj).map((key: StringKeyOf<T>) => fn(obj[key], key));
@@ -451,7 +450,7 @@ const addParentKey = (
 
 const applyBinds = <T extends Resource['Read']>(
 	filter: string,
-	params: Dictionary<Filter<T>>,
+	params: Record<string, Filter<T>>,
 	parentKey?: string[],
 ): string[] => {
 	for (const index of Object.keys(params)) {
@@ -641,7 +640,7 @@ const handleFilterOperator = <
 							`First element of array for ${operator} must be a string, got: ${typeof rawFilter}`,
 						);
 					}
-					const mappedParams: Dictionary<Filter<T>> = {};
+					const mappedParams: Record<string, Filter<T>> = {};
 					for (let index = 0; index < params.length; index++) {
 						mappedParams[index + 1] = params[index];
 					}
@@ -653,7 +652,7 @@ const handleFilterOperator = <
 							`$string element of object for ${operator} must be a string, got: ${typeof filterStr}`,
 						);
 					}
-					const mappedParams: Dictionary<Filter<T>> = {};
+					const mappedParams: Record<string, Filter<T>> = {};
 					for (const index of Object.keys(filterx)) {
 						if (index !== '$string') {
 							if (!/^[a-zA-Z0-9]+$/.test(index)) {
@@ -1160,7 +1159,7 @@ const validParams = [
 ] as const;
 
 export type PreparedFn<
-	T extends Dictionary<ParameterAlias>,
+	T extends Record<string, ParameterAlias>,
 	U,
 	TResource extends Resource = AnyResource,
 > = (
@@ -1637,7 +1636,8 @@ export abstract class PinejsClientCore<
 	}
 
 	public prepare<
-		TAliases extends Dictionary<
+		TAliases extends Record<
+			string,
 			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
 		>,
 		TResource extends StringKeyOf<Model>,
@@ -1667,7 +1667,8 @@ export abstract class PinejsClientCore<
 		Model[TResource]
 	>;
 	public prepare<
-		TAliases extends Dictionary<
+		TAliases extends Record<
+			string,
 			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
 		>,
 		TResource extends StringKeyOf<Model>,
@@ -1686,7 +1687,8 @@ export abstract class PinejsClientCore<
 		Model[TResource]
 	>;
 	public prepare<
-		TAliases extends Dictionary<
+		TAliases extends Record<
+			string,
 			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
 		>,
 		TResource extends StringKeyOf<Model>,
@@ -1704,7 +1706,7 @@ export abstract class PinejsClientCore<
 		Promise<AnyObject>,
 		Model[TResource]
 	>;
-	public prepare<T extends Dictionary<ParameterAlias>>(
+	public prepare<T extends Record<string, ParameterAlias>>(
 		params: Params,
 	): PreparedFn<T, Promise<PromiseResultTypes | undefined>> {
 		if (!isObject(params)) {
@@ -1798,7 +1800,7 @@ export abstract class PinejsClientCore<
 					);
 				}
 				url += '/$count';
-				options = options.$count as ODataOptionsWithoutCount<AnyObject>;
+				options = options.$count;
 			}
 
 			if (Object.prototype.hasOwnProperty.call(params, 'id')) {
@@ -2130,7 +2132,8 @@ type StringPrimitiveToType<
 	| ('boolean' extends T ? boolean : never)
 	| ('Date' extends T ? Date : never);
 type StringDictionaryToDictType<
-	T extends Dictionary<
+	T extends Record<
+		string,
 		Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
 	>,
 > = keyof T extends never
@@ -2193,7 +2196,7 @@ export type ResourceId<T extends Resource['Read']> =
 	| BaseResourceId
 	| ResourceAlternateKey<T>;
 
-export type AnyObject = Dictionary<any>;
+export type AnyObject = Record<string, any>;
 
 export interface ActionParams {
 	action: string;
