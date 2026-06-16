@@ -1,4 +1,18 @@
 - commits:
+    - subject: Switch from custom `Dictionary` type to built in `Record` typing
+      hash: 74417ed23af6f495e591eb00ad1f71734f39234f
+      body: |
+        This reduces the number of custom typings we maintain/need to know
+        about
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.25
+  title: ""
+  date: 2026-06-16T14:40:02.640Z
+- commits:
     - subject: Update typescript to 6.x
       hash: b91a0efec4ac27a23257a4d36711a13f1b8128ff
       body: ""
