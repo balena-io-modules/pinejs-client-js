@@ -32,7 +32,7 @@
     "@balena/abstract-sql-to-typescript": "^6.0.0"
   },
   "devDependencies": {
-    "@balena/lint": "^9.3.13",
+    "@balena/lint": "^9.4.5",
     "@types/chai": "4.3.20",
     "@types/mocha": "10.0.10",
     "chai": "6.2.2",
@@ -41,7 +41,7 @@
     "mocha": "11.7.6",
     "require-npm4-to-publish": "1.0.0",
     "ts-node": "10.9.2",
-    "typescript": "5.9.3"
+    "typescript": "^6.0.3"
   },
   "mocha": {
     "reporter": "spec",
