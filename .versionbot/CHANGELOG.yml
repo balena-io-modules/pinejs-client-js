@@ -1,4 +1,16 @@
 - commits:
+    - subject: Update typescript to 6.x
+      hash: b91a0efec4ac27a23257a4d36711a13f1b8128ff
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.24
+  title: ""
+  date: 2026-06-16T14:24:49.759Z
+- commits:
     - subject: Resolve lint errors
       hash: 2e8a6f76e8bce7735cfcf9114c59ff27a7c1e70e
       body: ""
