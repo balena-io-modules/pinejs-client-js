@@ -407,6 +407,22 @@ const bracketJoin = (arr: string[][], separator: string): string[] => {
 	if (arr.length === 1) {
 		return arr[0];
 	}
+	if (separator === ' or ' || separator === ' and ') {
+		const otherSeparator = separator === ' or ' ? ' and ' : ' or ';
+		const $resultArr: string[] = [];
+		for (let i = 0; i < arr.length; i++) {
+			if (i !== 0) {
+				$resultArr.push(separator);
+			}
+			const subArr = arr[i];
+			if (subArr.includes(otherSeparator)) {
+				$resultArr.push(`(${subArr.join('')})`);
+			} else {
+				$resultArr.push(...subArr);
+			}
+		}
+		return $resultArr;
+	}
 	const resultArr: string[] = [];
 	for (let i = 0; i < arr.length; i++) {
 		if (i !== 0) {
