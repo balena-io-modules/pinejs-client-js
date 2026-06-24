@@ -408,17 +408,16 @@ const bracketJoin = (arr: string[][], separator: string): string[] => {
 		return arr[0];
 	}
 	const resultArr: string[] = [];
-	const mappedArr = arr.map((subArr) => {
-		if (subArr.length > 1) {
-			return `(${subArr.join('')})`;
-		}
-		return subArr[0];
-	});
-	for (let i = 0; i < mappedArr.length; i++) {
+	for (let i = 0; i < arr.length; i++) {
 		if (i !== 0) {
 			resultArr.push(separator);
 		}
-		resultArr.push(mappedArr[i]);
+		const subArr = arr[i];
+		if (subArr.length > 1) {
+			resultArr.push(`(${subArr.join('')})`);
+		} else {
+			resultArr.push(subArr[0]);
+		}
 	}
 	return resultArr;
 };
