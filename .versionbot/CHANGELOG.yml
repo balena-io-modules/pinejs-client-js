@@ -1,4 +1,24 @@
 - commits:
+    - subject: Combine the two iterations for `bracketJoin` into a single iteration
+      hash: 953782eb706ea0f106c15ddb07438d9f302aff8f
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+    - subject: Use for loops in preference to `forEach`
+      hash: 830f2a28dde51c40cd7e99eb3dcbc3d3fce781fc
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.27
+  title: ""
+  date: 2026-06-25T11:48:16.176Z
+- commits:
     - subject: Pin dependencies
       hash: cf5271f82a86477a9d75ec347ea7e9b475dcf2c4
       body: |
