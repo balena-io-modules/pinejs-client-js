@@ -269,7 +269,7 @@ class Poll<T extends PromiseResultTypes> {
 			// Catch errors in event subscribers so that they don't trigger
 			// the 'catch' below, and that subsequent subscribers will still
 			// be called
-			this.subscribers.data.forEach((fn) => {
+			for (const fn of this.subscribers.data) {
 				try {
 					fn(response);
 				} catch (error) {
@@ -278,14 +278,14 @@ class Poll<T extends PromiseResultTypes> {
 						error,
 					);
 				}
-			});
+			}
 		} catch (err: any) {
 			if (this.stopped) {
 				return;
 			}
 			this.restartTimeout();
 
-			this.subscribers.error.forEach((fn) => {
+			for (const fn of this.subscribers.error) {
 				try {
 					fn(err);
 				} catch (error) {
@@ -294,7 +294,7 @@ class Poll<T extends PromiseResultTypes> {
 						error,
 					);
 				}
-			});
+			}
 		}
 	}
 
@@ -408,19 +408,17 @@ const bracketJoin = (arr: string[][], separator: string): string[] => {
 		return arr[0];
 	}
 	const resultArr: string[] = [];
-	arr
-		.map((subArr) => {
-			if (subArr.length > 1) {
-				return `(${subArr.join('')})`;
-			}
-			return subArr[0];
-		})
-		.forEach((str, i) => {
-			if (i !== 0) {
-				resultArr.push(separator);
-			}
-			resultArr.push(str);
-		});
+	for (let i = 0; i < arr.length; i++) {
+		if (i !== 0) {
+			resultArr.push(separator);
+		}
+		const subArr = arr[i];
+		if (subArr.length > 1) {
+			resultArr.push(`(${subArr.join('')})`);
+		} else {
+			resultArr.push(subArr[0]);
+		}
+	}
 	return resultArr;
 };
 
