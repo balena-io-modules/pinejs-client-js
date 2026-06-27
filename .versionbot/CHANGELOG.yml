@@ -1,4 +1,17 @@
 - commits:
+    - subject: Update dependency lint-staged to v17.0.8
+      hash: ac25218dcd65c0315111528257b0288bd0398ec5
+      body: |
+        Update lint-staged from 17.0.7 to 17.0.8
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: balena-renovate[bot]
+      nested: []
+  version: 8.5.28
+  title: ""
+  date: 2026-06-27T00:22:37.226Z
+- commits:
     - subject: Combine the two iterations for `bracketJoin` into a single iteration
       hash: 953782eb706ea0f106c15ddb07438d9f302aff8f
       body: ""
