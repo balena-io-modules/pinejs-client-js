@@ -2055,6 +2055,69 @@ type FilterOperations<T extends Resource['Read']> = {
 	};
 };
 
+type LambdaFilterOperations<T extends Resource['Read']> = {
+	'@'?: string;
+
+	$raw?: RawFilter<T>;
+
+	$?: StringKeyOf<T> | string[];
+
+	$and?: LambdaExpr<T>;
+	$or?: LambdaExpr<T>;
+
+	$not?: LambdaExpr<T>;
+
+	// Filter operations
+	$ne?: LambdaExpr<T>;
+	$eq?: LambdaExpr<T>;
+	$gt?: LambdaExpr<T>;
+	$ge?: LambdaExpr<T>;
+	$lt?: LambdaExpr<T>;
+	$le?: LambdaExpr<T>;
+	$add?: LambdaExpr<T>;
+	$sub?: LambdaExpr<T>;
+	$mul?: LambdaExpr<T>;
+	$div?: LambdaExpr<T>;
+	$mod?: LambdaExpr<T>;
+
+	// Filter functions
+	$contains?: LambdaExpr<T>;
+	$endswith?: LambdaExpr<T>;
+	$startswith?: LambdaExpr<T>;
+	$length?: LambdaExpr<T>;
+	$indexof?: LambdaExpr<T>;
+	$substring?: LambdaExpr<T>;
+	$tolower?: LambdaExpr<T>;
+	$toupper?: LambdaExpr<T>;
+	$trim?: LambdaExpr<T>;
+	$concat?: LambdaExpr<T>;
+	$year?: LambdaExpr<T>;
+	$month?: LambdaExpr<T>;
+	$day?: LambdaExpr<T>;
+	$hour?: LambdaExpr<T>;
+	$minute?: LambdaExpr<T>;
+	$second?: LambdaExpr<T>;
+	$fractionalseconds?: LambdaExpr<T>;
+	$date?: LambdaExpr<T>;
+	$time?: LambdaExpr<T>;
+	$totaloffsetminutes?: LambdaExpr<T>;
+	$now?: LambdaExpr<T>;
+	$duration?: DurationValue;
+	$maxdatetime?: LambdaExpr<T>;
+	$mindatetime?: LambdaExpr<T>;
+	$totalseconds?: LambdaExpr<T>;
+	$round?: LambdaExpr<T>;
+	$floor?: LambdaExpr<T>;
+	$ceiling?: LambdaExpr<T>;
+	$isof?: LambdaExpr<T>;
+	$cast?: LambdaExpr<T>;
+	$fn?: {
+		$scope: string;
+		$method: string;
+		$args?: Primitive[];
+	};
+};
+
 type AllFilterOperations<T extends Resource['Read']> = FilterOperations<T> &
 	NestedFilterOperations<T>;
 
@@ -2084,12 +2147,19 @@ export interface Lambda<
 	// practice it has limited use but if/when typescript supports partial inference of generic
 	// parameters it will become significantly more useful
 	$alias: Alias;
-	$expr: Filter<T & { [a in NoInfer<Alias>]: T }>;
+	$expr: string extends Alias
+		? LambdaExpr<T>
+		: Filter<T & { [a in NoInfer<Alias>]: T }>; // TODO: maybe we should just `never` here?
 }
 export type Filter<T extends Resource['Read'] = AnyResourceObject> =
 	| FilterObj<T>
 	| FilterArray<T>
 	| FilterBaseType;
+
+export type LambdaExpr<T extends Resource['Read'] = AnyResourceObject> =
+	| FilterBaseType
+	| ReadonlyArray<LambdaExpr<T>>
+	| ({ [alias: ResourceName]: Filter<T> } & LambdaFilterOperations<T>);
 
 export type ResourceExpand<T extends Resource['Read'] = AnyResourceObject> = {
 	[resource in StringKeyOf<T> as ExtractExpand<T, resource> extends never
