@@ -1,4 +1,24 @@
 - commits:
+    - subject: Type the bracketJoin separator as precise literals
+      hash: 84d63fb7dd545e18ac43051f685ab9adbe430273
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Otavio Jacobi
+      nested: []
+    - subject: Avoid not necessary parenthesis on 'or' and 'and' expressions
+      hash: 63cf798e9acaddc182bd7f7a8383ef493b0ef95d
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Otavio Jacobi
+      nested: []
+  version: 8.5.29
+  title: ""
+  date: 2026-06-30T18:06:27.823Z
+- commits:
     - subject: Update dependency lint-staged to v17.0.8
       hash: ac25218dcd65c0315111528257b0288bd0398ec5
       body: |
