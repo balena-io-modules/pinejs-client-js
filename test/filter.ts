@@ -58,7 +58,7 @@ testFilter(
 		a: 'b',
 		d: 'e',
 	},
-	"(a eq 'b') and (d eq 'e')",
+	"a eq 'b' and d eq 'e'",
 );
 
 testFilter(
@@ -66,7 +66,7 @@ testFilter(
 		a: "b'c",
 		d: "e''f'''g",
 	},
-	"(a eq 'b''c') and (d eq 'e''''f''''''g')",
+	"a eq 'b''c' and d eq 'e''''f''''''g'",
 );
 
 const testOperator = function (operator: string) {
@@ -331,7 +331,7 @@ testFilter(
 			},
 		},
 	],
-	"((a eq 'b') eq (c eq 'd')) or ((e eq 'f') ne (g eq 'h'))",
+	"(a eq 'b') eq (c eq 'd') or (e eq 'f') ne (g eq 'h')",
 );
 
 testFilter(
@@ -373,7 +373,7 @@ testFilter(
 	{
 		a: [{ b: 'c' }, { d: 'e' }],
 	},
-	"a eq ((b eq 'c') or (d eq 'e'))",
+	"a eq (b eq 'c' or d eq 'e')",
 );
 
 testFilter(
@@ -398,7 +398,7 @@ testFilter(
 	{
 		a: [{ b: 'c' }, 'd'],
 	},
-	"a eq ((b eq 'c') or 'd')",
+	"a eq (b eq 'c' or 'd')",
 );
 
 testFilter(
@@ -733,14 +733,14 @@ testFilter(
 			c: 'd',
 		},
 	},
-	"not((a eq 'b') and (c eq 'd'))",
+	"not(a eq 'b' and c eq 'd')",
 );
 
 testFilter(
 	{
 		$not: [{ a: 'b' }, { c: 'd' }],
 	},
-	"not((a eq 'b') or (c eq 'd'))",
+	"not(a eq 'b' or c eq 'd')",
 );
 
 testFilter(
@@ -770,7 +770,7 @@ testFilter(
 			},
 		},
 	},
-	"a eq not((b eq 'c') and (d eq 'e'))",
+	"a eq not(b eq 'c' and d eq 'e')",
 );
 
 testFilter(
@@ -779,7 +779,7 @@ testFilter(
 			$not: [{ b: 'c' }, { d: 'e' }],
 		},
 	},
-	"a eq not((b eq 'c') or (d eq 'e'))",
+	"a eq not(b eq 'c' or d eq 'e')",
 );
 
 // Test $add
@@ -997,7 +997,7 @@ const testLambda = function (operator: string) {
 				},
 			}),
 		},
-		`a/${op}(x:(x/b/${op}(y:y/c eq 'd')) and (x/e/${op}(z:z/f eq 'g')))`,
+		`a/${op}(x:x/b/${op}(y:y/c eq 'd') and x/e/${op}(z:z/f eq 'g'))`,
 	);
 };
 
@@ -1074,7 +1074,7 @@ testFilter(
 			},
 		},
 	},
-	'(o/E.f()) or ((a eq true) and (b/any(c:c/d/E.f())))',
+	'o/E.f() or (a eq true and b/any(c:c/d/E.f()))',
 );
 
 testFilter(
@@ -1107,5 +1107,37 @@ testFilter(
 			},
 		},
 	},
-	`(o/E.f()) or ((a eq true) and (b/any(c:c/d/B.k('arg1','arg2'))))`,
+	`o/E.f() or (a eq true and b/any(c:c/d/B.k('arg1','arg2')))`,
+);
+
+// `or`/`and` operands that are comparisons or paths never need parentheses.
+testFilter({ $or: [{ a: 1 }, { b: 2 }] }, 'a eq 1 or b eq 2');
+testFilter({ $and: [{ a: 1 }, { b: 2 }] }, 'a eq 1 and b eq 2');
+testFilter(
+	{ $or: [{ a: 1 }, { b: 2 }, { c: 3 }] },
+	'a eq 1 or b eq 2 or c eq 3',
+);
+
+// A nested `and` under `or` (or vice versa) keeps its parentheses regardless of
+// position, since the mixed precedence would otherwise be ambiguous.
+testFilter(
+	{ $or: [{ $and: [{ a: 1 }, { b: 2 }] }, { c: 3 }] },
+	'(a eq 1 and b eq 2) or c eq 3',
+);
+testFilter(
+	{ $or: [{ c: 3 }, { $and: [{ a: 1 }, { b: 2 }] }] },
+	'c eq 3 or (a eq 1 and b eq 2)',
+);
+testFilter(
+	{ $and: [{ $or: [{ a: 1 }, { b: 2 }] }, { c: 3 }] },
+	'(a eq 1 or b eq 2) and c eq 3',
+);
+testFilter(
+	{ $and: [{ $or: [{ a: 1 }, { b: 2 }] }, { $or: [{ c: 3 }, { d: 4 }] }] },
+	'(a eq 1 or b eq 2) and (c eq 3 or d eq 4)',
+);
+// Same-operator nesting is associative, so no extra parentheses are added.
+testFilter(
+	{ $or: [{ $or: [{ a: 1 }, { b: 2 }] }, { c: 3 }] },
+	'a eq 1 or b eq 2 or c eq 3',
 );

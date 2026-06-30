@@ -402,10 +402,41 @@ const join = (strOrArray: string | string[], separator = ','): string => {
 	}
 };
 
+type RemoveDollarPrefix<T extends string> = T extends `$${infer Rest}`
+	? Rest
+	: T;
+const stripDollarPrefix = <T extends `$${string}`>(
+	key: T,
+): RemoveDollarPrefix<T> => key.slice(1) as RemoveDollarPrefix<T>;
+
+// Every separator `bracketJoin` is ever called with: `,` for `$in` lists, the
+// logical `$and`/`$or` joins, and the comparison/arithmetic operators.
+type FilterSeparator =
+	| ','
+	| ' and '
+	| ' or '
+	| ` ${RemoveDollarPrefix<FilterOperationKey>} `;
+
 // Join together a bunch of statements making sure the whole lot is correctly parenthesised
-const bracketJoin = (arr: string[][], separator: string): string[] => {
+const bracketJoin = (arr: string[][], separator: FilterSeparator): string[] => {
 	if (arr.length === 1) {
 		return arr[0];
+	}
+	if (separator === ' or ' || separator === ' and ') {
+		const otherSeparator = separator === ' or ' ? ' and ' : ' or ';
+		const $resultArr: string[] = [];
+		for (let i = 0; i < arr.length; i++) {
+			if (i !== 0) {
+				$resultArr.push(separator);
+			}
+			const subArr = arr[i];
+			if (subArr.includes(otherSeparator)) {
+				$resultArr.push(`(${subArr.join('')})`);
+			} else {
+				$resultArr.push(...subArr);
+			}
+		}
+		return $resultArr;
 	}
 	const resultArr: string[] = [];
 	for (let i = 0; i < arr.length; i++) {
@@ -470,7 +501,7 @@ const filterOperation = <T extends Resource['Read']>(
 	operator: FilterOperationKey,
 	parentKey?: string[],
 ): string[] => {
-	const op = ' ' + operator.slice(1) + ' ';
+	const op = ` ${stripDollarPrefix(operator)} ` as const;
 	if (isPrimitive(filter)) {
 		const filterStr = escapeValue(filter);
 		return addParentKey(filterStr, parentKey, op);
@@ -702,7 +733,7 @@ const handleFilterOperator = <
 			const filterStr = buildFilter(
 				filter as FilterType<typeof operator, T>,
 				undefined,
-				` ${operator.slice(1)} `,
+				` ${stripDollarPrefix(operator)} `,
 			);
 			return addParentKey(filterStr, parentKey);
 		}
@@ -852,7 +883,7 @@ const handleFilterArray = <T extends Resource['Read']>(
 const buildFilter = <T extends Resource['Read']>(
 	filter: Filter<T>,
 	parentKey?: string[],
-	joinStr?: string,
+	joinStr?: FilterSeparator,
 ): string[] => {
 	if (isPrimitive(filter)) {
 		const filterStr = escapeValue(filter);
