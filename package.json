@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@balena/lint": "^9.4.5",
-    "@types/chai": "4.3.20",
+    "@types/chai": "5.2.3",
     "@types/mocha": "10.0.10",
     "chai": "6.2.2",
     "husky": "9.1.7",
