@@ -228,8 +228,8 @@ interface PollOnObj {
 }
 class Poll<T extends PromiseResultTypes> {
 	private subscribers: {
-		error: Array<(response: T) => void>;
-		data: Array<(err: any) => void>;
+		error: Array<(err: any) => void>;
+		data: Array<(response: T) => void>;
 	} = {
 		error: [],
 		data: [],
