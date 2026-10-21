@@ -24,3 +24,16 @@ it('should throw an error on undefined id', () => {
 		id: undefined,
 	});
 });
+
+it('should throw an error when combining id with $count', () => {
+	test(
+		new Error(
+			'`options: { $count: ... }` cannot be combined with `id`, please use `options: { $count: { $filter: { id: ... } } }` instead.',
+		),
+		{
+			resource: 'test',
+			id: 1,
+			options: { $count: {} },
+		},
+	);
+});
