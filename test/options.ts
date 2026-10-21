@@ -115,6 +115,7 @@ testOrderBy({ a: 'desc' }, 'a desc');
 
 testOrderBy([{ a: 'desc' }, { b: 'asc' }], 'a desc,b asc');
 
+// @ts-expect-error Testing intentionally invalid type
 testOrderBy([['a']], new Error("'$orderby' cannot have nested arrays"));
 
 testOrderBy(
