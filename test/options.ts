@@ -233,3 +233,15 @@ testParam(
 	{},
 	new Error("Unknown type for parameter alias option '@param': object"),
 );
+
+it('should throw an error when combining $count with other options', () => {
+	test(
+		new Error(
+			`When using 'options: { $count: ... }' you can only specify $count, got: '["$count","$top"]'`,
+		),
+		{
+			resource: 'test',
+			options: { $count: {}, $top: 1 },
+		},
+	);
+});

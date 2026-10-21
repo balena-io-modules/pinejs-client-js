@@ -1823,7 +1823,7 @@ export abstract class PinejsClientCore<
 				const keys = Object.keys(options);
 				if (keys.length > 1) {
 					throw new Error(
-						`When using '$expand: a: $count: ...' you can only specify $count, got: '${JSON.stringify(
+						`When using 'options: { $count: ... }' you can only specify $count, got: '${JSON.stringify(
 							keys,
 						)}'`,
 					);
