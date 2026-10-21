@@ -2246,12 +2246,17 @@ export interface Params<T extends Resource = AnyResource> {
 	url?: string;
 	body?: Partial<T['Write']>;
 	passthrough?: AnyObject;
-	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
 	options?: ODataOptions<T['Read']>;
 	retry?: RetryParameters;
 }
 
-export type ConstructorParams = Pick<Params, (typeof validParams)[number]>;
+export interface ConstructorParams extends Pick<
+	Params,
+	'apiPrefix' | 'passthrough' | 'retry'
+> {
+	// Only supported on the client, as a request already has a single method for `passthrough`
+	passthroughByMethod?: { [method in ODataMethod]?: AnyObject };
+}
 
 export interface SubscribeParams<
 	T extends Resource = AnyResource,
