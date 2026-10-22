@@ -1828,6 +1828,12 @@ export abstract class PinejsClientCore<
 						)}'`,
 					);
 				}
+				// A single resource cannot be counted, and pine accepts neither `a(1)/$count` nor `a/$count(1)`
+				if (params.id != null) {
+					throw new Error(
+						'`options: { $count: ... }` cannot be combined with `id`, please use `options: { $count: { $filter: { id: ... } } }` instead.',
+					);
+				}
 				url += '/$count';
 				options = options.$count;
 			}
