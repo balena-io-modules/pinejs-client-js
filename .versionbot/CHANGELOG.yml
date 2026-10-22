@@ -1,4 +1,16 @@
 - commits:
+    - subject: Fix `delete` mutating the params passed in
+      hash: 3aa3fbc203832bd0cadf60dfe323e8e8a627d680
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.49
+  title: ""
+  date: 2026-10-22T23:12:38.625Z
+- commits:
     - subject: Error when `action` is set but null/undefined
       hash: a7b94719aad4039b2fc004342168487fafcce541
       body: |
