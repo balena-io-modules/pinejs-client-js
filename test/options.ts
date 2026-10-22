@@ -105,6 +105,7 @@ testId(
 	},
 	'a=@param1,b=@param2',
 );
+testId({}, new Error('If the id property is an object it must not be empty'));
 
 testOrderBy('a', 'a');
 

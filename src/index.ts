@@ -1840,6 +1840,11 @@ export abstract class PinejsClientCore<
 				let value: string;
 
 				if (isObject(id) && !isDate(id)) {
+					if (Object.keys(id).length === 0) {
+						throw new Error(
+							'If the id property is an object it must not be empty',
+						);
+					}
 					if ('@' in id) {
 						value = escapeParameterAlias(id['@']);
 					} else {
