@@ -1,4 +1,20 @@
 - commits:
+    - subject: Error when `id` is an empty object
+      hash: e47d16a075d8dadfa145a8289fe7d1763c235c23
+      body: |
+        `id: {}` compiled to `a()`, which is never a valid key (pine requires at
+        least one key binding), so fail early with a clear error instead of
+        sending a request that the API will reject. `getOrCreate`/`upsert`
+        already reject empty natural keys themselves.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.45
+  title: ""
+  date: 2026-10-22T14:52:00.285Z
+- commits:
     - subject: Fix the error message for extra options alongside a top level `$count`
       hash: 99f21ef08f42f4f0dbc343ecb0424a067d27a5ce
       body: |
