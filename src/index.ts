@@ -1539,7 +1539,6 @@ export abstract class PinejsClientCore<
 				'Passing `url` to `delete` has been removed, please use a query object instead or use `request` directly.',
 			);
 		}
-		params.method = 'DELETE';
 		return this.request({ ...params, method: 'DELETE' });
 	}
 
