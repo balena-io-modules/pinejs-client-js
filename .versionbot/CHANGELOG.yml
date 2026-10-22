@@ -1,4 +1,19 @@
 - commits:
+    - subject: Fix the error message for extra options alongside a top level `$count`
+      hash: 99f21ef08f42f4f0dbc343ecb0424a067d27a5ce
+      body: |
+        Using `options: { $count: {...}, $top: 1 }` reported "When using
+        '$expand: a: $count: ...' you can only specify $count", pointing at the
+        nested `$expand` form instead of the `options` that were actually used.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.44
+  title: ""
+  date: 2026-10-22T14:34:13.189Z
+- commits:
     - subject: Update dependency mocha to v12.0.3
       hash: 330e51b5d2130d0041d215a7a86eeda907401639
       body: |
