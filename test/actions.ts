@@ -19,3 +19,17 @@ test("a(b='c')/act", {
 	},
 	action: 'act',
 });
+
+it('should throw an error on undefined action', () => {
+	test(new Error('If the action property is set it must be non-null'), {
+		resource: 'a',
+		action: undefined,
+	});
+});
+
+it('should throw an error on null action', () => {
+	test(new Error('If the action property is set it must be non-null'), {
+		resource: 'a',
+		action: null,
+	});
+});

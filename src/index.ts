@@ -1869,6 +1869,9 @@ export abstract class PinejsClientCore<
 			}
 
 			if (Object.prototype.hasOwnProperty.call(params, 'action')) {
+				if (params.action == null) {
+					throw new Error('If the action property is set it must be non-null');
+				}
 				url += `/${params.action}`;
 			}
 
