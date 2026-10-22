@@ -1290,7 +1290,7 @@ export abstract class PinejsClientCore<
 		}
 		if (maxAttempts == null || maxAttempts <= 0) {
 			throw new Error(
-				`pinejs-client maxAttempts be a positive integer, got: '${maxDelayMs}'`,
+				`pinejs-client maxAttempts must be a positive integer, got: '${maxAttempts}'`,
 			);
 		}
 		if (minDelayMs > maxDelayMs) {
