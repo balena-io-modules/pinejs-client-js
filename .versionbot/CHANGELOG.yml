@@ -1,4 +1,22 @@
 - commits:
+    - subject: Fix the error message for an invalid retry `maxAttempts`
+      hash: 3f0a1d922ef3498f8ac9f75f0cca3415c3ccd7c4
+      body: >
+        The message reported the `maxDelayMs` value instead of `maxAttempts`
+        (and
+
+        was missing "must"), eg `maxAttempts: 0` with `maxDelayMs: 100` produced
+
+        "pinejs-client maxAttempts be a positive integer, got: '100'".
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.47
+  title: ""
+  date: 2026-10-22T15:20:33.443Z
+- commits:
     - subject: "Error when combining `id` with `options: { $count: ... }`"
       hash: 130327c26e3353f2621e3ba8615fb32142127469
       body: |
