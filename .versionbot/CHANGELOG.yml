@@ -1,4 +1,20 @@
 - commits:
+    - subject: Error when `action` is set but null/undefined
+      hash: a7b94719aad4039b2fc004342168487fafcce541
+      body: |
+        `{ action: undefined }` compiled to `a/undefined` (and `null` to
+        `a/null`), so eg `pine.post({ resource: 'a', action: maybeAction })`
+        silently posted to the wrong URL. Throw the same kind of error that an
+        unset `id` already produces.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.48
+  title: ""
+  date: 2026-10-22T15:28:37.124Z
+- commits:
     - subject: Fix the error message for an invalid retry `maxAttempts`
       hash: 3f0a1d922ef3498f8ac9f75f0cca3415c3ccd7c4
       body: >
