@@ -1,4 +1,21 @@
 - commits:
+    - subject: "Error when combining `id` with `options: { $count: ... }`"
+      hash: 130327c26e3353f2621e3ba8615fb32142127469
+      body: |
+        This compiled to `a/$count(1)`, which pine cannot parse (nor would it
+        accept `a(1)/$count`, as `$count` only applies to collections), and on
+        the response side `get` returned `undefined` where its typings promise a
+        `number`. Throw a descriptive error pointing at the `$count` `$filter`
+        alternative instead.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.46
+  title: ""
+  date: 2026-10-22T15:00:14.944Z
+- commits:
     - subject: Error when `id` is an empty object
       hash: e47d16a075d8dadfa145a8289fe7d1763c235c23
       body: |
