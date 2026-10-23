@@ -92,13 +92,11 @@ export type OptionsToResponse<
 }
 	? number
 	: Equals<ID, any> extends true
-		?
-				| (PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>)
-				| undefined
+		? | (PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>)
+			| undefined
 		: ID extends ResourceId<T>
-			?
-					| (PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>)
-					| undefined
+			? | (PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>)
+				| undefined
 			: Array<PickDeferred<T, SelectPropsOf<T, U>> & ExpandToResponse<T, U>>;
 
 // TODO-Major: remove this export
@@ -412,10 +410,7 @@ const stripDollarPrefix = <T extends `$${string}`>(
 // Every separator `bracketJoin` is ever called with: `,` for `$in` lists, the
 // logical `$and`/`$or` joins, and the comparison/arithmetic operators.
 type FilterSeparator =
-	| ','
-	| ' and '
-	| ' or '
-	| ` ${RemoveDollarPrefix<FilterOperationKey>} `;
+	',' | ' and ' | ' or ' | ` ${RemoveDollarPrefix<FilterOperationKey>} `;
 
 // Join together a bunch of statements making sure the whole lot is correctly parenthesised
 const bracketJoin = (arr: string[][], separator: FilterSeparator): string[] => {
@@ -1371,10 +1366,12 @@ export abstract class PinejsClientCore<
 		if (isObject(backendParams)) {
 			cloneBackendParams = { ...cloneBackendParams, ...backendParams };
 		}
-		return new (this.constructor as new (
-			$params: ConstructorParams,
-			$backendParams: AnyObject,
-		) => this)(cloneParams, cloneBackendParams);
+		return new (
+			this.constructor as new (
+				$params: ConstructorParams,
+				$backendParams: AnyObject,
+			) => this
+		)(cloneParams, cloneBackendParams);
 	}
 
 	public async get<
@@ -2021,9 +2018,8 @@ export type NestedFilterOperations<
 	NestedKey extends StringKeyOf<T> = ExpandableStringKeyOf<T>,
 > = {
 	$count?: NestedKey extends ExpandableStringKeyOf<T>
-		?
-				| Filter<ExtractExpand<T, NestedKey>>
-				| ODataCountOptions<ExtractExpand<T, NestedKey>>
+		? | Filter<ExtractExpand<T, NestedKey>>
+			| ODataCountOptions<ExtractExpand<T, NestedKey>>
 		: never;
 
 	$in?: Filter<T>;
@@ -2104,9 +2100,7 @@ type AllFilterOperations<T extends Resource['Read']> = FilterOperations<T> &
 
 export type FilterObj<T extends Resource['Read'] = AnyResourceObject> = {
 	[key in StringKeyOf<T>]?:
-		| Filter<T>
-		| NestedFilterOperations<T, key>
-		| undefined;
+		Filter<T> | NestedFilterOperations<T, key> | undefined;
 } & FilterOperations<T>;
 
 export type FilterArray<T extends Resource['Read'] = AnyResourceObject> =
@@ -2131,31 +2125,28 @@ export interface Lambda<
 	$expr: Filter<T & { [a in NoInfer<Alias>]: T }>;
 }
 export type Filter<T extends Resource['Read'] = AnyResourceObject> =
-	| FilterObj<T>
-	| FilterArray<T>
-	| FilterBaseType;
+	FilterObj<T> | FilterArray<T> | FilterBaseType;
 
 export type ResourceExpand<T extends Resource['Read'] = AnyResourceObject> = {
-	[resource in StringKeyOf<T> as ExtractExpand<T, resource> extends never
-		? never
-		: resource]?: ODataOptions<ExtractExpand<T, resource>>;
+	[
+		resource in StringKeyOf<T> as ExtractExpand<T, resource> extends never
+			? never
+			: resource
+	]?: ODataOptions<ExtractExpand<T, resource>>;
 };
 
 export type BaseExpand<T extends Resource['Read'] = AnyResourceObject> =
-	| ExpandableStringKeyOf<T>
-	| ResourceExpand<T>;
+	ExpandableStringKeyOf<T> | ResourceExpand<T>;
 export type Expand<T extends Resource['Read'] = AnyResourceObject> =
-	| BaseExpand<T>
-	| ReadonlyArray<BaseExpand<T>>;
+	BaseExpand<T> | ReadonlyArray<BaseExpand<T>>;
 
 /**
  * This can interact poorly with generics because `field: 'desc'` would be treated as `field: string` which doesn't match
  */
 type OrderByDirection = 'asc' | 'desc';
 
-export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
+type BaseOrderBy<T extends Resource['Read'] = AnyResourceObject> =
 	| StringKeyOf<T>
-	| ReadonlyArray<OrderBy<T>>
 	| { [k in StringKeyOf<T>]?: OrderByDirection }
 	| ({
 			[k in ExpandableStringKeyOf<T> & ResourceName]?: {
@@ -2164,6 +2155,9 @@ export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
 	  } & {
 			$dir: OrderByDirection;
 	  });
+// Arrays of orderbys cannot be nested
+export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
+	BaseOrderBy<T> | ReadonlyArray<BaseOrderBy<T>>;
 
 type StringPrimitiveToType<
 	T extends 'null' | 'string' | 'number' | 'boolean' | 'Date',
@@ -2235,8 +2229,7 @@ export type ResourceAlternateKey<T extends Resource['Read']> = {
 	[key in StringKeyOf<T>]?: BaseResourceId;
 };
 export type ResourceId<T extends Resource['Read']> =
-	| BaseResourceId
-	| ResourceAlternateKey<T>;
+	BaseResourceId | ResourceAlternateKey<T>;
 
 export type AnyObject = Record<string, any>;
 
