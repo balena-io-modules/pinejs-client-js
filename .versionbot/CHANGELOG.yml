@@ -1,4 +1,21 @@
 - commits:
+    - subject: Fix the swapped internal typings of `Poll` subscribers
+      hash: 78b80b07a8ac1713fec73ab4865e41496ced9a8b
+      body: |
+        The private `subscribers` field typed `error` handlers as taking the
+        response and `data` handlers as taking the error. It had no runtime
+        effect (and the public `on` overloads were correct) but meant the
+        handlers were not type checked against what they are actually called
+        with.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.52
+  title: ""
+  date: 2026-10-23T14:21:47.905Z
+- commits:
     - subject: Remove `passthroughByMethod` from the per-request `Params` typings
       hash: f62ccf5cc7fd29977fa1601a6fa216e3f5031dec
       body: |
