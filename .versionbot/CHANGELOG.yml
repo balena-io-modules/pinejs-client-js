@@ -1,4 +1,23 @@
 - commits:
+    - subject: Remove `passthroughByMethod` from the per-request `Params` typings
+      hash: f62ccf5cc7fd29977fa1601a6fa216e3f5031dec
+      body: |
+        `passthroughByMethod` is only ever read from the client (as set via the
+        constructor/`clone`), so passing it to an individual request type
+        checked but was silently ignored. It now only exists on
+        `ConstructorParams`; use `passthrough` for a single request instead.
+
+        Note that methods with an inferred params generic (eg `get`) do not
+        apply excess property checks, so they still won't flag it.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.51
+  title: ""
+  date: 2026-10-23T11:46:00.381Z
+- commits:
     - subject: Disallow nested arrays in the `OrderBy` typings
       hash: ae02190fedf74b5def15cdadb9bf2afdf5eb1a58
       body: |
