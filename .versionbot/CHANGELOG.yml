@@ -1,4 +1,18 @@
 - commits:
+    - subject: Disallow nested arrays in the `OrderBy` typings
+      hash: ae02190fedf74b5def15cdadb9bf2afdf5eb1a58
+      body: |
+        `OrderBy` was recursive, so eg `$orderby: [['a']]` type checked even
+        though it always throws "'$orderby' cannot have nested arrays".
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.50
+  title: ""
+  date: 2026-10-23T00:02:36.960Z
+- commits:
     - subject: Fix `delete` mutating the params passed in
       hash: 3aa3fbc203832bd0cadf60dfe323e8e8a627d680
       body: ""
