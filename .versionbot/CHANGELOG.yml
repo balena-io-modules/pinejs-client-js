@@ -1,4 +1,17 @@
 - commits:
+    - subject: Update dependency @balena/lint to v11
+      hash: 940acd42a229bc90b8ef5c495662c4a6147c121d
+      body: |
+        Update @balena/lint from 9.4.15 to 11.0.0
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: balena-renovate[bot]
+      nested: []
+  version: 8.5.53
+  title: ""
+  date: 2026-11-02T23:17:05.464Z
+- commits:
     - subject: Fix the swapped internal typings of `Poll` subscribers
       hash: 78b80b07a8ac1713fec73ab4865e41496ced9a8b
       body: |
