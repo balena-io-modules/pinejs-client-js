@@ -180,6 +180,25 @@ const isDate = (v: any): v is Date =>
 const isObject = (v: unknown): v is object =>
 	v != null && typeof v === 'object';
 
+const assertBodyMatchesNaturalKey = (id: AnyObject, body: AnyObject) => {
+	for (const key of Object.keys(id)) {
+		if (!Object.prototype.hasOwnProperty.call(body, key)) {
+			continue;
+		}
+		const idValue: unknown = id[key];
+		const bodyValue: unknown = body[key];
+		const isSameValue =
+			isDate(idValue) && isDate(bodyValue)
+				? idValue.getTime() === bodyValue.getTime()
+				: idValue === bodyValue;
+		if (!isSameValue) {
+			throw new Error(
+				`The body property '${key}' conflicts with the natural key in the id property`,
+			);
+		}
+	}
+};
+
 const isValidOption = <T extends Resource>(
 	key: string,
 ): key is StringKeyOf<ODataOptionsWithoutCount<T['Read']>> => {
@@ -1609,22 +1628,7 @@ export abstract class PinejsClientCore<
 
 		// The body is spread over the id when creating, so a differing value would create a
 		// resource that doesn't match the natural key that we looked up
-		for (const key of Object.keys(resolvedId)) {
-			if (!Object.prototype.hasOwnProperty.call(body, key)) {
-				continue;
-			}
-			const idValue: unknown = resolvedId[key];
-			const bodyValue: unknown = (body as AnyObject)[key];
-			const isSameValue =
-				isDate(idValue) && isDate(bodyValue)
-					? idValue.getTime() === bodyValue.getTime()
-					: idValue === bodyValue;
-			if (!isSameValue) {
-				throw new Error(
-					`The body property '${key}' conflicts with the natural key in the id property`,
-				);
-			}
-		}
+		assertBodyMatchesNaturalKey(resolvedId, body);
 
 		const result = await this.get<TResource, Omit<TParams, 'body'>>({
 			...restParams,
@@ -1676,6 +1680,10 @@ export abstract class PinejsClientCore<
 		if (body == null) {
 			throw new Error('The body property is missing');
 		}
+
+		// The body is sent as is when patching an existing resource, so a differing value would
+		// change the natural key that we matched on
+		assertBodyMatchesNaturalKey(id, body);
 
 		const postParams = {
 			...restParams,

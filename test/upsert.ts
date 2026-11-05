@@ -54,4 +54,41 @@ describe('upsert', () => {
 		}
 		expect(client.requests.map(({ method }) => method)).to.deep.equal(['POST']);
 	});
+
+	it('should reject a body that conflicts with the natural key', async () => {
+		const client = new PinejsClient(
+			new StatusError('Unique key constraint violated', 409),
+		);
+		try {
+			await client.upsert({
+				resource: 'a',
+				id: { slug: 'from-id' },
+				body: { slug: 'from-body', name: 'b' },
+			});
+			expect.fail('Expected upsert to throw');
+		} catch (e: any) {
+			expect(e.message).to.equal(
+				"The body property 'slug' conflicts with the natural key in the id property",
+			);
+		}
+		expect(client.requests).to.deep.equal([]);
+	});
+
+	it('should patch with a body that repeats the natural key', async () => {
+		const client = new PinejsClient(
+			new StatusError('Unique key constraint violated', 409),
+		);
+		await client.upsert({
+			resource: 'a',
+			id: { slug: 'c', created_at: new Date(0) },
+			body: { slug: 'c', created_at: new Date(0), name: 'b' },
+		});
+		const body = { slug: 'c', created_at: new Date(0), name: 'b' };
+		expect(
+			client.requests.map(({ method, body: b }) => ({ method, body: b })),
+		).to.deep.equal([
+			{ method: 'POST', body },
+			{ method: 'PATCH', body },
+		]);
+	});
 });
