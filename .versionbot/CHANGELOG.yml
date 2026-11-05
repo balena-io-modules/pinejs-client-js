@@ -1,4 +1,20 @@
 - commits:
+    - subject: Fix `no-useless-assignment` lint errors
+      hash: a5313b39dc1d156759e0bd759b99e6d881eb51d9
+      body: |
+        The `@balena/lint` v11 update (940acd4) enabled `no-useless-assignment`,
+        which flags the initial values of `keys` in the `$count` filter handling
+        and `compiledValue` in `buildOption` since every path that uses them
+        assigns them first, so `npm run lint` failed on master.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.54
+  title: ""
+  date: 2026-11-05T17:54:55.702Z
+- commits:
     - subject: Update dependency @balena/lint to v11
       hash: 940acd42a229bc90b8ef5c495662c4a6147c121d
       body: |
