@@ -18,8 +18,7 @@
   "scripts": {
     "lint": "balena-lint -t tsconfig.dev.json src test",
     "pretest": "npm run build",
-    "test": "mocha",
-    "posttest": "npm run lint & npx tsc --noEmit --project tsconfig.dev.json",
+    "test": "mocha && npm run lint & npx tsc --noEmit --project tsconfig.dev.json",
     "test6": "npm run build && mocha",
     "build": "tsc",
     "prepare": "node -e \"try { (await import('husky')).default() } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e }\" --input-type module",

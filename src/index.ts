@@ -700,7 +700,6 @@ const handleFilterOperator = <
 			return addParentKey(resource, parentKey);
 		}
 		case '$count': {
-			let keys = ['$count'];
 			if (
 				parentKey != null &&
 				isObject(filter) &&
@@ -708,7 +707,7 @@ const handleFilterOperator = <
 				(Object.keys(filter).length === 0 ||
 					Object.prototype.hasOwnProperty.call(filter, '$filter'))
 			) {
-				keys = parentKey.slice(0, parentKey.length - 1);
+				const keys = parentKey.slice(0, parentKey.length - 1);
 				keys.push(
 					handleOptions(
 						'$filter',
@@ -973,7 +972,7 @@ const buildOption = <T extends Resource['Read']>(
 	option: string,
 	value: ODataOptionsWithoutCount<T>[string],
 ): string => {
-	let compiledValue = '';
+	let compiledValue: string;
 	switch (option) {
 		case '$filter':
 			compiledValue = buildFilter(value as Filter<T>).join('');
