@@ -1636,8 +1636,9 @@ export abstract class PinejsClientCore<
 		try {
 			return await this.post(postParams);
 		} catch (err: any) {
+			// Backends such as pinejs-client-fetch/request pass the response body as the message
 			const isUniqueKeyViolationResponse =
-				err.statusCode === 409 && /unique/i.test(err.body);
+				err.statusCode === 409 && /unique/i.test(err.body ?? err.message);
 
 			if (!isUniqueKeyViolationResponse) {
 				throw err;
