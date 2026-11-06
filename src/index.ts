@@ -1575,6 +1575,25 @@ export abstract class PinejsClientCore<
 			);
 		}
 
+		// The body is spread over the id when creating, so a differing value would create a
+		// resource that doesn't match the natural key that we looked up
+		for (const key of Object.keys(id)) {
+			if (!Object.prototype.hasOwnProperty.call(body, key)) {
+				continue;
+			}
+			const idValue: unknown = (id as AnyObject)[key];
+			const bodyValue: unknown = (body as AnyObject)[key];
+			const isSameValue =
+				isDate(idValue) && isDate(bodyValue)
+					? idValue.getTime() === bodyValue.getTime()
+					: idValue === bodyValue;
+			if (!isSameValue) {
+				throw new Error(
+					`The body property '${key}' conflicts with the natural key in the id property`,
+				);
+			}
+		}
+
 		const result = await this.get<TResource, Omit<TParams, 'body'>>({
 			...restParams,
 			id,
