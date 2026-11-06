@@ -1,4 +1,22 @@
 - commits:
+    - subject: Fix `upsert` not patching after a unique key conflict
+      hash: 541619e55e27277925adff3a5e5f4e75e86e8bae
+      body: |
+        `upsert` only falls back to a PATCH when the POST fails with a 409 whose
+        `err.body` mentions "unique", but `StatusError` has no `body`, and
+        pinejs-client-fetch and pinejs-client-request pass the response body as
+        the error message instead. With those backends a conflict was always
+        rethrown rather than updating the existing row. The check now falls
+        back to the error message when there is no `body`.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.55
+  title: ""
+  date: 2026-11-06T14:36:20.587Z
+- commits:
     - subject: Fix `no-useless-assignment` lint errors
       hash: a5313b39dc1d156759e0bd759b99e6d881eb51d9
       body: |
