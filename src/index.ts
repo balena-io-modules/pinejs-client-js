@@ -1740,32 +1740,31 @@ export abstract class PinejsClientCore<
 		// precompile the URL string to improve performance
 		const compiledUrl = params.url ?? this.compile(params);
 		const urlQueryParamsStr = !compiledUrl.includes('?') ? '?' : '&';
-		if (params.method == null) {
-			params.method = 'GET';
-		} else {
-			params.method = params.method.toUpperCase() as typeof params.method;
-		}
+		const method = (params.method ?? 'GET').toUpperCase() as ODataMethod;
 		const { body: defaultBody, passthrough: defaultPassthrough } = params;
 
 		return async (parameterAliases, body, passthrough) => {
+			// Build fresh params for every call so that we never mutate the caller's
+			// params and concurrent calls cannot interfere with each other
+			const requestParams: Params = { ...params, method };
 			if (body != null) {
-				params.body = {
+				requestParams.body = {
 					...defaultBody,
 					...body,
 				};
 			} else if (defaultBody != null) {
-				params.body = { ...defaultBody };
+				requestParams.body = { ...defaultBody };
 			}
 			if (passthrough != null) {
-				params.passthrough = {
+				requestParams.passthrough = {
 					...defaultPassthrough,
 					...passthrough,
 				};
 			} else if (defaultPassthrough != null) {
-				params.passthrough = { ...defaultPassthrough };
+				requestParams.passthrough = { ...defaultPassthrough };
 			}
 			if (parameterAliases != null) {
-				params.url =
+				requestParams.url =
 					compiledUrl +
 					urlQueryParamsStr +
 					mapObj(parameterAliases, (value, option) => {
@@ -1777,11 +1776,11 @@ export abstract class PinejsClientCore<
 						return `@${option}=${escapeValue(value)}`;
 					}).join('&');
 			} else {
-				params.url = compiledUrl;
+				requestParams.url = compiledUrl;
 			}
-			const result = await this.request(params);
-			if (params.method === 'GET') {
-				return this.transformGetResult(params, result as AnyObject);
+			const result = await this.request(requestParams);
+			if (method === 'GET') {
+				return this.transformGetResult(requestParams, result as AnyObject);
 			}
 			return result;
 		};
