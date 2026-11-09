@@ -1,4 +1,28 @@
 - commits:
+    - subject: Fix `prepare` and `subscribe` sharing params between calls
+      hash: e6f23d439e81383d2e03629c1d2e8700c7f12a6f
+      body: |
+        `prepare` built one params object and every call of the prepared
+        function wrote `method`, `url`, `body` and `passthrough` onto it, so:
+        - A call that omitted `body` or `passthrough` (with no default given to
+          `prepare`) re-sent the previous call's values, including any headers
+          such as `authorization`. Prepared functions shared between callers
+          could therefore send one caller's credentials or body with another
+          caller's request.
+        - The caller's own params object was mutated (`subscribe` passes its
+          params straight to `prepare`), so reusing it, eg `pine.get(params)`,
+          threw "Passing `url` to `get` has been removed".
+
+        Every call now builds its own params object.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.56
+  title: ""
+  date: 2026-11-09T17:02:26.234Z
+- commits:
     - subject: Fix `upsert` not patching after a unique key conflict
       hash: 541619e55e27277925adff3a5e5f4e75e86e8bae
       body: |
