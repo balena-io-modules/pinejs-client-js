@@ -74,6 +74,25 @@ describe('upsert', () => {
 		expect(client.requests).to.deep.equal([]);
 	});
 
+	it('should reject an undefined body value for a natural key property', async () => {
+		const client = new PinejsClient(
+			new StatusError('Unique key constraint violated', 409),
+		);
+		try {
+			await client.upsert({
+				resource: 'a',
+				id: { slug: 'c' },
+				body: { slug: undefined, name: 'b' },
+			});
+			expect.fail('Expected upsert to throw');
+		} catch (e: any) {
+			expect(e.message).to.equal(
+				"The body property 'slug' is undefined, omit it to use the value from the id property",
+			);
+		}
+		expect(client.requests).to.deep.equal([]);
+	});
+
 	it('should patch with a body that repeats the natural key', async () => {
 		const client = new PinejsClient(
 			new StatusError('Unique key constraint violated', 409),
