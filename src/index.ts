@@ -476,6 +476,9 @@ const escapeValue = (value: Primitive): string | number | boolean | null => {
 		value = value.replace(/'/g, "''");
 		return `'${encodeURIComponent(value)}'`;
 	} else if (isDate(value)) {
+		if (!NumberIsFinite(value.getTime())) {
+			throw new Error('Not a valid value: Invalid Date');
+		}
 		return `datetime'${value.toISOString()}'`;
 	} else if (value === null || NumberIsFinite(value) || isBoolean(value)) {
 		return value;

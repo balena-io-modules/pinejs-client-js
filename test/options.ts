@@ -274,6 +274,13 @@ testParam(
 	new Error("Unknown type for parameter alias option '@param': object"),
 );
 
+describe('Invalid Dates', () => {
+	const error = new Error('Not a valid value: Invalid Date');
+	it('should be rejected as a parameter alias value', () => {
+		test(error, { resource: 'test', options: { '@param': new Date(NaN) } });
+	});
+});
+
 it('should throw an error when combining $count with other options', () => {
 	test(
 		new Error(

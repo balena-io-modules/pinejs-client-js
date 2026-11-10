@@ -299,6 +299,18 @@ testFilter({ a: null }, 'a eq null');
 	const date = new Date();
 	testFilter({ a: date }, `a eq datetime'${date.toISOString()}'`);
 })();
+it('should reject an Invalid Date in a filter', () => {
+	test(new Error('Not a valid value: Invalid Date'), {
+		resource: 'test',
+		options: { $filter: { a: new Date(NaN) } },
+	});
+});
+it('should reject an Invalid Date in a filter operator', () => {
+	test(new Error('Not a valid value: Invalid Date'), {
+		resource: 'test',
+		options: { $filter: { a: { $in: [new Date(0), new Date(NaN)] } } },
+	});
+});
 
 // Test mixing operators
 testFilter(
