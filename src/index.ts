@@ -1035,6 +1035,12 @@ const buildOption = <T extends Resource['Read']>(
 		default:
 			// Escape parameter aliases as primitives
 			if (option.startsWith('@')) {
+				// odata-parser can't parse null parameter alias values
+				if (value === null) {
+					throw new Error(
+						`Parameter alias value for '${option}' must not be null`,
+					);
+				}
 				if (!isPrimitive(value)) {
 					throw new Error(
 						`Unknown type for parameter alias option '${option}': ${typeof value}`,
@@ -1827,6 +1833,12 @@ export abstract class PinejsClientCore<
 					compiledUrl +
 					urlQueryParamsStr +
 					mapObj(parameterAliases, (value, option) => {
+						// odata-parser can't parse null parameter alias values
+						if (value === null) {
+							throw new Error(
+								`Parameter alias value for '@${option}' must not be null`,
+							);
+						}
 						if (!isPrimitive(value)) {
 							throw new Error(
 								`Unknown type for parameter alias option '${option}': ${typeof value}`,

@@ -61,3 +61,25 @@ describe('subscribe', () => {
 		expect(params).to.deep.equal({ resource: 'a', pollInterval: 1000 });
 	});
 });
+
+describe('prepared parameter aliases', () => {
+	it('should reject null values', async () => {
+		const client = new PinejsClient('/');
+		const prepared = client.prepare(
+			{ resource: 'a', options: { $filter: { b: { '@': 'b' } } } },
+			{ b: ['number'] },
+		);
+		let error: unknown;
+		try {
+			// Untyped callers can still pass null
+			await prepared({ b: null as unknown as number });
+		} catch (err) {
+			error = err;
+		}
+		expect(error).to.be.instanceOf(Error);
+		expect((error as Error).message).to.equal(
+			"Parameter alias value for '@b' must not be null",
+		);
+		expect(client.requests).to.deep.equal([]);
+	});
+});
