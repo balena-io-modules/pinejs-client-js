@@ -91,4 +91,24 @@ describe('upsert', () => {
 			{ method: 'PATCH', body },
 		]);
 	});
+
+	it('should reject an array id', async () => {
+		const client = new PinejsClient(new Error('Unexpected request'));
+		let error: unknown;
+		try {
+			await client.upsert({
+				resource: 'a',
+				// @ts-expect-error - an array is not a natural key
+				id: ['x'],
+				body: { c: 1 },
+			});
+		} catch (err) {
+			error = err;
+		}
+		expect(error).to.be.instanceOf(Error);
+		expect((error as Error).message).to.equal(
+			'The id property must be an object',
+		);
+		expect(client.requests).to.deep.equal([]);
+	});
 });
