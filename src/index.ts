@@ -1714,7 +1714,7 @@ export abstract class PinejsClientCore<
 	public prepare<
 		TAliases extends Record<
 			string,
-			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+			Array<'string' | 'number' | 'boolean' | 'Date'>
 		>,
 		TResource extends StringKeyOf<Model>,
 		TParams extends Params<Model[TResource]> & {
@@ -1745,7 +1745,7 @@ export abstract class PinejsClientCore<
 	public prepare<
 		TAliases extends Record<
 			string,
-			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+			Array<'string' | 'number' | 'boolean' | 'Date'>
 		>,
 		TResource extends StringKeyOf<Model>,
 	>(
@@ -1765,7 +1765,7 @@ export abstract class PinejsClientCore<
 	public prepare<
 		TAliases extends Record<
 			string,
-			Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
+			Array<'string' | 'number' | 'boolean' | 'Date'>
 		>,
 		TResource extends StringKeyOf<Model>,
 	>(
@@ -2209,19 +2209,13 @@ type BaseOrderBy<T extends Resource['Read'] = AnyResourceObject> =
 export type OrderBy<T extends Resource['Read'] = AnyResourceObject> =
 	BaseOrderBy<T> | ReadonlyArray<BaseOrderBy<T>>;
 
-type StringPrimitiveToType<
-	T extends 'null' | 'string' | 'number' | 'boolean' | 'Date',
-> =
-	| ('null' extends T ? null : never)
+type StringPrimitiveToType<T extends 'string' | 'number' | 'boolean' | 'Date'> =
 	| ('number' extends T ? number : never)
 	| ('string' extends T ? string : never)
 	| ('boolean' extends T ? boolean : never)
 	| ('Date' extends T ? Date : never);
 type StringDictionaryToDictType<
-	T extends Record<
-		string,
-		Array<'null' | 'string' | 'number' | 'boolean' | 'Date'>
-	>,
+	T extends Record<string, Array<'string' | 'number' | 'boolean' | 'Date'>>,
 > = keyof T extends never
 	? Record<string, never>
 	: {
@@ -2229,7 +2223,8 @@ type StringDictionaryToDictType<
 		};
 
 export type Primitive = null | string | number | boolean | Date;
-export type ParameterAlias = Primitive;
+// odata-parser can't parse null parameter alias values
+export type ParameterAlias = Exclude<Primitive, null>;
 
 export interface ODataOptionsWithoutCount<
 	T extends Resource['Read'] = AnyResourceObject,
