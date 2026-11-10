@@ -1,4 +1,37 @@
 - commits:
+    - subject: Resolve parameter aliases in the `getOrCreate` natural key
+      hash: 0445a7479bf955ba170d124f39926e4c57a1b91f
+      body: |
+        `getOrCreate` created the resource with `{ ...id, ...body }`, so an
+        aliased natural key (`id: { uuid: { '@': 'u' } }`) posted the
+        `{ '@': 'u' }` object as the value, and the body conflict check
+        rejected a body that repeated the aliased value. The aliases are now
+        resolved from the `@u` option, so the body is checked against, and the
+        resource created with, the aliased value. An alias missing from the
+        options, or an aliased primary key (`id: { '@': 'u' }`), is rejected
+        since there is no natural key value to look up or create with.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+    - subject: Error when `getOrCreate` body conflicts with the natural key in `id`
+      hash: e32665c970cac9bc849159efba839ff8056e9bbd
+      body: |
+        `getOrCreate` looks the resource up by `id` but creates it with
+        `{ ...id, ...body }`, so a body value for a natural key field silently
+        won, creating a resource that doesn't match the key that was looked up
+        (and that later calls will never find). Reject such conflicts before
+        making any requests; repeating the same value in the body is still fine.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.57
+  title: ""
+  date: 2026-11-10T01:04:40.696Z
+- commits:
     - subject: Fix `prepare` and `subscribe` sharing params between calls
       hash: e6f23d439e81383d2e03629c1d2e8700c7f12a6f
       body: |
