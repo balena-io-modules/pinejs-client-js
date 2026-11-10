@@ -1569,10 +1569,61 @@ export abstract class PinejsClientCore<
 			throw new Error('The body property is missing');
 		}
 
-		if (!isObject(id) || isDate(id) || Object.keys(id).length === 0) {
+		if (
+			!isObject(id) ||
+			isDate(id) ||
+			Object.keys(id).length === 0 ||
+			// `{ '@': alias }` is an aliased primary key, not a natural key
+			'@' in id
+		) {
 			throw new Error(
 				'The id property must be an object with the natural key of the model',
 			);
+		}
+
+		// The id is used to create the resource, so parameter aliases have to be resolved
+		// to the values they refer to in the options
+		const resolvedId: AnyObject = {};
+		for (const [key, idValue] of Object.entries(id as AnyObject)) {
+			if (isObject(idValue) && '@' in idValue) {
+				const alias: unknown = idValue['@'];
+				if (!isString(alias)) {
+					throw new Error(
+						`Parameter alias reference must be a string, got: ${typeof alias}`,
+					);
+				}
+				const aliasOption = `@${alias}`;
+				if (
+					params.options == null ||
+					!Object.prototype.hasOwnProperty.call(params.options, aliasOption)
+				) {
+					throw new Error(
+						`The parameter alias '${aliasOption}' for the id property '${key}' must be set in the options`,
+					);
+				}
+				resolvedId[key] = (params.options as AnyObject)[aliasOption];
+			} else {
+				resolvedId[key] = idValue;
+			}
+		}
+
+		// The body is spread over the id when creating, so a differing value would create a
+		// resource that doesn't match the natural key that we looked up
+		for (const key of Object.keys(resolvedId)) {
+			if (!Object.prototype.hasOwnProperty.call(body, key)) {
+				continue;
+			}
+			const idValue: unknown = resolvedId[key];
+			const bodyValue: unknown = (body as AnyObject)[key];
+			const isSameValue =
+				isDate(idValue) && isDate(bodyValue)
+					? idValue.getTime() === bodyValue.getTime()
+					: idValue === bodyValue;
+			if (!isSameValue) {
+				throw new Error(
+					`The body property '${key}' conflicts with the natural key in the id property`,
+				);
+			}
 		}
 
 		const result = await this.get<TResource, Omit<TParams, 'body'>>({
@@ -1591,7 +1642,7 @@ export abstract class PinejsClientCore<
 		return (await this.post({
 			...restParams,
 			body: {
-				...id,
+				...resolvedId,
 				...body,
 			},
 		})) as OptionsToResponse<
