@@ -454,13 +454,21 @@ const escapeValue = (value: Primitive): string | number | boolean | null => {
 	}
 };
 
+// Parameter alias names are parsed by odata-parser's `ResourceName` rule, and only from the raw
+// url, so they must not contain anything that needs encoding
+const parameterAliasNameRegex = /^[A-Za-z0-9\-._~]+$/;
 const escapeParameterAlias = (value: unknown): string => {
 	if (!isString(value)) {
 		throw new Error(
 			`Parameter alias reference must be a string, got: ${typeof value}`,
 		);
 	}
-	return `@${encodeURIComponent(value)}`;
+	if (!parameterAliasNameRegex.test(value)) {
+		throw new Error(
+			`Parameter alias names must be non-empty and only contain [A-Za-z0-9-._~], got: ${JSON.stringify(value)}`,
+		);
+	}
+	return `@${value}`;
 };
 
 const join = (strOrArray: string | string[], separator = ','): string => {
@@ -1094,7 +1102,8 @@ const buildOption = <T extends Resource['Read']>(
 						`Unknown type for parameter alias option '${option}': ${typeof value}`,
 					);
 				}
-				compiledValue = '' + escapeValue(value);
+				// Validates the alias name, which would otherwise be added to the url as is
+				return `${escapeParameterAlias(option.slice(1))}=${escapeValue(value)}`;
 			}
 			// Unknown values are left as-is
 			else if (isArray(value)) {
@@ -1900,7 +1909,7 @@ export abstract class PinejsClientCore<
 								`Unknown type for parameter alias option '${option}': ${typeof value}`,
 							);
 						}
-						return `@${option}=${escapeValue(value)}`;
+						return `${escapeParameterAlias(option)}=${escapeValue(value)}`;
 					}).join('&');
 			} else {
 				requestParams.url = compiledUrl;

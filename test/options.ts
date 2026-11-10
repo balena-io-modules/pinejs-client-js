@@ -247,3 +247,77 @@ it('should throw an error when combining $count with other options', () => {
 		},
 	);
 });
+
+describe('parameter alias names', () => {
+	it('should allow names that do not need encoding', () => {
+		test("test(a=@a-b.c_d~e)?$filter=b eq @a-b.c_d~e&@a-b.c_d~e='x'", {
+			resource: 'test',
+			id: { a: { '@': 'a-b.c_d~e' } },
+			options: {
+				$filter: { b: { '@': 'a-b.c_d~e' } },
+				'@a-b.c_d~e': 'x',
+			},
+		});
+	});
+
+	const invalidNameError = (name: string) =>
+		new Error(
+			`Parameter alias names must be non-empty and only contain [A-Za-z0-9-._~], got: ${JSON.stringify(name)}`,
+		);
+
+	it('should reject names with reserved characters in the options', () => {
+		test(invalidNameError('a&b'), {
+			resource: 'test',
+			options: { '@a&b': 'x' },
+		});
+	});
+
+	it('should reject names that need encoding in the options', () => {
+		test(invalidNameError('é'), {
+			resource: 'test',
+			options: { '@é': 'x' },
+		});
+	});
+
+	it('should reject names with spaces in references', () => {
+		test(invalidNameError('a b'), {
+			resource: 'test',
+			options: { $filter: { b: { '@': 'a b' } } },
+		});
+	});
+
+	it('should reject names that need encoding in references', () => {
+		test(invalidNameError('é'), {
+			resource: 'test',
+			options: { $filter: { b: { '@': 'é' } } },
+		});
+	});
+
+	it("should reject names with a ' in references", () => {
+		test(invalidNameError("a'b"), {
+			resource: 'test',
+			options: { $filter: { b: { '@': "a'b" } } },
+		});
+	});
+
+	it('should reject empty names in ids', () => {
+		test(invalidNameError(''), {
+			resource: 'test',
+			id: { a: { '@': '' } },
+		});
+	});
+
+	it('should reject names that need encoding in natural key ids', () => {
+		test(invalidNameError('é'), {
+			resource: 'test',
+			id: { a: { '@': 'é' } },
+		});
+	});
+
+	it('should reject names that need encoding in ids', () => {
+		test(invalidNameError('a|b'), {
+			resource: 'test',
+			id: { '@': 'a|b' },
+		});
+	});
+});
