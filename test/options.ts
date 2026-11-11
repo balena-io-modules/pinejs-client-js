@@ -321,3 +321,89 @@ describe('parameter alias names', () => {
 		});
 	});
 });
+
+describe('id property names', () => {
+	it('should allow numbers, strings and parameter aliases', () => {
+		test("test(a=1,b='x',c=@p)?@p=1", {
+			resource: 'test',
+			id: { a: 1, b: 'x', c: { '@': 'p' } },
+			options: { '@p': 1 },
+		});
+	});
+	const invalidNameError = (name: string) =>
+		new Error(
+			`Property names in an id must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(name)}`,
+		);
+	for (const name of ['x=1)?$expand=owner#', 'é', '1', "a'"]) {
+		it(`should reject ${JSON.stringify(name)}`, () => {
+			test(invalidNameError(name), {
+				resource: 'test',
+				id: { slug: 's', [name]: 'z' },
+			});
+		});
+	}
+});
+
+describe('id values', () => {
+	for (const [description, value] of [
+		['null', null],
+		['boolean', true],
+		['Date', new Date(0)],
+	] as const) {
+		it(`should reject ${description} values in an object id`, () => {
+			test(
+				new Error(
+					`The id property 'a' must be a number, string or parameter alias, got: ${description}`,
+				),
+				{ resource: 'test', id: { a: value } },
+			);
+		});
+	}
+	for (const [description, value] of [
+		['boolean', true],
+		['Date', new Date(0)],
+	] as const) {
+		it(`should reject ${description} ids`, () => {
+			test(
+				new Error(
+					`The id must be a number, string or parameter alias, got: ${description}`,
+				),
+				{ resource: 'test', id: value },
+			);
+		});
+	}
+	it('should allow a parameter alias without a prototype in an object id', () => {
+		test('test(a=@p)?@p=1', {
+			resource: 'test',
+			id: { a: Object.assign(Object.create(null), { '@': 'p' }) },
+			options: { '@p': 1 },
+		});
+	});
+	for (const [description, value, type] of [
+		['with other properties', { '@': 'p', b: 1 }, 'object'],
+		['that is inherited', Object.create({ '@': 'p' }), 'object'],
+		[
+			'that is not enumerable next to other properties',
+			Object.defineProperty({ b: 1 }, '@', { value: 'p' }),
+			'object',
+		],
+		['on a Date', Object.assign(new Date(0), { '@': 'p' }), 'Date'],
+	] as const) {
+		it(`should reject a parameter alias ${description} in an object id`, () => {
+			test(
+				new Error(
+					`The id property 'a' must be a number, string or parameter alias, got: ${type}`,
+				),
+				{ resource: 'test', id: { a: value }, options: { '@p': 1 } },
+			);
+		});
+	}
+	it('should reject a parameter alias with other properties as the id', () => {
+		test(
+			new Error(
+				`Property names in an id must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: "@"`,
+			),
+			{ resource: 'test', id: { '@': 'p', b: 1 } as any, options: { '@p': 1 } },
+		);
+	});
+});

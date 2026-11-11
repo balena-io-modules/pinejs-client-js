@@ -38,8 +38,9 @@ describe('getOrCreate', () => {
 		const client = new PinejsClient('/');
 		const result = await client.getOrCreate({
 			resource: 'a',
-			id: { slug: 'c', created_at: new Date(0) },
+			id: { slug: 'c', created_at: { '@': 'd' } },
 			body: { slug: 'c', created_at: new Date(0), name: 'b' },
+			options: { '@d': new Date(0) },
 		});
 		expect(client.requests.map(({ method }) => method)).to.deep.equal([
 			'GET',
@@ -87,7 +88,7 @@ describe('getOrCreate', () => {
 			const client = new PinejsClient('/');
 			const result = await client.getOrCreate({
 				resource: 'a',
-				id: { uuid: { '@': 'u' }, created_at: new Date(0) },
+				id: { uuid: { '@': 'u' }, slug: 'c' },
 				body: { name: 'x' },
 				options: { '@u': 'abc' },
 			});
@@ -97,7 +98,7 @@ describe('getOrCreate', () => {
 			]);
 			expect(result).to.deep.equal({
 				uuid: 'abc',
-				created_at: new Date(0),
+				slug: 'c',
 				name: 'x',
 			});
 		});
