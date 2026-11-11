@@ -1025,11 +1025,27 @@ testFilter(
 		a: {
 			$fn: {
 				$scope: '$E',
+				$method: 'f',
+			},
+		},
+	},
+	new Error(
+		`Function scopes must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: "$E"`,
+	),
+);
+
+testFilter(
+	{
+		a: {
+			$fn: {
+				$scope: 'E',
 				$method: '$f',
 			},
 		},
 	},
-	'a/%24E.%24f()',
+	new Error(
+		`Function methods must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: "$f"`,
+	),
 );
 
 testFilter(
@@ -1185,6 +1201,56 @@ describe('filter property names', () => {
 			options: {
 				$filter: {
 					a: { $any: { $alias: 'x', $expr: { x: { 'b)': 1 } } } },
+				},
+			},
+		});
+	});
+});
+
+describe('other names', () => {
+	const invalidNameError = (description: string, name: unknown) =>
+		new Error(
+			`${description} must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(name)}`,
+		);
+	it('should allow property reference paths', () => {
+		test(
+			"test?$filter=a eq b and c/$count eq 1 and d/e eq 'x' and f/$count eq 2",
+			{
+				resource: 'test',
+				options: {
+					$filter: {
+						a: { $: 'b' },
+						$and: [
+							{ $eq: [{ $: 'c/$count' }, 1] },
+							{ $eq: [{ $: ['d', 'e'] }, 'x'] },
+							{ $eq: [{ $: ['f', '$count'] }, 2] },
+						],
+					},
+				},
+			},
+		);
+	});
+	for (const reference of [
+		'b eq 1 or c',
+		'b/c',
+		'1',
+		['b', 'c d'],
+		['$count'],
+		['b', '$count', 'c'],
+	]) {
+		it(`should reject the property reference ${JSON.stringify(reference)}`, () => {
+			test(invalidNameError('Property references', reference), {
+				resource: 'test',
+				options: { $filter: { a: { $: reference } } },
+			});
+		});
+	}
+	it('should reject lambda aliases that would change the filter', () => {
+		test(invalidNameError('Lambda aliases', 'x:true) or a/any(y'), {
+			resource: 'test',
+			options: {
+				$filter: {
+					a: { $any: { $alias: 'x:true) or a/any(y', $expr: { y: { b: 1 } } } },
 				},
 			},
 		});

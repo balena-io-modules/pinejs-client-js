@@ -416,14 +416,44 @@ const isIdAlias = (value: unknown): value is { '@': unknown } =>
 const propertyNameRegex =
 	/^(?!(?:null|true|false)$)[A-Za-z_][A-Za-z0-9\-._~]*$/;
 const assertPropertyName = (
-	name: string,
+	name: unknown,
 	description: string,
 	fullName = name,
 ): void => {
-	if (!propertyNameRegex.test(name)) {
+	if (!isString(name) || !propertyNameRegex.test(name)) {
 		throw new Error(
 			`${description} must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(fullName)}`,
 		);
+	}
+};
+// A `/` separated path string or an array of names, either of which may end with `$count`
+const assertPropertyPath = (path: unknown, description: string): void => {
+	if (isString(path)) {
+		// A `/` in a string is encoded, so only a trailing `/$count` is a path
+		assertPropertyName(path.replace(/\/\$count$/, ''), description, path);
+	} else if (isArray(path)) {
+		path.forEach((name, i) => {
+			if (i === 0 || i < path.length - 1 || name !== '$count') {
+				assertPropertyName(name, description, path);
+			}
+		});
+	}
+};
+
+// `$select` names are added as is, so each has to be a property name or a `/` path of them,
+// or `*` on its own
+const assertSelectNames = (names: readonly unknown[]): void => {
+	if (names.length === 1 && names[0] === '*') {
+		return;
+	}
+	for (const name of names) {
+		if (!isString(name)) {
+			assertPropertyName(name, 'Select property names');
+			continue;
+		}
+		for (const segment of name.split('/')) {
+			assertPropertyName(segment, 'Select property names', name);
+		}
 	}
 };
 
@@ -790,6 +820,7 @@ const handleFilterOperator = <
 		}
 		// break
 		case '$': {
+			assertPropertyPath(filter, 'Property references');
 			const resource = escapeResource(filter as FilterType<typeof operator, T>);
 			return addParentKey(resource, parentKey);
 		}
@@ -873,6 +904,8 @@ const handleFilterOperator = <
 					`Lambda expression (${operator}) has no alias defined.`,
 				);
 			}
+			// It's added to the filter as is
+			assertPropertyName(alias, 'Lambda aliases');
 			if (expr == null) {
 				throw new Error(`Lambda expression (${operator}) has no expr defined.`);
 			}
@@ -895,6 +928,7 @@ const handleFilterOperator = <
 					`Function expression (${operator}) $scope must be a string.`,
 				);
 			}
+			assertPropertyName(filterx.$scope, 'Function scopes');
 			const scope = escapeResource(filterx.$scope);
 
 			if (typeof filterx.$method !== 'string') {
@@ -902,6 +936,7 @@ const handleFilterOperator = <
 					`Function expression (${operator}) $method must be a string.`,
 				);
 			}
+			assertPropertyName(filterx.$method, 'Function methods');
 			const method = escapeResource(filterx.$method);
 
 			const args = filterx.$args?.map((v) => `${escapeValue(v)}`) ?? [];
@@ -1020,6 +1055,13 @@ const buildOrderBy = <T extends Resource['Read']>(
 	} else if (isObject(orderby)) {
 		const { $dir, ...$orderby } = orderby;
 		const result = mapObj($orderby as typeof orderby, (dirOrOptions, key) => {
+			// The key is added as is, so a `/` path works, and it may end with `/$count`
+			const names = key.split('/');
+			names.forEach((name, i) => {
+				if (i === 0 || i < names.length - 1 || name !== '$count') {
+					assertPropertyName(name, 'Orderby property names', key);
+				}
+			});
 			let propertyPath: string = key;
 			let dir = $dir;
 			if (dirOrOptions == null) {
@@ -1095,17 +1137,21 @@ const buildOption = <T extends Resource['Read']>(
 		case '$select': {
 			const select = value;
 			if (isString(select)) {
+				assertSelectNames([select]);
 				compiledValue = join(select);
 			} else if (isArray(select)) {
 				if (select.length === 0) {
 					throw new Error(`'${option}' arrays have to have at least 1 element`);
 				}
+				assertSelectNames(select);
 				compiledValue = join(select as string[]);
 			} else if (isSet(select)) {
 				if (select.size === 0) {
 					throw new Error(`'${option}' sets have to have at least 1 element`);
 				}
-				compiledValue = join(Array.from(select));
+				const names = Array.from(select);
+				assertSelectNames(names);
+				compiledValue = join(names);
 			} else {
 				throw new Error(
 					`'${option}' option has to be either a string or array`,
@@ -2020,6 +2066,8 @@ export abstract class PinejsClientCore<
 				if (params.action == null) {
 					throw new Error('If the action property is set it must be non-null');
 				}
+				// It's added to the url path as is
+				assertPropertyName(params.action, 'Action names');
 				url += `/${params.action}`;
 			}
 

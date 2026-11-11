@@ -139,6 +139,19 @@ testOrderBy(
 
 testOrderBy({ a: { $count: {} }, $dir: 'desc' }, 'a/$count desc');
 
+testOrderBy({ 'a/b': 'asc' }, 'a/b asc');
+
+testOrderBy({ 'a/$count': 'asc' }, 'a/$count asc');
+
+for (const key of ['a,b', 'a/b c', 'a//b', '1', '$count', '$count/a']) {
+	testOrderBy(
+		{ [key]: 'asc' as const },
+		new Error(
+			`Orderby property names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(key)}`,
+		),
+	);
+}
+
 testOrderBy(
 	{ a: { $count: { $filter: { d: 'e' } } }, $dir: 'desc' },
 	"a/$count($filter=d eq 'e') desc",
@@ -220,6 +233,31 @@ testSelect(
 
 // @ts-expect-error Testing intentionally invalid type
 testSelect(1, new Error("'$select' option has to be either a string or array"));
+
+// The typings only allow property names, but odata-parser also accepts `*` on its own
+testSelect('*' as 'a', '*');
+
+testSelect(['a/b', 'c'], 'a/b,c');
+
+const invalidSelectNameError = (name: unknown) =>
+	new Error(
+		`Select property names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(name)}`,
+	);
+for (const name of [
+	'b&$filter=c eq 1',
+	'a,b',
+	'a b',
+	'a//b',
+	'$count',
+] as string[] as Array<'a'>) {
+	testSelect(['a', name], invalidSelectNameError(name));
+	testSelect(new Set(['a', name]), invalidSelectNameError(name));
+}
+testSelect('a,b', invalidSelectNameError('a,b'));
+// @ts-expect-error Testing intentionally invalid type
+testSelect(['*', 'a'], invalidSelectNameError('*'));
+// @ts-expect-error Testing intentionally invalid type
+testSelect([1], invalidSelectNameError(1));
 
 testCustom('a', 'a');
 
