@@ -1,4 +1,17 @@
 - commits:
+    - subject: Update dependency lint-staged to v17.6.1
+      hash: f32c119fb621ecd3d2c9837ea79486f84ba91171
+      body: |
+        Update lint-staged from 17.6.0 to 17.6.1
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: balena-renovate[bot]
+      nested: []
+  version: 8.5.58
+  title: ""
+  date: 2026-11-21T01:09:16.161Z
+- commits:
     - subject: Resolve parameter aliases in the `getOrCreate` natural key
       hash: 0445a7479bf955ba170d124f39926e4c57a1b91f
       body: |
