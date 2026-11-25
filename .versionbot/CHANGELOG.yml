@@ -1,4 +1,22 @@
 - commits:
+    - subject: Error when `upsert` body conflicts with the natural key in `id`
+      hash: f2f488d6c1fc6613def974221625b3dd9abb9f94
+      body: |
+        `upsert` creates with `{ ...body, ...id }`, but when the POST hits a
+        unique conflict it patches the matching resource with `body` as is, so a
+        body value for a natural key field renamed the resource that was
+        matched. Reject such conflicts before making any requests, using the
+        same check as `getOrCreate`; repeating the same value in the body is
+        still fine.
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+      nested: []
+  version: 8.5.59
+  title: ""
+  date: 2026-11-25T17:08:37.757Z
+- commits:
     - subject: Update dependency lint-staged to v17.6.1
       hash: f32c119fb621ecd3d2c9837ea79486f84ba91171
       body: |
