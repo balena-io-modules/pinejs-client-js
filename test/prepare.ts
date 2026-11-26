@@ -49,6 +49,27 @@ describe('prepare', () => {
 			passthrough: {},
 		});
 	});
+
+	it('should reject parameter alias names that would add other query options', async () => {
+		const client = new PinejsClient('/');
+		const prepared = client.prepare(
+			{ resource: 'a', options: { $filter: { b: { '@': 'b' } } } },
+			{ b: ['number'] },
+		);
+		let error: unknown;
+		try {
+			await prepared({ b: 1, 'c=1&$select=password&@d': 2 } as {
+				b: number;
+			});
+		} catch (err) {
+			error = err;
+		}
+		expect(error).to.be.instanceOf(Error);
+		expect((error as Error).message).to.equal(
+			'Parameter alias names must be non-empty and only contain [A-Za-z0-9-._~], got: "c=1&$select=password&@d"',
+		);
+		expect(client.requests).to.deep.equal([]);
+	});
 });
 
 describe('subscribe', () => {
