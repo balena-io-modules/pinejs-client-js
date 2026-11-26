@@ -410,6 +410,23 @@ const isIdAlias = (value: unknown): value is { '@': unknown } =>
 	Object.getOwnPropertyNames(value).length === 1 &&
 	Object.keys(value)[0] === '@';
 
+// Property names are parsed by odata-parser's `ResourceName` rule from the raw url, so they must not
+// need encoding. Where a value may appear, numbers, strings, dates and `null`/`true`/`false` are
+// parsed first, so names must not start like or be one of them
+const propertyNameRegex =
+	/^(?!(?:null|true|false)$)[A-Za-z_][A-Za-z0-9\-._~]*$/;
+const assertPropertyName = (
+	name: string,
+	description: string,
+	fullName = name,
+): void => {
+	if (!propertyNameRegex.test(name)) {
+		throw new Error(
+			`${description} must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(fullName)}`,
+		);
+	}
+};
+
 // Escape a resource name (string), or resource path (array)
 const escapeResource = (resource: string | string[]): string => {
 	if (isString(resource)) {
@@ -1712,10 +1729,20 @@ export abstract class PinejsClientCore<
 		}
 
 		const naturalKeyProps = Object.keys(params.id);
-		if (naturalKeyProps.length === 0) {
+		if (
+			naturalKeyProps.length === 0 ||
+			// `{ '@': alias }` is an aliased primary key, not a natural key
+			'@' in id
+		) {
 			throw new Error(
 				'The id property must be an object with the natural key of the model',
 			);
+		}
+		// The id is sent as the body and used in a filter, so it has to hold the values themselves
+		for (const key of naturalKeyProps) {
+			// The keys are used in the filter when patching
+			assertPropertyName(key, 'Natural key property names');
+			assertNaturalKeyValue(`the id property '${key}'`, (id as AnyObject)[key]);
 		}
 
 		if (body == null) {

@@ -43,6 +43,109 @@ describe('upsert', () => {
 		]);
 	});
 
+	describe('should reject an invalid natural key before making any requests', () => {
+		const cases: Array<{
+			title: string;
+			id: object;
+			message: string;
+		}> = [
+			{
+				title: 'an aliased primary key',
+				id: { '@': 'p' },
+				message:
+					'The id property must be an object with the natural key of the model',
+			},
+			{
+				title: 'a natural key property name that is an operator',
+				id: { $raw: '1 eq 1' },
+				message: `Natural key property names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: "$raw"`,
+			},
+			{
+				title: 'a natural key property name that is filter syntax',
+				id: { 'id gt 0 or id': 0 },
+				message: `Natural key property names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: "id gt 0 or id"`,
+			},
+			{
+				title: 'a natural key property name that is a path',
+				id: { 'b/c': 'x' },
+				message: `Natural key property names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: "b/c"`,
+			},
+			...['1', '-1', 'null', 'true', "'x'", 'é', ''].map((key) => ({
+				title: `a natural key property name of ${JSON.stringify(key)}`,
+				id: { [key]: 0 },
+				message: `Natural key property names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(key)}`,
+			})),
+			{
+				title: 'a parameter alias',
+				id: { b: { '@': 'u' } },
+				message: "Unknown type for the id property 'b': object",
+			},
+			{
+				title: 'a nested array',
+				id: { b: ['x'] },
+				message: "Unknown type for the id property 'b': object",
+			},
+			{
+				title: 'an undefined value',
+				id: { b: undefined },
+				message: "Unknown type for the id property 'b': undefined",
+			},
+			{
+				title: 'a NaN value',
+				id: { b: NaN },
+				message: "The id property 'b' must be a finite number, got: NaN",
+			},
+			{
+				title: 'an Infinity value',
+				id: { b: Infinity },
+				message: "The id property 'b' must be a finite number, got: Infinity",
+			},
+			{
+				title: 'an Invalid Date',
+				id: { b: new Date(NaN) },
+				message: "The id property 'b' is an Invalid Date",
+			},
+			{
+				title: 'a string with a lone surrogate',
+				id: { b: '\uD800' },
+				message: "The id property 'b' must not contain lone surrogates",
+			},
+		];
+		for (const { title, id, message } of cases) {
+			it(title, async () => {
+				const client = new PinejsClient(new Error('Unexpected request'));
+				let error: unknown;
+				try {
+					await client.upsert({ resource: 'a', id, body: { c: 1 } });
+				} catch (err) {
+					error = err;
+				}
+				expect(error).to.be.instanceOf(Error);
+				expect((error as Error).message).to.equal(message);
+				expect(client.requests).to.deep.equal([]);
+			});
+		}
+	});
+
+	it('should accept null and boolean natural key values', async () => {
+		const client = new PinejsClient(
+			new StatusError('Unique key constraint violated', 409),
+		);
+		await client.upsert({
+			resource: 'a',
+			id: { b: null, c: true },
+			body: { d: 1 },
+		});
+		expect(client.requests).to.deep.equal([
+			{ method: 'POST', url: '/a', body: { d: 1, b: null, c: true } },
+			{
+				method: 'PATCH',
+				url: '/a?$filter=b eq null and c eq true',
+				body: { d: 1 },
+			},
+		]);
+	});
+
 	it('should rethrow other conflicts', async () => {
 		const err = new StatusError('Some other conflict', 409);
 		const client = new PinejsClient(err);
