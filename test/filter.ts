@@ -1141,3 +1141,52 @@ testFilter(
 	{ $or: [{ $or: [{ a: 1 }, { b: 2 }] }, { c: 3 }] },
 	'a eq 1 or b eq 2 or c eq 3',
 );
+
+describe('filter property names', () => {
+	const invalidNameError = (name: string) =>
+		new Error(
+			`Filter property names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(name)}`,
+		);
+	it('should allow names made of unreserved characters', () => {
+		test('test?$filter=_a eq 1 and b-c.d_e~f eq 2', {
+			resource: 'test',
+			options: { $filter: { _a: 1, 'b-c.d_e~f': 2 } },
+		});
+	});
+	it('should allow a trailing /$count', () => {
+		test('test?$filter=a/$count gt 1', {
+			resource: 'test',
+			options: { $filter: { 'a/$count': { $gt: 1 } } },
+		});
+	});
+	for (const name of [
+		'id gt 0 or id',
+		'é',
+		'a/b',
+		'1/$count',
+		'',
+		'1',
+		'-1',
+		'null',
+		'true',
+		'false',
+		"'x'",
+	]) {
+		it(`should reject ${JSON.stringify(name)}`, () => {
+			test(invalidNameError(name), {
+				resource: 'test',
+				options: { $filter: { [name]: 0 } },
+			});
+		});
+	}
+	it('should reject names nested in a lambda', () => {
+		test(invalidNameError('b)'), {
+			resource: 'test',
+			options: {
+				$filter: {
+					a: { $any: { $alias: 'x', $expr: { x: { 'b)': 1 } } } },
+				},
+			},
+		});
+	});
+});

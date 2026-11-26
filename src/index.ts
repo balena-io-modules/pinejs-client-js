@@ -471,6 +471,19 @@ const escapeParameterAlias = (value: unknown): string => {
 	return `@${value}`;
 };
 
+// odata-parser's `KeyBind` rule only accepts numbers, strings and parameter aliases
+const escapeIdValue = (value: unknown, description: string) => {
+	if (isIdAlias(value)) {
+		return escapeParameterAlias(value['@']);
+	}
+	if (!isString(value) && typeof value !== 'number') {
+		throw new Error(
+			`${description} must be a number, string or parameter alias, got: ${value === null ? 'null' : isDate(value) ? 'Date' : typeof value}`,
+		);
+	}
+	return escapeValue(value);
+};
+
 const join = (strOrArray: string | string[], separator = ','): string => {
 	if (isString(strOrArray)) {
 		return strOrArray;
@@ -922,6 +935,12 @@ const handleFilterObject = <T extends Resource['Read']>(
 			const parameterAlias = escapeParameterAlias(value);
 			return addParentKey(parameterAlias, parentKey);
 		} else {
+			// A trailing `/$count` is the only path allowed here, others have to use `$any`/`$all` or `$`
+			assertPropertyName(
+				key.replace(/\/\$count$/, ''),
+				'Filter property names',
+				key,
+			);
 			let keys: string[] = [key];
 			if (parentKey != null) {
 				if (disableExpandFilterError === false && parentKey.length > 0) {
@@ -1982,19 +2001,17 @@ export abstract class PinejsClientCore<
 							'If the id property is an object it must not be empty',
 						);
 					}
-					if ('@' in id) {
+					if (isIdAlias(id)) {
 						value = escapeParameterAlias(id['@']);
 					} else {
 						value = mapObj(id, (v, k) => {
-							const escapedValue =
-								isObject(v) && '@' in v
-									? escapeParameterAlias(v['@'])
-									: escapeValue(v!);
-							return `${k}=${escapedValue}`;
+							// The names are added to the url path as is
+							assertPropertyName(k, 'Property names in an id');
+							return `${k}=${escapeIdValue(v, `The id property '${k}'`)}`;
 						}).join(',');
 					}
 				} else {
-					value = '' + escapeValue(id);
+					value = '' + escapeIdValue(id, 'The id');
 				}
 				url += `(${value})`;
 			}
