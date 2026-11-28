@@ -1200,6 +1200,26 @@ const validParams = [
 	'retry',
 ] as const;
 
+// Shallow copy object params (and each method's entry of `passthroughByMethod`) so that a clone
+// never shares a params object with the instance it was cloned from. Nested values, eg `headers`,
+// are still shared as they may hold anything (agents, signals, etc) that cannot safely be copied
+const copyParam = <K extends (typeof validParams)[number]>(
+	key: K,
+	value: PinejsClientCore[K],
+): PinejsClientCore[K] => {
+	if (!isObject(value)) {
+		return value;
+	}
+	if (key === 'passthroughByMethod') {
+		const copy: AnyObject = {};
+		for (const method of Object.keys(value)) {
+			copy[method] = { ...(value as AnyObject)[method] };
+		}
+		return copy as PinejsClientCore[K];
+	}
+	return { ...value };
+};
+
 export type PreparedFn<
 	T extends Record<string, ParameterAlias>,
 	U,
@@ -1367,7 +1387,7 @@ export abstract class PinejsClientCore<
 		for (const validParam of validParams) {
 			if (this[validParam] != null) {
 				(cloneParams[validParam] as PinejsClientCore[typeof validParam]) =
-					this[validParam];
+					copyParam(validParam, this[validParam]);
 			}
 
 			const paramValue = params?.[validParam];
