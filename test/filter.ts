@@ -299,6 +299,18 @@ testFilter({ a: null }, 'a eq null');
 	const date = new Date();
 	testFilter({ a: date }, `a eq datetime'${date.toISOString()}'`);
 })();
+it('should reject an Invalid Date in a filter', () => {
+	test(new Error('Not a valid value: Invalid Date'), {
+		resource: 'test',
+		options: { $filter: { a: new Date(NaN) } },
+	});
+});
+it('should reject an Invalid Date in a filter operator', () => {
+	test(new Error('Not a valid value: Invalid Date'), {
+		resource: 'test',
+		options: { $filter: { a: { $in: [new Date(0), new Date(NaN)] } } },
+	});
+});
 
 // Test mixing operators
 testFilter(
@@ -1025,11 +1037,27 @@ testFilter(
 		a: {
 			$fn: {
 				$scope: '$E',
+				$method: 'f',
+			},
+		},
+	},
+	new Error(
+		`Function scopes must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: "$E"`,
+	),
+);
+
+testFilter(
+	{
+		a: {
+			$fn: {
+				$scope: 'E',
 				$method: '$f',
 			},
 		},
 	},
-	'a/%24E.%24f()',
+	new Error(
+		`Function methods must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: "$f"`,
+	),
 );
 
 testFilter(
@@ -1141,3 +1169,102 @@ testFilter(
 	{ $or: [{ $or: [{ a: 1 }, { b: 2 }] }, { c: 3 }] },
 	'a eq 1 or b eq 2 or c eq 3',
 );
+
+describe('filter property names', () => {
+	const invalidNameError = (name: string) =>
+		new Error(
+			`Filter property names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(name)}`,
+		);
+	it('should allow names made of unreserved characters', () => {
+		test('test?$filter=_a eq 1 and b-c.d_e~f eq 2', {
+			resource: 'test',
+			options: { $filter: { _a: 1, 'b-c.d_e~f': 2 } },
+		});
+	});
+	it('should allow a trailing /$count', () => {
+		test('test?$filter=a/$count gt 1', {
+			resource: 'test',
+			options: { $filter: { 'a/$count': { $gt: 1 } } },
+		});
+	});
+	for (const name of [
+		'id gt 0 or id',
+		'é',
+		'a/b',
+		'1/$count',
+		'',
+		'1',
+		'-1',
+		'null',
+		'true',
+		'false',
+		"'x'",
+	]) {
+		it(`should reject ${JSON.stringify(name)}`, () => {
+			test(invalidNameError(name), {
+				resource: 'test',
+				options: { $filter: { [name]: 0 } },
+			});
+		});
+	}
+	it('should reject names nested in a lambda', () => {
+		test(invalidNameError('b)'), {
+			resource: 'test',
+			options: {
+				$filter: {
+					a: { $any: { $alias: 'x', $expr: { x: { 'b)': 1 } } } },
+				},
+			},
+		});
+	});
+});
+
+describe('other names', () => {
+	const invalidNameError = (description: string, name: unknown) =>
+		new Error(
+			`${description} must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(name)}`,
+		);
+	it('should allow property reference paths', () => {
+		test(
+			"test?$filter=a eq b and c/$count eq 1 and d/e eq 'x' and f/$count eq 2",
+			{
+				resource: 'test',
+				options: {
+					$filter: {
+						a: { $: 'b' },
+						$and: [
+							{ $eq: [{ $: 'c/$count' }, 1] },
+							{ $eq: [{ $: ['d', 'e'] }, 'x'] },
+							{ $eq: [{ $: ['f', '$count'] }, 2] },
+						],
+					},
+				},
+			},
+		);
+	});
+	for (const reference of [
+		'b eq 1 or c',
+		'b/c',
+		'1',
+		['b', 'c d'],
+		['$count'],
+		['b', '$count', 'c'],
+	]) {
+		it(`should reject the property reference ${JSON.stringify(reference)}`, () => {
+			test(invalidNameError('Property references', reference), {
+				resource: 'test',
+				options: { $filter: { a: { $: reference } } },
+			});
+		});
+	}
+	it('should reject lambda aliases that would change the filter', () => {
+		test(invalidNameError('Lambda aliases', 'x:true) or a/any(y'), {
+			resource: 'test',
+			options: {
+				$filter: {
+					a: { $any: { $alias: 'x:true) or a/any(y', $expr: { y: { b: 1 } } } },
+				},
+			},
+		});
+	});
+});

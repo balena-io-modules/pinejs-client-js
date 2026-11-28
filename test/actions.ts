@@ -33,3 +33,14 @@ it('should throw an error on null action', () => {
 		action: null,
 	});
 });
+
+for (const action of ['act?$filter=a eq 1', 'a/b', '1']) {
+	it(`should throw an error on the action ${JSON.stringify(action)}`, () => {
+		test(
+			new Error(
+				`Action names must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(action)}`,
+			),
+			{ resource: 'a', action },
+		);
+	});
+}

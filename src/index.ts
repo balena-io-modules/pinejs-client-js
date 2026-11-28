@@ -187,6 +187,11 @@ const assertBodyMatchesNaturalKey = (id: AnyObject, body: AnyObject) => {
 		}
 		const idValue: unknown = id[key];
 		const bodyValue: unknown = body[key];
+		if (bodyValue === undefined) {
+			throw new Error(
+				`The body property '${key}' is undefined, omit it to use the value from the id property`,
+			);
+		}
 		const isSameValue =
 			isDate(idValue) && isDate(bodyValue)
 				? idValue.getTime() === bodyValue.getTime()
@@ -373,6 +378,85 @@ const isPrimitive = (value?: unknown): value is Primitive => {
 	);
 };
 
+// Natural key values are sent in the body as well as compiled into the url, so check that
+// `escapeValue` can compile them before making any requests, naming the property in the errors
+function assertNaturalKeyValue(
+	description: string,
+	value: unknown,
+): asserts value is Primitive {
+	const subject = description[0].toUpperCase() + description.slice(1);
+	if (typeof value === 'number' && !NumberIsFinite(value)) {
+		throw new Error(`${subject} must be a finite number, got: ${value}`);
+	}
+	if (!isPrimitive(value)) {
+		throw new Error(`Unknown type for ${description}: ${typeof value}`);
+	}
+	// JSON would send an Invalid Date as null
+	if (isDate(value) && !NumberIsFinite(value.getTime())) {
+		throw new Error(`${subject} is an Invalid Date`);
+	}
+	// They can't be percent-encoded
+	if (isString(value) && /\p{Cs}/u.test(value)) {
+		throw new Error(`${subject} must not contain lone surrogates`);
+	}
+}
+
+// Only `{ '@': name }` exactly is a parameter alias reference in an id, so that nothing next to
+// the alias is silently ignored, and the values sent in a body always match what the url refers to
+const isIdAlias = (value: unknown): value is { '@': unknown } =>
+	isObject(value) &&
+	[Object.prototype, null].includes(Object.getPrototypeOf(value)) &&
+	// A non-enumerable `'@'` next to other properties would otherwise hide them
+	Object.getOwnPropertyNames(value).length === 1 &&
+	Object.keys(value)[0] === '@';
+
+// Property names are parsed by odata-parser's `ResourceName` rule from the raw url, so they must not
+// need encoding. Where a value may appear, numbers, strings, dates and `null`/`true`/`false` are
+// parsed first, so names must not start like or be one of them
+const propertyNameRegex =
+	/^(?!(?:null|true|false)$)[A-Za-z_][A-Za-z0-9\-._~]*$/;
+const assertPropertyName = (
+	name: unknown,
+	description: string,
+	fullName = name,
+): void => {
+	if (!isString(name) || !propertyNameRegex.test(name)) {
+		throw new Error(
+			`${description} must start with a letter or '_', only contain [A-Za-z0-9-._~] and not be 'null', 'true' or 'false', got: ${JSON.stringify(fullName)}`,
+		);
+	}
+};
+// A `/` separated path string or an array of names, either of which may end with `$count`
+const assertPropertyPath = (path: unknown, description: string): void => {
+	if (isString(path)) {
+		// A `/` in a string is encoded, so only a trailing `/$count` is a path
+		assertPropertyName(path.replace(/\/\$count$/, ''), description, path);
+	} else if (isArray(path)) {
+		path.forEach((name, i) => {
+			if (i === 0 || i < path.length - 1 || name !== '$count') {
+				assertPropertyName(name, description, path);
+			}
+		});
+	}
+};
+
+// `$select` names are added as is, so each has to be a property name or a `/` path of them,
+// or `*` on its own
+const assertSelectNames = (names: readonly unknown[]): void => {
+	if (names.length === 1 && names[0] === '*') {
+		return;
+	}
+	for (const name of names) {
+		if (!isString(name)) {
+			assertPropertyName(name, 'Select property names');
+			continue;
+		}
+		for (const segment of name.split('/')) {
+			assertPropertyName(segment, 'Select property names', name);
+		}
+	}
+};
+
 // Escape a resource name (string), or resource path (array)
 const escapeResource = (resource: string | string[]): string => {
 	if (isString(resource)) {
@@ -392,6 +476,9 @@ const escapeValue = (value: Primitive): string | number | boolean | null => {
 		value = value.replace(/'/g, "''");
 		return `'${encodeURIComponent(value)}'`;
 	} else if (isDate(value)) {
+		if (!NumberIsFinite(value.getTime())) {
+			throw new Error('Not a valid value: Invalid Date');
+		}
 		return `datetime'${value.toISOString()}'`;
 	} else if (value === null || NumberIsFinite(value) || isBoolean(value)) {
 		return value;
@@ -400,13 +487,34 @@ const escapeValue = (value: Primitive): string | number | boolean | null => {
 	}
 };
 
+// Parameter alias names are parsed by odata-parser's `ResourceName` rule, and only from the raw
+// url, so they must not contain anything that needs encoding
+const parameterAliasNameRegex = /^[A-Za-z0-9\-._~]+$/;
 const escapeParameterAlias = (value: unknown): string => {
 	if (!isString(value)) {
 		throw new Error(
 			`Parameter alias reference must be a string, got: ${typeof value}`,
 		);
 	}
-	return `@${encodeURIComponent(value)}`;
+	if (!parameterAliasNameRegex.test(value)) {
+		throw new Error(
+			`Parameter alias names must be non-empty and only contain [A-Za-z0-9-._~], got: ${JSON.stringify(value)}`,
+		);
+	}
+	return `@${value}`;
+};
+
+// odata-parser's `KeyBind` rule only accepts numbers, strings and parameter aliases
+const escapeIdValue = (value: unknown, description: string) => {
+	if (isIdAlias(value)) {
+		return escapeParameterAlias(value['@']);
+	}
+	if (!isString(value) && typeof value !== 'number') {
+		throw new Error(
+			`${description} must be a number, string or parameter alias, got: ${value === null ? 'null' : isDate(value) ? 'Date' : typeof value}`,
+		);
+	}
+	return escapeValue(value);
 };
 
 const join = (strOrArray: string | string[], separator = ','): string => {
@@ -715,6 +823,7 @@ const handleFilterOperator = <
 		}
 		// break
 		case '$': {
+			assertPropertyPath(filter, 'Property references');
 			const resource = escapeResource(filter as FilterType<typeof operator, T>);
 			return addParentKey(resource, parentKey);
 		}
@@ -798,6 +907,8 @@ const handleFilterOperator = <
 					`Lambda expression (${operator}) has no alias defined.`,
 				);
 			}
+			// It's added to the filter as is
+			assertPropertyName(alias, 'Lambda aliases');
 			if (expr == null) {
 				throw new Error(`Lambda expression (${operator}) has no expr defined.`);
 			}
@@ -820,6 +931,7 @@ const handleFilterOperator = <
 					`Function expression (${operator}) $scope must be a string.`,
 				);
 			}
+			assertPropertyName(filterx.$scope, 'Function scopes');
 			const scope = escapeResource(filterx.$scope);
 
 			if (typeof filterx.$method !== 'string') {
@@ -827,6 +939,7 @@ const handleFilterOperator = <
 					`Function expression (${operator}) $method must be a string.`,
 				);
 			}
+			assertPropertyName(filterx.$method, 'Function methods');
 			const method = escapeResource(filterx.$method);
 
 			const args = filterx.$args?.map((v) => `${escapeValue(v)}`) ?? [];
@@ -860,6 +973,12 @@ const handleFilterObject = <T extends Resource['Read']>(
 			const parameterAlias = escapeParameterAlias(value);
 			return addParentKey(parameterAlias, parentKey);
 		} else {
+			// A trailing `/$count` is the only path allowed here, others have to use `$any`/`$all` or `$`
+			assertPropertyName(
+				key.replace(/\/\$count$/, ''),
+				'Filter property names',
+				key,
+			);
 			let keys: string[] = [key];
 			if (parentKey != null) {
 				if (disableExpandFilterError === false && parentKey.length > 0) {
@@ -939,6 +1058,13 @@ const buildOrderBy = <T extends Resource['Read']>(
 	} else if (isObject(orderby)) {
 		const { $dir, ...$orderby } = orderby;
 		const result = mapObj($orderby as typeof orderby, (dirOrOptions, key) => {
+			// The key is added as is, so a `/` path works, and it may end with `/$count`
+			const names = key.split('/');
+			names.forEach((name, i) => {
+				if (i === 0 || i < names.length - 1 || name !== '$count') {
+					assertPropertyName(name, 'Orderby property names', key);
+				}
+			});
 			let propertyPath: string = key;
 			let dir = $dir;
 			if (dirOrOptions == null) {
@@ -1014,17 +1140,21 @@ const buildOption = <T extends Resource['Read']>(
 		case '$select': {
 			const select = value;
 			if (isString(select)) {
+				assertSelectNames([select]);
 				compiledValue = join(select);
 			} else if (isArray(select)) {
 				if (select.length === 0) {
 					throw new Error(`'${option}' arrays have to have at least 1 element`);
 				}
+				assertSelectNames(select);
 				compiledValue = join(select as string[]);
 			} else if (isSet(select)) {
 				if (select.size === 0) {
 					throw new Error(`'${option}' sets have to have at least 1 element`);
 				}
-				compiledValue = join(Array.from(select));
+				const names = Array.from(select);
+				assertSelectNames(names);
+				compiledValue = join(names);
 			} else {
 				throw new Error(
 					`'${option}' option has to be either a string or array`,
@@ -1040,7 +1170,8 @@ const buildOption = <T extends Resource['Read']>(
 						`Unknown type for parameter alias option '${option}': ${typeof value}`,
 					);
 				}
-				compiledValue = '' + escapeValue(value);
+				// Validates the alias name, which would otherwise be added to the url as is
+				return `${escapeParameterAlias(option.slice(1))}=${escapeValue(value)}`;
 			}
 			// Unknown values are left as-is
 			else if (isArray(value)) {
@@ -1602,26 +1733,30 @@ export abstract class PinejsClientCore<
 
 		// The id is used to create the resource, so parameter aliases have to be resolved
 		// to the values they refer to in the options
-		const resolvedId: AnyObject = {};
+		// Without a prototype, so that a `__proto__` key is kept as a property
+		const resolvedId: AnyObject = Object.create(null);
 		for (const [key, idValue] of Object.entries(id as AnyObject)) {
-			if (isObject(idValue) && '@' in idValue) {
-				const alias: unknown = idValue['@'];
-				if (!isString(alias)) {
-					throw new Error(
-						`Parameter alias reference must be a string, got: ${typeof alias}`,
-					);
-				}
-				const aliasOption = `@${alias}`;
+			if (isIdAlias(idValue)) {
+				// Throws for an invalid alias reference before the alias is looked up
+				escapeParameterAlias(idValue['@']);
+				const aliasOption = `@${idValue['@'] as string}`;
+				// Matches how the options are added to the url
 				if (
 					params.options == null ||
-					!Object.prototype.hasOwnProperty.call(params.options, aliasOption)
+					!Object.keys(params.options).includes(aliasOption)
 				) {
 					throw new Error(
 						`The parameter alias '${aliasOption}' for the id property '${key}' must be set in the options`,
 					);
 				}
-				resolvedId[key] = (params.options as AnyObject)[aliasOption];
+				const aliasValue: unknown = (params.options as AnyObject)[aliasOption];
+				assertNaturalKeyValue(
+					`parameter alias option '${aliasOption}'`,
+					aliasValue,
+				);
+				resolvedId[key] = aliasValue;
 			} else {
+				assertNaturalKeyValue(`the id property '${key}'`, idValue);
 				resolvedId[key] = idValue;
 			}
 		}
@@ -1671,10 +1806,20 @@ export abstract class PinejsClientCore<
 		}
 
 		const naturalKeyProps = Object.keys(params.id);
-		if (naturalKeyProps.length === 0) {
+		if (
+			naturalKeyProps.length === 0 ||
+			// `{ '@': alias }` is an aliased primary key, not a natural key
+			'@' in id
+		) {
 			throw new Error(
 				'The id property must be an object with the natural key of the model',
 			);
+		}
+		// The id is sent as the body and used in a filter, so it has to hold the values themselves
+		for (const key of naturalKeyProps) {
+			// The keys are used in the filter when patching
+			assertPropertyName(key, 'Natural key property names');
+			assertNaturalKeyValue(`the id property '${key}'`, (id as AnyObject)[key]);
 		}
 
 		if (body == null) {
@@ -1832,7 +1977,7 @@ export abstract class PinejsClientCore<
 								`Unknown type for parameter alias option '${option}': ${typeof value}`,
 							);
 						}
-						return `@${option}=${escapeValue(value)}`;
+						return `${escapeParameterAlias(option)}=${escapeValue(value)}`;
 					}).join('&');
 			} else {
 				requestParams.url = compiledUrl;
@@ -1905,19 +2050,17 @@ export abstract class PinejsClientCore<
 							'If the id property is an object it must not be empty',
 						);
 					}
-					if ('@' in id) {
+					if (isIdAlias(id)) {
 						value = escapeParameterAlias(id['@']);
 					} else {
 						value = mapObj(id, (v, k) => {
-							const escapedValue =
-								isObject(v) && '@' in v
-									? escapeParameterAlias(v['@'])
-									: escapeValue(v!);
-							return `${k}=${escapedValue}`;
+							// The names are added to the url path as is
+							assertPropertyName(k, 'Property names in an id');
+							return `${k}=${escapeIdValue(v, `The id property '${k}'`)}`;
 						}).join(',');
 					}
 				} else {
-					value = '' + escapeValue(id);
+					value = '' + escapeIdValue(id, 'The id');
 				}
 				url += `(${value})`;
 			}
@@ -1926,6 +2069,8 @@ export abstract class PinejsClientCore<
 				if (params.action == null) {
 					throw new Error('If the action property is set it must be non-null');
 				}
+				// It's added to the url path as is
+				assertPropertyName(params.action, 'Action names');
 				url += `/${params.action}`;
 			}
 

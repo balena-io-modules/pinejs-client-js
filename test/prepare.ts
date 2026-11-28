@@ -29,6 +29,25 @@ describe('prepare', () => {
 		expect(client.requests[1].url).to.equal('/a?$filter=b eq @b');
 	});
 
+	it('should reject an Invalid Date parameter alias value', async () => {
+		const client = new PinejsClient('/');
+		const prepared = client.prepare(
+			{ resource: 'a', options: { $filter: { b: { '@': 'b' } } } },
+			{ b: ['Date'] },
+		);
+		let error: unknown;
+		try {
+			await prepared({ b: new Date(NaN) });
+		} catch (err) {
+			error = err;
+		}
+		expect(error).to.be.instanceOf(Error);
+		expect((error as Error).message).to.equal(
+			'Not a valid value: Invalid Date',
+		);
+		expect(client.requests).to.deep.equal([]);
+	});
+
 	it('should not reuse the body or passthrough of a previous call', async () => {
 		const client = new PinejsClient('/');
 		const prepared = client.prepare(
@@ -48,6 +67,27 @@ describe('prepare', () => {
 			body: undefined,
 			passthrough: {},
 		});
+	});
+
+	it('should reject parameter alias names that would add other query options', async () => {
+		const client = new PinejsClient('/');
+		const prepared = client.prepare(
+			{ resource: 'a', options: { $filter: { b: { '@': 'b' } } } },
+			{ b: ['number'] },
+		);
+		let error: unknown;
+		try {
+			await prepared({ b: 1, 'c=1&$select=password&@d': 2 } as {
+				b: number;
+			});
+		} catch (err) {
+			error = err;
+		}
+		expect(error).to.be.instanceOf(Error);
+		expect((error as Error).message).to.equal(
+			'Parameter alias names must be non-empty and only contain [A-Za-z0-9-._~], got: "c=1&$select=password&@d"',
+		);
+		expect(client.requests).to.deep.equal([]);
 	});
 });
 
