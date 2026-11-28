@@ -229,6 +229,11 @@ testCustom(true, 'true');
 
 testParam('test', "'test'");
 
+testParam(
+	null,
+	new Error("Parameter alias value for '@param' must not be null"),
+);
+
 testParam(1, '1');
 
 testParam(
