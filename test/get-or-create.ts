@@ -34,6 +34,26 @@ describe('getOrCreate', () => {
 		throw new Error('Expected getOrCreate to be rejected');
 	});
 
+	it('should reject an array id', async () => {
+		const client = new PinejsClient('/');
+		let error: unknown;
+		try {
+			await client.getOrCreate({
+				resource: 'a',
+				// @ts-expect-error - an array is not a natural key
+				id: ['x'],
+				body: { name: 'b' },
+			});
+		} catch (err) {
+			error = err;
+		}
+		expect(error).to.be.instanceOf(Error);
+		expect((error as Error).message).to.equal(
+			'The id property must be an object with the natural key of the model',
+		);
+		expect(client.requests).to.deep.equal([]);
+	});
+
 	it('should allow a body that repeats the natural key', async () => {
 		const client = new PinejsClient('/');
 		const result = await client.getOrCreate({

@@ -106,6 +106,8 @@ testId(
 	'a=@param1,b=@param2',
 );
 testId({}, new Error('If the id property is an object it must not be empty'));
+// @ts-expect-error - an array is not a valid id
+testId(['x'], new Error('The id property must not be an array'));
 
 testOrderBy('a', 'a');
 

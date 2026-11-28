@@ -1590,6 +1590,7 @@ export abstract class PinejsClientCore<
 
 		if (
 			!isObject(id) ||
+			isArray(id) ||
 			isDate(id) ||
 			Object.keys(id).length === 0 ||
 			// `{ '@': alias }` is an aliased primary key, not a natural key
@@ -1666,7 +1667,7 @@ export abstract class PinejsClientCore<
 		}
 		const { id, body, ...restParams } = params;
 
-		if (!isObject(id)) {
+		if (!isObject(id) || isArray(id)) {
 			throw new Error('The id property must be an object');
 		}
 
@@ -1896,6 +1897,9 @@ export abstract class PinejsClientCore<
 				const { id } = params;
 				if (id == null) {
 					throw new Error('If the id property is set it must be non-null');
+				}
+				if (isArray(id)) {
+					throw new Error('The id property must not be an array');
 				}
 				let value: string;
 
