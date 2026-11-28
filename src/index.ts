@@ -187,6 +187,11 @@ const assertBodyMatchesNaturalKey = (id: AnyObject, body: AnyObject) => {
 		}
 		const idValue: unknown = id[key];
 		const bodyValue: unknown = body[key];
+		if (bodyValue === undefined) {
+			throw new Error(
+				`The body property '${key}' is undefined, omit it to use the value from the id property`,
+			);
+		}
 		const isSameValue =
 			isDate(idValue) && isDate(bodyValue)
 				? idValue.getTime() === bodyValue.getTime()
@@ -372,6 +377,38 @@ const isPrimitive = (value?: unknown): value is Primitive => {
 		isDate(value)
 	);
 };
+
+// Natural key values are sent in the body as well as compiled into the url, so check that
+// `escapeValue` can compile them before making any requests, naming the property in the errors
+function assertNaturalKeyValue(
+	description: string,
+	value: unknown,
+): asserts value is Primitive {
+	const subject = description[0].toUpperCase() + description.slice(1);
+	if (typeof value === 'number' && !NumberIsFinite(value)) {
+		throw new Error(`${subject} must be a finite number, got: ${value}`);
+	}
+	if (!isPrimitive(value)) {
+		throw new Error(`Unknown type for ${description}: ${typeof value}`);
+	}
+	// JSON would send an Invalid Date as null
+	if (isDate(value) && !NumberIsFinite(value.getTime())) {
+		throw new Error(`${subject} is an Invalid Date`);
+	}
+	// They can't be percent-encoded
+	if (isString(value) && /\p{Cs}/u.test(value)) {
+		throw new Error(`${subject} must not contain lone surrogates`);
+	}
+}
+
+// Only `{ '@': name }` exactly is a parameter alias reference in an id, so that nothing next to
+// the alias is silently ignored, and the values sent in a body always match what the url refers to
+const isIdAlias = (value: unknown): value is { '@': unknown } =>
+	isObject(value) &&
+	[Object.prototype, null].includes(Object.getPrototypeOf(value)) &&
+	// A non-enumerable `'@'` next to other properties would otherwise hide them
+	Object.getOwnPropertyNames(value).length === 1 &&
+	Object.keys(value)[0] === '@';
 
 // Escape a resource name (string), or resource path (array)
 const escapeResource = (resource: string | string[]): string => {
@@ -1602,26 +1639,30 @@ export abstract class PinejsClientCore<
 
 		// The id is used to create the resource, so parameter aliases have to be resolved
 		// to the values they refer to in the options
-		const resolvedId: AnyObject = {};
+		// Without a prototype, so that a `__proto__` key is kept as a property
+		const resolvedId: AnyObject = Object.create(null);
 		for (const [key, idValue] of Object.entries(id as AnyObject)) {
-			if (isObject(idValue) && '@' in idValue) {
-				const alias: unknown = idValue['@'];
-				if (!isString(alias)) {
-					throw new Error(
-						`Parameter alias reference must be a string, got: ${typeof alias}`,
-					);
-				}
-				const aliasOption = `@${alias}`;
+			if (isIdAlias(idValue)) {
+				// Throws for an invalid alias reference before the alias is looked up
+				escapeParameterAlias(idValue['@']);
+				const aliasOption = `@${idValue['@'] as string}`;
+				// Matches how the options are added to the url
 				if (
 					params.options == null ||
-					!Object.prototype.hasOwnProperty.call(params.options, aliasOption)
+					!Object.keys(params.options).includes(aliasOption)
 				) {
 					throw new Error(
 						`The parameter alias '${aliasOption}' for the id property '${key}' must be set in the options`,
 					);
 				}
-				resolvedId[key] = (params.options as AnyObject)[aliasOption];
+				const aliasValue: unknown = (params.options as AnyObject)[aliasOption];
+				assertNaturalKeyValue(
+					`parameter alias option '${aliasOption}'`,
+					aliasValue,
+				);
+				resolvedId[key] = aliasValue;
 			} else {
+				assertNaturalKeyValue(`the id property '${key}'`, idValue);
 				resolvedId[key] = idValue;
 			}
 		}
