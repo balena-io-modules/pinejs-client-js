@@ -1,4 +1,17 @@
 - commits:
+    - subject: Update dependency lint-staged to v17.6.2
+      hash: b50464c7af8b30f854a02c9029f1f90b2e160760
+      body: |
+        Update lint-staged from 17.6.1 to 17.6.2
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: balena-renovate[bot]
+      nested: []
+  version: 8.5.60
+  title: ""
+  date: 2026-11-28T01:11:01.556Z
+- commits:
     - subject: Error when `upsert` body conflicts with the natural key in `id`
       hash: f2f488d6c1fc6613def974221625b3dd9abb9f94
       body: |
